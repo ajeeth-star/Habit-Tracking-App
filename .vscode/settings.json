@@ -1,0 +1,8 @@
+{
+  // Re-run `xcodegen generate` automatically before SweetPad builds.
+  "sweetpad.xcodegen.autogenerate": true,
+  "files.exclude": {
+    "build": true,
+    "**/.DS_Store": true
+  }
+}
