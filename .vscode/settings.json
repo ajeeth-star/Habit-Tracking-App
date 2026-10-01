@@ -4,5 +4,6 @@
   "files.exclude": {
     "build": true,
     "**/.DS_Store": true
-  }
+  },
+  "sweetpad.build.xcodeWorkspacePath": "HabitApp.xcodeproj/project.xcworkspace"
 }
