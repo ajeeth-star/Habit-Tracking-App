@@ -19,6 +19,7 @@ targets:
     platform: iOS
     sources:
       - path: App
+      - path: DesignSystem
       - path: Models
       - path: Views
       - path: Services
@@ -40,6 +41,8 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Colors are used through Color.app (DesignSystem/AppColors.swift), not generated symbols.
+        ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS: NO
 
   HabitAppTests:
     type: bundle.unit-test

@@ -17,14 +17,26 @@ A private iPhone app for building habits. The user creates tasks (gym, skincare,
 ```
 project.yml        XcodeGen project definition (targets, settings, Info.plist keys)
 App/               App entry point (HabitApp.swift) and generated Info.plist
-Models/            Data types (SwiftData models later)
-Views/             SwiftUI screens
+DesignSystem/      AppColors (Color.app.*), AppFonts (Font.app.*), Spacing + Sizes, Radius,
+                   Strings (all user-facing text), Formatters (streaks, skips, times, schedules)
+Models/            Display types (TaskSnapshot, Streak, Weekday…) and SampleData (SwiftData models later)
+Views/Components/  Reusable pieces from design.md §2 (PrimaryButton, TaskCard, StatusPill…)
+Views/<Area>/      Screens: Home, TaskDetail, TaskForm, Skip, CheckIn, History
+Views/Gallery/     DesignGalleryView — DEBUG builds only (#if DEBUG)
 Services/          Non-UI logic (camera, notifications, streak rules…)
-Resources/         Assets.xcassets (app icon, accent color)
+Resources/         Assets.xcassets: app icon, AccentColor, Colors/ (light + dark color sets)
 Tests/             Unit tests (HabitAppTests target)
-docs/context.md    Product reference
+docs/context.md    Product reference (behavior)
+docs/design.md     Design spec (looks, component and screen names, copy)
 .vscode/           VS Code / SweetPad settings
 ```
+
+## Design rules
+
+- Views never hard-code a color, font, spacing value, corner radius, or size: use `Color.app.*`, `Font.app.*`, `Spacing.*`, `Sizes.*`, `Radius.*`.
+- All user-facing text lives in `DesignSystem/Strings.swift`; text built from data goes through `Formatters`.
+- To check screens: in a DEBUG build, tap the paintbrush (top left of Home) to open the Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
+- To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 
 ## Commands
 

@@ -177,8 +177,9 @@ Decide these with the owner when the relevant phase comes up. Don't guess.
 One phase at a time. Each phase ends with something runnable.
 
 1. Scaffold: empty app that builds, runs, and passes a test
-2. Tasks: create, edit, list, and save (including the next-week edit rules)
-3. Home screen: Today / Not today, status per task, empty state
-4. Check-in: in-app camera, preview, window-only rule, photo storage, history
-5. Streaks and skips: counting rules, skip confirmation, refunds, broken state, display toggle
-6. Reminders: window open, repeats, last call, stop on check-in or skip
+2. Design system and screens: the look of every screen from `docs/design.md`, filled with sample data (no saving or real logic), plus a DEBUG-only Design Gallery to check every state in the simulator
+3. Tasks: create, edit, list, and save (including the next-week edit rules)
+4. Home screen: Today / Not today, status per task, empty state
+5. Check-in: in-app camera, preview, window-only rule, photo storage, history
+6. Streaks and skips: counting rules, skip confirmation, refunds, broken state, display toggle
+7. Reminders: window open, repeats, last call, stop on check-in or skip
