@@ -23,9 +23,9 @@ struct RootView: View {
     var body: some View {
         NavigationStack {
             #if DEBUG
-            HomeView(tasks: SampleData.allTasks, date: SampleData.today, onOpenGallery: { showingGallery = true })
+            HomeView(tasks: SampleData.allTasks, now: SampleData.today, onOpenGallery: { showingGallery = true })
             #else
-            HomeView(tasks: SampleData.allTasks, date: SampleData.today)
+            HomeView(tasks: SampleData.allTasks, now: SampleData.today)
             #endif
         }
         #if DEBUG

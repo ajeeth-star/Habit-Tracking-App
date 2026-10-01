@@ -127,11 +127,17 @@ struct GalleryEntry: Identifiable {
     // MARK: Entries
 
     private static let home: [GalleryEntry] = [
-        GalleryEntry(id: "home.all", section: "Home", title: "Every card state") { close in
-            AnyView(HomeView(tasks: SampleData.allTasks, date: SampleData.today, onOpenGallery: close))
+        GalleryEntry(id: "home.all", section: "Home", title: "Every card state · summary in progress") { close in
+            AnyView(HomeView(tasks: SampleData.allTasks, now: SampleData.today, onOpenGallery: close))
+        },
+        GalleryEntry(id: "home.closingSoon", section: "Home", title: "Hero card · closes in under 15 min") { close in
+            AnyView(HomeView(tasks: SampleData.allTasks, now: SampleData.closingSoon, onOpenGallery: close))
+        },
+        GalleryEntry(id: "home.allDone", section: "Home", title: "Summary · all done for today") { close in
+            AnyView(HomeView(tasks: SampleData.allDoneTasks, now: SampleData.today, onOpenGallery: close))
         },
         GalleryEntry(id: "home.empty", section: "Home", title: "Empty (first launch)") { close in
-            AnyView(HomeView(tasks: [], date: SampleData.today, onOpenGallery: close))
+            AnyView(HomeView(tasks: [], now: SampleData.today, onOpenGallery: close))
         },
     ]
 
@@ -148,7 +154,7 @@ struct GalleryEntry: Identifiable {
 
     private static func detailEntry(_ id: String, _ title: String, _ task: TaskSnapshot) -> GalleryEntry {
         GalleryEntry(id: "detail.\(id)", section: "Task screen", title: title) { _ in
-            AnyView(TaskDetailView(task: task))
+            AnyView(LiveTaskDetail(task: task))
         }
     }
 
@@ -186,7 +192,7 @@ struct GalleryEntry: Identifiable {
     private static func skipEntry(_ id: String, _ title: String, _ prompt: SkipPrompt) -> GalleryEntry {
         GalleryEntry(id: "skip.\(id)", section: "Skip dialog", title: title, presentation: .cover) { close in
             AnyView(ZStack {
-                NavigationStack { TaskDetailView(task: SampleData.gym) }
+                NavigationStack { TaskDetailView(task: .constant(SampleData.gym)) }
                 SkipConfirmationView(prompt: prompt)
             })
         }
@@ -203,18 +209,22 @@ struct GalleryEntry: Identifiable {
         GalleryEntry(id: "preview", section: "Check-in", title: "Photo preview", presentation: .cover) { close in
             AnyView(PhotoPreviewView(taskName: "Gym", closesAt: TimeOfDay(20), onRetake: close, onSubmit: close))
         },
-        successEntry("midWeek", "Success · 1 more this week", SampleData.successMidWeek),
-        successEntry("twoLeft", "Success · 2 more this week", SampleData.successTwoLeft),
-        successEntry("complete", "Success · week complete", SampleData.successWeekComplete),
-        successEntry("refund", "Success · skip given back", SampleData.successSkipRefunded),
+        celebrationEntry("midWeek", "Celebration · 1 more this week", SampleData.celebrationMidWeek),
+        celebrationEntry("twoLeft", "Celebration · 2 more this week", SampleData.celebrationTwoLeft),
+        celebrationEntry("complete", "Celebration · week complete", SampleData.celebrationWeekComplete),
+        celebrationEntry("refund", "Celebration · skip given back", SampleData.celebrationSkipRefunded),
+        GalleryEntry(id: "celebration.auto", section: "Check-in", title: "Celebration · closes on its own", presentation: .cover) { close in
+            AnyView(StreakCelebrationView(result: SampleData.celebrationMidWeek, onDone: close))
+        },
         GalleryEntry(id: "flow", section: "Check-in", title: "Whole flow (tap through)", presentation: .cover) { _ in
-            AnyView(CheckInFlowView(task: SampleData.gym))
+            AnyView(CheckInFlowView(task: SampleData.gym, now: SampleData.today))
         },
     ]
 
-    private static func successEntry(_ id: String, _ title: String, _ result: CheckInResult) -> GalleryEntry {
-        GalleryEntry(id: "success.\(id)", section: "Check-in", title: title, presentation: .cover) { close in
-            AnyView(CheckInSuccessView(result: result, onDone: close))
+    /// Stays on screen (tap to close), so it can be looked at.
+    private static func celebrationEntry(_ id: String, _ title: String, _ result: CheckInResult) -> GalleryEntry {
+        GalleryEntry(id: "celebration.\(id)", section: "Check-in", title: title, presentation: .cover) { close in
+            AnyView(StreakCelebrationView(result: result, closesAutomatically: false, onDone: close))
         }
     }
 
@@ -241,6 +251,17 @@ private struct ComponentsGallery: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
+                group("Today summary card") {
+                    TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allTasks, now: SampleData.today))
+                    TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allDoneTasks, now: SampleData.today))
+                }
+                group("Task cards") {
+                    TaskCard(task: SampleData.gym, now: SampleData.today, onOpen: {}, onCheckIn: {})
+                    TaskCard(task: SampleData.gym, now: SampleData.closingSoon, onOpen: {}, onCheckIn: {})
+                    TaskCard(task: SampleData.gym.checkedIn(at: SampleData.time(18, 42)), now: SampleData.today,
+                             onOpen: {}, onCheckIn: {})
+                    TaskCard(task: SampleData.journal, now: SampleData.today, onOpen: {}, onCheckIn: {})
+                }
                 group("Buttons") {
                     PrimaryButton("Check in", systemImage: "camera.fill") {}
                     PrimaryButton("Opens 6:00 PM") {}.disabled(true)
@@ -249,12 +270,11 @@ private struct ComponentsGallery: View {
                     DangerTextButton("Use skip") {}
                 }
                 group("Status pills") {
-                    HStack(spacing: Spacing.xs) {
+                    // Stacked rather than side by side, so the page fits at the largest text sizes.
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         StatusPill(kind: .open)
                         StatusPill(kind: .done)
                         StatusPill(kind: .upcoming("9:00 PM"))
-                    }
-                    HStack(spacing: Spacing.xs) {
                         StatusPill(kind: .skipped)
                         StatusPill(kind: .missed)
                     }
@@ -316,6 +336,15 @@ private struct ComponentsGallery: View {
                 .padding(.top, Spacing.md)
             content()
         }
+    }
+}
+
+/// Holds a sample task in memory so a check-in started from the gallery shows up on the task screen.
+private struct LiveTaskDetail: View {
+    @State var task: TaskSnapshot
+
+    var body: some View {
+        TaskDetailView(task: $task)
     }
 }
 #endif

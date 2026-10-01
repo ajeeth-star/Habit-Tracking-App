@@ -112,6 +112,38 @@ struct FormattersTests {
             + "You'll have 1 skip left this week after this.")
     }
 
+    @Test("Closes in", arguments: [
+        (80, "Closes in 1h 20m"),
+        (120, "Closes in 2h"),
+        (59, "Closes in 59m"),
+        (12, "Closes in 12m"),
+        (1, "Closes in 1m"),
+    ])
+    func closesIn(minutes: Int, expected: String) {
+        #expect(format.closesIn(minutes: minutes) == expected)
+    }
+
+    @Test func summaryTitle() {
+        #expect(format.summaryTitle(TodaySummary(done: 2, total: 3, nextUp: nil)) == "2 of 3 done today")
+        #expect(format.summaryTitle(TodaySummary(done: 3, total: 3, nextUp: nil)) == "All done for today")
+    }
+
+    @Test func nextUp() {
+        let today = TodaySummary.NextUp(taskName: "Gym", day: nil, start: TimeOfDay(18))
+        let tomorrow = TodaySummary.NextUp(taskName: "Guitar", day: .tomorrow, start: TimeOfDay(21))
+        let later = TodaySummary.NextUp(taskName: "Walk", day: .weekday(.sunday), start: TimeOfDay(10))
+        #expect(plain(format.nextUp(today)) == "Next: Gym at 6:00 PM")
+        #expect(plain(format.nextUp(tomorrow)) == "Next: Guitar tomorrow at 9:00 PM")
+        #expect(plain(format.nextUp(later)) == "Next: Walk on Sunday at 10:00 AM")
+    }
+
+    @Test func doneMeta() {
+        #expect(plain(format.doneMeta(checkedInAt: TimeOfDay(18, 42), next: .weekday(.friday)))
+            == "Checked in 6:42 PM · Next: Friday")
+        #expect(plain(format.doneMeta(checkedInAt: TimeOfDay(7, 42), next: .tomorrow))
+            == "Checked in 7:42 AM · Next: Tomorrow")
+    }
+
     @Test func weekProgress() {
         #expect(format.weekProgress(remaining: 1) == "1 more to finish the week")
         #expect(format.weekProgress(remaining: 2) == "2 more to finish the week")

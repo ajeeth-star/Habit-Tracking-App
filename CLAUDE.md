@@ -26,6 +26,7 @@ Views/Gallery/     DesignGalleryView — DEBUG builds only (#if DEBUG)
 Services/          Non-UI logic (camera, notifications, streak rules…)
 Resources/         Assets.xcassets: app icon, AccentColor, Colors/ (light + dark color sets)
 Tests/             Unit tests (HabitAppTests target)
+UITests/           UI tests that tap through the app (HabitAppUITests target)
 docs/context.md    Product reference (behavior)
 docs/design.md     Design spec (looks, component and screen names, copy)
 .vscode/           VS Code / SweetPad settings
@@ -36,6 +37,8 @@ docs/design.md     Design spec (looks, component and screen names, copy)
 - Views never hard-code a color, font, spacing value, corner radius, or size: use `Color.app.*`, `Font.app.*`, `Spacing.*`, `Sizes.*`, `Radius.*`.
 - All user-facing text lives in `DesignSystem/Strings.swift`; text built from data goes through `Formatters`.
 - To check screens: in a DEBUG build, tap the paintbrush (top left of Home) to open the Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
+- Check-in flow UI test: `UITests/CheckInFlowUITests.swift` taps Check in → Use sample photo → Submit → celebration → Home. Set `TEST_RUNNER_SCREENSHOT_DIR=<folder>` on `xcodebuild test` to save a PNG of each step.
+- Animation timing lives in `DesignSystem/Motion.swift`; always check Reduce Motion before animating.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 
 ## Commands

@@ -24,9 +24,11 @@ struct StreakLabel: View {
         }
     }
 
-    /// The same label as `Text`, so it can sit inline inside a longer line (like a card's meta line).
-    static func text(_ streak: Streak, style: Style, mode: StreakDisplayMode) -> Text {
-        Text(Image(systemName: "flame.fill")).foregroundStyle(Color.app.streak)
+    /// The same label as `Text`, so it can sit inline inside a longer line.
+    /// `flameColor` is `streak` everywhere except the hero card, where it's `onAccent`.
+    static func text(_ streak: Streak, style: Style, mode: StreakDisplayMode,
+                     flameColor: Color = Color.app.streak) -> Text {
+        Text(Image(systemName: "flame.fill")).foregroundStyle(flameColor)
             + Text(" " + string(streak, style: style, mode: mode)).monospacedDigit()
     }
 }

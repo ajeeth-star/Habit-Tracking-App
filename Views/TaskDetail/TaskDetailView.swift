@@ -2,7 +2,10 @@ import SwiftUI
 
 /// One task: streak, skips, this week, actions, and recent photos (design.md §4.4).
 struct TaskDetailView: View {
-    let task: TaskSnapshot
+    /// A binding so a check-in started here updates the task (and Home) straight away.
+    @Binding var task: TaskSnapshot
+    /// When a check-in started here happens (sample "now" in this phase).
+    var now: Date = SampleData.today
 
     @Environment(\.dismiss) private var dismiss
     @Environment(StreakDisplaySettings.self) private var settings
@@ -55,7 +58,7 @@ struct TaskDetailView: View {
             TaskFormView(mode: .edit(task))
         }
         .fullScreenCover(isPresented: $showingCheckIn) {
-            CheckInFlowView(task: task)
+            CheckInFlowView(task: task, now: now) { task = $0 }
         }
         .fullScreenCover(isPresented: $showingSkip) {
             SkipConfirmationView(prompt: task.skipPrompt)

@@ -56,15 +56,29 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.ajeethsrinivasan.habitapp.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  HabitAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: HabitApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ajeethsrinivasan.habitapp.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   HabitApp:
     build:
       targets:
         HabitApp: all
         HabitAppTests: [test]
+        HabitAppUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - HabitAppTests
+        - HabitAppUITests

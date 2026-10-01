@@ -31,8 +31,11 @@ struct PhotoPreviewView: View {
                 .padding(.bottom, Spacing.lg)
             }
         }
+        // Always black with white controls. The dark look stays local to this screen (a preferredColorScheme
+        // would leak into whatever the same full-screen presentation shows next), and the status bar is
+        // hidden, like the system Camera app.
         .environment(\.colorScheme, .dark)
-        .preferredColorScheme(.dark)
+        .statusBarHidden()
     }
 
     @ViewBuilder private var photo: some View {

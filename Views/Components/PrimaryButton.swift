@@ -4,11 +4,14 @@ import SwiftUI
 struct PrimaryButton: View {
     let title: String
     var systemImage: String?
+    /// The hero-card variant: white fill, accent label.
+    var inverted = false
     let action: () -> Void
 
-    init(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
+    init(_ title: String, systemImage: String? = nil, inverted: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.systemImage = systemImage
+        self.inverted = inverted
         self.action = action
     }
 
@@ -17,8 +20,8 @@ struct PrimaryButton: View {
             ButtonLabel(title: title, systemImage: systemImage)
         }
         .buttonStyle(AppButtonStyle(
-            fill: Color.app.accent,
-            label: Color.app.onAccent,
+            fill: inverted ? Color.app.onAccent : Color.app.accent,
+            label: inverted ? Color.app.accent : Color.app.onAccent,
             disabledFill: Color.app.surfaceMuted,
             outline: nil
         ))

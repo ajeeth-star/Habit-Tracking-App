@@ -86,8 +86,9 @@ extension TaskSnapshot {
 
     /// Scheduled days later this week that haven't happened yet.
     var scheduledDaysAfterToday: [Weekday] {
-        guard let todayIndex = week.firstIndex(where: { $0.status == .today }) else { return [] }
-        return week[(todayIndex + 1)...].filter { $0.status == .upcoming }.map(\.day)
+        // Days up to and including today have a result (or the "today" ring); later days are upcoming.
+        guard let todayIndex = week.lastIndex(where: { $0.status != .upcoming }) else { return week.map(\.day) }
+        return week[(todayIndex + 1)...].map(\.day)
     }
 }
 
@@ -110,12 +111,60 @@ extension TaskSnapshot {
     }
 }
 
-/// What the check-in success screen shows.
+/// What the streak celebration shows.
 struct CheckInResult: Hashable {
     var taskName: String
+    /// The streak in days before this check-in, for the count-up.
+    var previousStreakDays: Int
     var streak: Streak
     /// Scheduled days still to do this week after this check-in.
     var remainingThisWeek: Int
     /// Skips left, when checking in gave back a skip used earlier today.
     var refundedSkipsLeft: Int?
+}
+
+extension TaskSnapshot {
+    /// The next scheduled day after `today`: "Tomorrow" or a weekday. Nil if the task has no days.
+    func nextDay(after today: Weekday) -> NextDay? {
+        guard let next = days.min(by: { today.daysUntil($0) < today.daysUntil($1) }) else { return nil }
+        return today.daysUntil(next) == 1 ? .tomorrow : .weekday(next)
+    }
+
+    /// Minutes from `now` until today's window closes, rounded up (0 once it has closed).
+    func minutesUntilClose(from now: Date, calendar: Calendar = .current) -> Int {
+        guard let close = calendar.date(bySettingHour: window.end.hour, minute: window.end.minute,
+                                        second: 0, of: now) else { return 0 }
+        return max(0, Int((close.timeIntervalSince(now) / 60).rounded(.up)))
+    }
+
+    /// This task as it looks right after checking in at `date`.
+    /// Placeholder rules until the streaks phase: the streak gains a day, a skip used today comes back,
+    /// and today's week circle turns done. Nothing is saved.
+    func checkedIn(at date: Date) -> TaskSnapshot {
+        var task = self
+        guard case .scheduled(let phase, let completion) = today else { return task }
+        if case .done = completion { return task }
+        task.today = .scheduled(phase, .done(at: TimeOfDay(date)))
+        task.streak.days += 1
+        task.streak.totalCheckIns += 1
+        if completion == .skipped { task.skipsLeft += 1 }
+        task.streakEnded = nil
+        // Today is the last day that isn't upcoming (see `scheduledDaysAfterToday`).
+        if let todayIndex = week.lastIndex(where: { $0.status != .upcoming }) {
+            task.week[todayIndex].status = .done
+        }
+        task.checkIns.insert(date, at: 0)
+        return task
+    }
+
+    /// What the celebration shows after checking this task in at `date`.
+    func checkInResult(at date: Date) -> CheckInResult {
+        let after = checkedIn(at: date)
+        return CheckInResult(
+            taskName: name,
+            previousStreakDays: streak.totalCheckIns,
+            streak: after.streak,
+            remainingThisWeek: scheduledDaysAfterToday.count,
+            refundedSkipsLeft: today == .scheduled(.open, .skipped) ? after.skipsLeft : nil)
+    }
 }

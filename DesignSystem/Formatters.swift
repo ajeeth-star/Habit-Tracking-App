@@ -184,11 +184,44 @@ struct Formatters {
         return first + " " + second
     }
 
-    // MARK: Check-in success
+    // MARK: Home
+
+    /// "Closes in 1h 20m", "Closes in 2h", or "Closes in 12m".
+    func closesIn(minutes: Int) -> String {
+        let hours = minutes / 60, rest = minutes % 60
+        let duration = hours == 0 ? Strings.Hero.minutes(rest)
+            : rest == 0 ? Strings.Hero.hours(hours)
+            : Strings.Hero.hoursMinutes(hours, rest)
+        return Strings.Hero.closesIn(duration)
+    }
+
+    /// "2 of 3 done today" or "All done for today".
+    func summaryTitle(_ summary: TodaySummary) -> String {
+        summary.isAllDone ? Strings.Summary.allDone : Strings.Summary.doneToday(summary.done, summary.total)
+    }
+
+    /// "Next: Gym at 6:00 PM", "Next: Guitar tomorrow at 9:00 PM", or "Next: Walk on Sunday at 10:00 AM".
+    func nextUp(_ next: TodaySummary.NextUp) -> String {
+        let time = time(next.start)
+        switch next.day {
+        case nil: return Strings.Summary.nextToday(next.taskName, time)
+        case .tomorrow: return Strings.Summary.nextTomorrow(next.taskName, time)
+        case .weekday(let day): return Strings.Summary.nextOn(next.taskName, weekdayName(day), time)
+        }
+    }
+
+    /// "Checked in 6:42 PM · Next: Friday".
+    func doneMeta(checkedInAt time: TimeOfDay, next: NextDay?) -> String {
+        let checkedIn = Strings.Home.checkedIn(self.time(time))
+        guard let next else { return checkedIn }
+        return checkedIn + Strings.separator + Strings.Home.nextDay(nextDay(next))
+    }
+
+    // MARK: Streak celebration
 
     /// "1 more to finish the week" or "Week complete".
     func weekProgress(remaining: Int) -> String {
-        remaining == 0 ? Strings.Success.weekComplete : Strings.Success.moreToFinish(remaining)
+        remaining == 0 ? Strings.Celebration.weekComplete : Strings.Celebration.moreToFinish(remaining)
     }
 
     // MARK: Helpers

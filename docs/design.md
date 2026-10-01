@@ -39,25 +39,34 @@ Rules:
 - `accent` is the only "loud" color. Use it for the one most important action on a screen and nothing else.
 - Never rely on color alone to carry meaning. Every status color is paired with text or an icon (e.g. a checkmark plus "Done").
 - The camera and photo-preview screens are always black with white controls, in both modes.
+- Text on the hero card's secondary line uses `onAccent` at 85% opacity, exposed as `Color.app.onAccentMuted` (derived from `onAccent`, not a separate color set).
 
 ### 1.2 Typography
 
-Use the system font (SF Pro) through **Dynamic Type text styles**, so text scales with the user's iPhone text-size setting. Expose these as `Font.app.<name>` in `DesignSystem/AppFonts.swift`. Put `.monospacedDigit()` on any number that changes (streaks, counts, times) so digits don't jitter.
+Use the system font through **Dynamic Type text styles**, so text scales with the user's iPhone text-size setting. Expose these as `Font.app.<name>` in `DesignSystem/AppFonts.swift`. Put `.monospacedDigit()` on any number that changes (streaks, counts, times) so digits don't jitter.
 
-| Name | Text style + weight | Approx. size | Used for |
-|---|---|---|---|
-| `screenTitle` | `.title`, bold | 28 | "Today", task name on the task screen |
-| `successTitle` | `.title2`, bold | 22 | "Gym done" |
-| `emptyTitle` | `.title3`, semibold | 20 | "Start your first habit" |
-| `statValue` | `.title3`, semibold, monospaced digits | 20 | "3w 2d", "1 of 1" |
-| `cardTitle` | `.headline` (semibold) | 17 | Task name on a card, dialog title, form screen title |
-| `button` | `.body`, semibold | 17 | All button labels |
-| `body` | `.body`, regular | 17 | Form field text |
-| `subhead` | `.subheadline`, regular | 15 | Date line, dialog body, empty-state body |
-| `meta` | `.footnote`, regular | 13 | Card meta line, helper text, schedule line |
-| `sectionHeader` | `.footnote`, semibold | 13 | "Today", "Not today", "This week", "Recent check-ins" |
-| `pill` | `.caption`, semibold | 12 | Status pills |
-| `caption` | `.caption`, regular | 12 | Stat tile labels, field labels, day labels under circles, photo dates |
+**Two designs of the system font:** **SF Pro Rounded** (`.rounded` design) for screen titles, card titles, and all numbers (streaks, counts, the progress ring). **SF Pro** (regular design) for meta lines, helper text, body text, and buttons. Which design each style uses is decided in `AppFonts` only.
+
+| Name | Text style + weight | Design | Approx. size | Used for |
+|---|---|---|---|---|
+| `screenTitle` | `.title`, bold | Rounded | 28 | "Today", task name on the task screen |
+| `successTitle` | `.title2`, bold | Rounded | 22 | "Gym done" |
+| `emptyTitle` | `.title3`, semibold | Rounded | 20 | "Start your first habit" |
+| `statValue` | `.title3`, semibold, monospaced digits | Rounded | 20 | "3w 2d", "1 of 1", the streak on the hero card |
+| `cardTitle` | `.headline` (semibold) | Rounded | 17 | Task name on a card, summary card title, dialog title, form screen title |
+| `cardStreak` | `.headline` (semibold), monospaced digits | Rounded | 17 | The streak on the right of a (non-hero) task card |
+| `ringCount` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | "2/3" inside the progress ring |
+| `celebrationNumber` | bold, monospaced digits, fixed size | Rounded | 64 | The big streak number on the celebration |
+| `celebrationIcon` | fixed size | — | 96 | The big flame on the celebration |
+| `button` | `.body`, semibold | Regular | 17 | All button labels |
+| `body` | `.body`, regular | Regular | 17 | Form field text |
+| `subhead` | `.subheadline`, regular | Regular | 15 | Date line, dialog body, empty-state body, "day streak" |
+| `meta` | `.footnote`, regular | Regular | 13 | Card meta line, helper text, schedule line |
+| `sectionHeader` | `.footnote`, semibold | Regular | 13 | "Today", "Not today", "This week", "Recent check-ins" |
+| `pill` | `.caption`, semibold | Regular | 12 | Status pills |
+| `caption` | `.caption`, regular | Regular | 12 | Stat tile labels, field labels, day labels under circles, photo dates |
+
+`celebrationNumber` and `celebrationIcon` are fixed sizes: they're decorative and already very large. The text around them still scales.
 
 Section headers are sentence case ("Not today"), not ALL CAPS.
 
@@ -103,12 +112,14 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
 
 - **Buttons:** 50pt tall, full width of their container unless side by side.
 - **Tap targets:** at least 44×44pt everywhere, including icon-only buttons like + and Back.
-- **Card outline:** a 0.5pt `separator` stroke. The open-task card uses a 1.5pt `accent` stroke instead.
+- **Card outline:** a 0.5pt `separator` stroke. The hero card (open task) has no outline; its `accent` fill sets it apart.
+- **Progress ring:** 56pt across, 8pt line, round line caps.
+- **Celebration:** 96pt flame, 64pt streak number.
 - **Shadows and gradients:** none.
 - **Icons:** SF Symbols only, sized to match the text next to them.
   - `plus` (create task, empty state)
   - `camera.fill` (Check in)
-  - `flame.fill` (streaks, in `streak` color)
+  - `flame.fill` (streaks, in `streak` color; `onAccent` on the hero card)
   - `checkmark` (done)
   - `xmark` (missed, close camera)
   - `minus` (skipped day)
@@ -119,9 +130,11 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
 ### 1.6 Motion and haptics
 
 - Keep motion subtle and quick: system default animations, about 0.25s.
-- **Check-in success:** the checkmark circle scales from 0.6 to 1.0 with a gentle spring, and a **success haptic** plays.
+- **Streak celebration:** the flame scales from 0.5 to 1.0 with a spring, a **success haptic** plays, and the streak number counts up from the previous value. It closes on its own after **2.5 seconds** (tap anywhere to close sooner).
+- **Progress ring:** animates to its new value when a check-in completes.
+- **Closing a task:** back on Home after a check-in, the hero card animates into a compact done card in the same spot.
 - **Confirming "Use skip":** a **warning haptic** plays.
-- Respect the Reduce Motion setting: skip the scale animation when it's on.
+- Respect the Reduce Motion setting: when it's on, skip the pop, the count-up, the ring animation, and the card animation, and just show the end state. The celebration still closes on its own.
 
 ---
 
@@ -132,6 +145,7 @@ Put each in its own file under `Views/Components/`, with these exact names:
 - **`PrimaryButton`**
   - 50pt tall, `accent` fill, `onAccent` label in `Font.app.button`, `Radius.md`, optional leading SF Symbol.
   - Disabled: `surfaceMuted` fill, `textTertiary` label.
+  - **Inverted** variant (only on the hero card): `onAccent` fill (white in both modes), `accent` label.
 - **`SecondaryButton`**
   - Same size, `surface` fill, 0.5pt `separator` stroke, `textPrimary` label.
   - Disabled: `textTertiary` label.
@@ -149,7 +163,12 @@ Put each in its own file under `Views/Components/`, with these exact names:
   - Flame icon (`streak` color) followed by the formatted streak (section 3).
   - Has a `short` style ("3w 2d") and a `long` style ("3 weeks 2 days").
 - **`TaskCard`**
-  - The home-screen card. Every state is described in section 4.1.
+  - The home-screen card, including the hero (open) card. Every state is described in section 4.1.
+- **`ProgressRing`**
+  - 56pt circle, 8pt line with round caps: `surfaceMuted` track, `accent` progress, starting at the top and going clockwise.
+  - Center: the count ("2/3") in `Font.app.ringCount` / `textPrimary`; when complete, a `checkmark` in `accentText` instead.
+- **`TodaySummaryCard`**
+  - The card at the top of Home (section 4.1): a `ProgressRing` on the left; the summary line and the next-up line stacked on the right.
 - **`StatTile`**
   - `surfaceMuted` fill, `Radius.md`, padding `sm` (12).
   - Label in `Font.app.caption` / `textSecondary`, with the value below it in `Font.app.statValue` / `textPrimary`.
@@ -202,6 +221,17 @@ Put all of these in `DesignSystem/Formatters.swift`. Write unit tests for the st
 
 **Meta separator:** " · " (space, middle dot, space).
 
+**Closes in** (hero card countdown, rounded up to the next whole minute): "Closes in 1h 20m"; whole hours drop the minutes ("Closes in 2h"); under an hour it's minutes only ("Closes in 12m", "Closes in 1m").
+
+**Today summary:** "2 of 3 done today"; when every task scheduled today is checked in, "All done for today".
+
+**Next up** (summary card): the next task still to come, by window start:
+- Later today: "Next: Journal at 9:00 PM"
+- Tomorrow: "Next: Guitar tomorrow at 9:00 PM"
+- Later this week: "Next: Walk on Sunday at 10:00 AM"
+
+**Streak celebration number:** the streak in days, as a plain number ("23"), with "day streak" under it.
+
 ---
 
 ## 4. Screens
@@ -216,27 +246,45 @@ Put screens in `Views/<Area>/` with these exact names. Every screen uses `Color.
 - Right: a + button, `plus` icon, `accentText`, 44pt tap target. Tapping it opens Create Task.
 - No navigation bar title. The header scrolls with the content.
 
+**Today summary card** (`TodaySummaryCard`), `Spacing.md` below the date:
+
+- `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline.
+- Left: a `ProgressRing` showing tasks checked in today out of tasks scheduled today, with the count in the middle ("2/3").
+- Right, stacked with `xxs` spacing: "2 of 3 done today" in `cardTitle` / `textPrimary`, then the next-up line in `meta` / `textSecondary` (e.g. "Next: Gym at 6:00 PM"; rules in section 3). The next-up line skips the task whose window is open right now, since the hero card already shows it. Hide the line if nothing is coming up.
+- **All done** (every task scheduled today is checked in): a full ring with a `checkmark` in the middle, "All done for today", and the next-up line below (e.g. "Next: Guitar tomorrow at 9:00 PM").
+- **No tasks scheduled today:** hide the card.
+- The ring animates to its new value when a check-in completes (not with Reduce Motion).
+
 **Body:** a scrolling list with two sections, each headed with `sectionHeader` / `textTertiary`.
 
-- **"Today":** tasks scheduled today, **sorted by window start time**. Done tasks stay in place.
+- **"Today":** tasks scheduled today, **sorted by window start time**. Done tasks stay in place. The open task stays in its time-sorted spot too; it stands out through its hero styling.
 - **"Not today":** the remaining tasks, sorted by their next scheduled window. Hide this section if it's empty.
 
 Cards are separated by `Spacing.sm`. **Tapping anywhere on a card** (other than its button) opens that task's screen.
 
-**`TaskCard` states.** Every card has `surface` fill, `Radius.lg`, and `Spacing.md` padding. The title row has the task name (`cardTitle`) on the left and a `StatusPill` on the right. The meta line below it uses `meta` / `textSecondary`.
+**Hero card** (the open task: window open, not checked in or skipped):
 
-| State | Pill | Meta line | Extras |
+- `accent` fill, `Radius.lg`, `Spacing.md` padding, no outline. All text and icons on it are `onAccent`.
+- Title row: task name (`cardTitle`) on the left; on the right, the `flame.fill` icon and the streak (`statValue`), both `onAccent`. The streak uses the short or days-only format, following the owner's toggle.
+- `xxs` below: "Closes in 1h 20m · 1 skip left" in `meta` / `onAccentMuted`. The countdown updates every minute; under an hour it reads "Closes in 12m".
+- `Spacing.sm` below: a full-width **inverted** `PrimaryButton` "Check in" with `camera.fill` (`onAccent` fill, `accent` label). **No skip button here.**
+
+**Other `TaskCard` states.** `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline.
+
+- **Title row:** the task name (`cardTitle`) on the left; on the right, the `flame.fill` icon (`streak` color) and the streak in `cardStreak`, short or days-only following the owner's toggle.
+- **Status row** (`xxs` below the title): the `StatusPill`, then the meta line in `meta` / `textSecondary` next to it, `Spacing.xs` apart. At accessibility text sizes the meta line wraps below the pill.
+
+| State | Pill | Meta line | Notes |
 |---|---|---|---|
-| **Open** (window open, not done or skipped) | `open` | "Closes 8:00 PM · 🔥 12 days · 1 skip left" | 1.5pt `accent` outline. A full-width `PrimaryButton` "Check in" with `camera.fill`, `Spacing.sm` below the meta line. **No skip button here.** |
-| **Done** | `done` | "Checked in 7:42 AM · 🔥 30 days" | — |
-| **Upcoming** (later today) | `upcoming` "Opens 9:00 PM" | "🔥 5 days · 2 skips left" | — |
-| **Skipped today** | `skipped` | "🔥 12 days · No skips left" | — |
+| **Done** | `done` | "Checked in 6:42 PM · Next: Friday" | Task name and streak in `textSecondary`. The compact card a hero turns into after a check-in. |
+| **Upcoming** (later today) | `upcoming` "Opens 9:00 PM" | "2 skips left" | — |
+| **Skipped today** | `skipped` | "No skips left" | — |
 | **Missed today** | `missed` | — | Streak-ended lines (below) |
-| **Not today** | none | "Next: Friday, 8:00 – 10:00 PM · 🔥 4 days" | Task name in `textTertiary` instead of `textPrimary` |
+| **Not today** | none | "Next: Friday, 8:00 – 10:00 PM" | Task name and streak in `textTertiary` |
 
-(🔥 above means `StreakLabel`, the `flame.fill` icon in `streak` color, not an emoji.) The streak in the meta line uses the short or days-only format, following the owner's toggle.
+A done task can't be checked in again until its next scheduled window. On the task screen its Check in button stays disabled and reads "Done today".
 
-**Streak-ended lines** (shown on a card after a streak breaks), stacked below the meta line with `xxs` spacing:
+**Streak-ended lines** (shown on a card after a streak breaks), stacked below the status row with `xxs` spacing:
 
 - Line 1, `meta` / `danger`: "Streak ended Friday at 3w 3d"
 - Line 2, `meta` / `textSecondary`: "Longest: 5w 1d · Starts fresh today"
@@ -352,19 +400,22 @@ This is a centered dialog over a `scrim`. It is not Apple's default alert, becau
 - Top: "Gym · closes 8:00 PM" in `subhead`, white.
 - Bottom: `SecondaryButton` "Retake" and `PrimaryButton` "Submit", side by side, equal width, `xs` gap, `Spacing.lg` from the bottom safe area. On this screen only, "Retake" has a translucent white fill (white at 15%) and a white label, so it reads on black.
 
-### 4.8 Check-in success — `Views/CheckIn/CheckInSuccessView.swift`
+### 4.8 Streak celebration — `Views/CheckIn/StreakCelebrationView.swift`
 
-Full screen vs. a quick popup is **(open)**. Build the full-screen version below, and keep it easy to swap.
+Shown full screen right after Submit. It replaces the old check-in success screen and settles the earlier "full screen vs. popup" question: **full screen, then it closes on its own.**
 
 - `background` color, content centered vertically:
-  - A 72pt circle in `successSoft` with a 32pt `checkmark` in `success`, using the spring animation and success haptic.
-  - `Spacing.md` below: "{Task} done" in `successTitle`.
-  - `xs` below: "Streak: 3 weeks 3 days" in `subhead` / `textSecondary` (long style, or days-only if toggled).
-  - `xxs` below, in `meta` / `textTertiary`:
-    - "1 more to finish the week" / "2 more to finish the week"
-    - "Week complete" when no scheduled days are left
-    - If a skip was refunded: "Your skip is back — 1 skip left"
-- `SecondaryButton` "Back to today", pinned `Spacing.lg` above the bottom safe area. It returns to Home.
+  - A large `flame.fill` (`celebrationIcon`, about 96pt) in `streak` color. It pops in, scaling from 0.5 to 1.0 with a spring, and the **success haptic** plays.
+  - Below it, the streak **in days** as a big number in `celebrationNumber` / `textPrimary` (e.g. "23"). It counts up quickly from the previous value (22 → 23).
+  - Directly under the number: "day streak" in `subhead` / `textSecondary`.
+  - `Spacing.lg` below: "{Task} done" in `successTitle` / `textPrimary`.
+  - `xxs` below, in `meta` / `textTertiary`, the week line: "1 more to finish the week", "2 more to finish the week", or "Week complete". If checking in gave back a skip used earlier today, a second line: "Your skip is back — 1 skip left".
+- The celebration always shows the streak in days, even when the owner's toggle is set to weeks + days.
+- It **closes automatically after 2.5 seconds** and returns to the screen the check-in started from. **Tapping anywhere** closes it early. There's no button.
+- Reduce Motion: no pop and no count-up; the final number shows straight away. It still closes on its own.
+- VoiceOver reads it as one element: "23 day streak. Gym done. 1 more to finish the week."
+
+**Closing the task.** Back on Home, the task animates from the hero card into a compact done card (section 4.1) in the same time-sorted spot, and the summary ring fills to its new value.
 
 ### 4.9 History — `Views/History/HistoryView.swift`
 
@@ -396,7 +447,9 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Section headers | Today · Not today · This week · Recent check-ins |
 | Empty state | Start your first habit / Pick the days, a time window, and how many skips you get each week. |
 | Pills | Open now · Done · Opens {time} · Skipped · Missed |
-| Card meta | Closes {time} · Checked in {time} · Next: {day}, {window} |
+| Today summary | {n} of {m} done today · All done for today · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} on {weekday} at {time} |
+| Hero card | Closes in {h}h {m}m · Closes in {h}h · Closes in {m}m · Check in |
+| Card meta | Checked in {time} · Next: {day} · Next: {day}, {window} · {n} skips left |
 | Streak ended | Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today |
 | Form | New task · Edit task · Cancel · Name · Which days · Time window · From · To · Skips per week · Create task · Save changes |
 | Form errors | End time must be after start time. |
@@ -406,5 +459,5 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Skip dialog | Use your last skip? · Use a skip? · Keep my skip · Use skip |
 | Camera | {Task} · closes {time} · The window closed at {time}. · Use sample photo |
 | Preview | Retake · Submit |
-| Success | {Task} done · Streak: {long streak} · {n} more to finish the week · Week complete · Your skip is back — {n} skip left · Back to today |
+| Celebration | {days} · day streak · {Task} done · {n} more to finish the week · Week complete · Your skip is back — {n} skip left |
 | History | {Task} History · No check-ins yet. Your photos will show up here. |

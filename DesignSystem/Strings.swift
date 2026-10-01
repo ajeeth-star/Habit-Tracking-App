@@ -11,11 +11,29 @@ enum Strings {
         static let emptyBody = "Pick the days, a time window, and how many skips you get each week."
         static let createTask = "Create task"
         static let checkIn = "Check in"
-        static func closes(_ time: String) -> String { "Closes \(time)" }
         static func checkedIn(_ time: String) -> String { "Checked in \(time)" }
         static func next(_ day: String, _ window: String) -> String { "Next: \(day), \(window)" }
         static func streakEnded(_ weekday: String, _ streak: String) -> String { "Streak ended \(weekday) at \(streak)" }
         static func longestStartsFresh(_ streak: String) -> String { "Longest: \(streak) · Starts fresh today" }
+        static func nextDay(_ day: String) -> String { "Next: \(day)" }
+    }
+
+    enum Summary {
+        static func doneToday(_ done: Int, _ total: Int) -> String { "\(done) of \(total) done today" }
+        static let allDone = "All done for today"
+        static func ringCount(_ done: Int, _ total: Int) -> String { "\(done)/\(total)" }
+        static func nextToday(_ task: String, _ time: String) -> String { "Next: \(task) at \(time)" }
+        static func nextTomorrow(_ task: String, _ time: String) -> String { "Next: \(task) tomorrow at \(time)" }
+        static func nextOn(_ task: String, _ weekday: String, _ time: String) -> String {
+            "Next: \(task) on \(weekday) at \(time)"
+        }
+    }
+
+    enum Hero {
+        static func closesIn(_ duration: String) -> String { "Closes in \(duration)" }
+        static func hoursMinutes(_ h: Int, _ m: Int) -> String { "\(h)h \(m)m" }
+        static func hours(_ h: Int) -> String { "\(h)h" }
+        static func minutes(_ m: Int) -> String { "\(m)m" }
     }
 
     enum Pill {
@@ -126,13 +144,12 @@ enum Strings {
         static let submit = "Submit"
     }
 
-    enum Success {
+    enum Celebration {
+        static let dayStreak = "day streak"
         static func done(_ task: String) -> String { "\(task) done" }
-        static func streak(_ streak: String) -> String { "Streak: \(streak)" }
         static func moreToFinish(_ n: Int) -> String { "\(n) more to finish the week" }
         static let weekComplete = "Week complete"
         static func skipBack(_ n: Int) -> String { "Your skip is back — \(n) \(n == 1 ? "skip" : "skips") left" }
-        static let backToToday = "Back to today"
     }
 
     enum History {

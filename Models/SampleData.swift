@@ -152,19 +152,39 @@ enum SampleData {
     static let skipLastNoDaysLeft = SkipPrompt(taskName: "Gym", skipsLeft: 1, daysAfterToday: [])
     static let skipNotLast = SkipPrompt(taskName: "Gym", skipsLeft: 2, daysAfterToday: [.friday])
 
-    // MARK: Check-in success variants
+    // MARK: Home variants
 
-    static let successMidWeek = CheckInResult(
-        taskName: "Gym", streak: Streak(weeks: 3, days: 3, totalCheckIns: 15), remainingThisWeek: 1)
-    static let successTwoLeft = CheckInResult(
-        taskName: "Journal", streak: Streak(weeks: 0, days: 4, totalCheckIns: 4), remainingThisWeek: 2)
-    static let successWeekComplete = CheckInResult(
-        taskName: "Climbing", streak: Streak(weeks: 1, days: 0, totalCheckIns: 5), remainingThisWeek: 0)
-    static let successSkipRefunded = CheckInResult(
-        taskName: "Run", streak: Streak(weeks: 1, days: 2, totalCheckIns: 13), remainingThisWeek: 1,
-        refundedSkipsLeft: 1)
+    /// 7:48 PM: Gym's window closes in 12 minutes.
+    static let closingSoon = time(19, 48)
+
+    /// Everything scheduled today is checked in.
+    static let allDoneTasks = [
+        skincare,
+        run.checkedIn(at: time(17, 20)),
+        gym.checkedIn(at: time(18, 12)),
+        climbing,
+        walk,
+    ]
+
+    // MARK: Streak celebration variants
+
+    /// Gym, 14 → 15 days, Friday still to go.
+    static let celebrationMidWeek = gym.checkInResult(at: today)
+    static let celebrationTwoLeft = CheckInResult(
+        taskName: "Journal", previousStreakDays: 3, streak: Streak(weeks: 0, days: 4, totalCheckIns: 4),
+        remainingThisWeek: 2)
+    static let celebrationWeekComplete = CheckInResult(
+        taskName: "Climbing", previousStreakDays: 4, streak: Streak(weeks: 1, days: 0, totalCheckIns: 5),
+        remainingThisWeek: 0)
+    /// Run was skipped earlier today; checking in gives the skip back.
+    static let celebrationSkipRefunded = run.checkInResult(at: today)
 
     // MARK: Helpers
+
+    /// Today (sample) at the given clock time.
+    static func time(_ hour: Int, _ minute: Int) -> Date {
+        Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: today)!
+    }
 
     /// Fake check-in times going back from today, on the given days, newest first.
     private static func checkIns(on days: [Weekday], at time: TimeOfDay, count: Int, skippingToday: Bool = false) -> [Date] {

@@ -33,7 +33,9 @@ enum Sizes {
     static let emptyStateCircle: CGFloat = 88
     static let emptyStateTextMaxWidth: CGFloat = 260
 
-    static let successCircle: CGFloat = 72
+    /// Progress ring on the today summary card: diameter and line width.
+    static let progressRing: CGFloat = 56
+    static let progressRingLine: CGFloat = 8
 
     /// Skip dialog: screen width minus this, capped at `dialogMaxWidth`.
     static let dialogHorizontalInset: CGFloat = 48

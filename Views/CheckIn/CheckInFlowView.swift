@@ -1,14 +1,19 @@
 import SwiftUI
 
-/// Camera → preview → success, presented full screen from a task's "Check in" button.
-/// Nothing is saved in this phase; the success screen shows what the result would look like.
+/// Camera → preview → streak celebration, presented full screen from a "Check in" button.
+/// On Submit it hands the checked-in task to `onCheckedIn`; the screen that opened the flow decides
+/// when to show it (Home waits until the celebration has closed, so the card closes in front of you).
+/// Nothing is saved in this phase.
 struct CheckInFlowView: View {
     let task: TaskSnapshot
+    /// When the check-in happens (sample "now" in this phase).
+    let now: Date
+    var onCheckedIn: (TaskSnapshot) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
     @State private var step = Step.camera
 
-    private enum Step { case camera, preview, success }
+    private enum Step { case camera, preview, celebration }
 
     var body: some View {
         switch step {
@@ -23,22 +28,12 @@ struct CheckInFlowView: View {
                 taskName: task.name,
                 closesAt: task.window.end,
                 onRetake: { step = .camera },
-                onSubmit: { step = .success })
-        case .success:
-            CheckInSuccessView(result: sampleResult, onDone: { dismiss() })
+                onSubmit: {
+                    onCheckedIn(task.checkedIn(at: now))
+                    step = .celebration
+                })
+        case .celebration:
+            StreakCelebrationView(result: task.checkInResult(at: now), onDone: { dismiss() })
         }
-    }
-
-    /// What checking in would show. Placeholder until streak rules exist.
-    private var sampleResult: CheckInResult {
-        var streak = task.streak
-        streak.days += 1
-        streak.totalCheckIns += 1
-        let refunded = task.today == .scheduled(.open, .skipped)
-        return CheckInResult(
-            taskName: task.name,
-            streak: streak,
-            remainingThisWeek: task.scheduledDaysAfterToday.count,
-            refundedSkipsLeft: refunded ? task.skipsLeft + 1 : nil)
     }
 }

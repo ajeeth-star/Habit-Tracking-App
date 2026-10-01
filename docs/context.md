@@ -49,7 +49,7 @@ All four fields are set on **one create screen**. Under the skips counter, a pla
 - **Preview before it counts.** After taking the photo, show it with **Retake** and **Submit**.
 - **Any photo is accepted in v1.** Smart photo checking (on-device Apple Vision first, maybe an AI service later) is a future phase. Don't build it yet.
 - **Photos are kept on the device** and shown in that task's check-in history, each with its date and time. Save them compressed so storage doesn't balloon; hundreds of photos a year is expected.
-- **After submitting:** a confirmation showing "Gym done", the updated streak, and progress for the week, e.g. "1 more to finish the week". (Full screen vs. a quick popup is still open; see section 9.)
+- **After submitting:** a confirmation showing "Gym done", the updated streak, and progress for the week, e.g. "1 more to finish the week". Decided: a full-screen streak celebration that closes on its own after 2.5 seconds (tap to close sooner), then the task shows as done on Home (see `docs/design.md` §4.8).
 
 **Using a skip:**
 
@@ -164,7 +164,6 @@ Technically out of scope:
 
 Decide these with the owner when the relevant phase comes up. Don't guess.
 
-- **After submitting a check-in:** a full confirmation screen, or a quick popup and then straight back home?
 - **"Streak ended" message:** does it stay until the next check-in on that task, show once, or stay for the rest of that day?
 - **Deleting a check-in:** never allowed, allowed only while the window is open, or allowed anytime with the streak recalculated?
 - **Timezones, travel, and daylight saving time:** what happens to windows and streaks.

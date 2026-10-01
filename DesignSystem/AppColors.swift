@@ -23,6 +23,8 @@ struct AppColors {
     let streak = Color("streak")
     /// Dim layer behind the skip dialog.
     let scrim = Color("scrim")
+    /// Secondary text on the hero card: `onAccent` at 85%.
+    let onAccentMuted = Color("onAccent").opacity(0.85)
 
     /// Camera and photo-preview screens are always black with white controls, in both modes.
     let cameraBackground = Color.black

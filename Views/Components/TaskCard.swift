@@ -1,8 +1,11 @@
 import SwiftUI
 
-/// A task on the home screen. Its look depends on the task's state today (design.md §4.1).
+/// A task on the home screen (design.md §4.1). The open task is the hero card: accent fill, a live
+/// "Closes in" countdown, and the Check in button. Every other state is a compact surface card.
 struct TaskCard: View {
     let task: TaskSnapshot
+    /// The current time, for the countdown and "Next: Friday".
+    let now: Date
     let onOpen: () -> Void
     let onCheckIn: () -> Void
     @Environment(StreakDisplaySettings.self) private var settings
@@ -11,48 +14,79 @@ struct TaskCard: View {
 
     var body: some View {
         let state = task.cardState
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            summary(state)
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onOpen)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityText(state))
-                .accessibilityAddTraits(.isButton)
-                .accessibilityAction { onOpen() }
-
+        Group {
             if state == .open {
-                PrimaryButton(Strings.Home.checkIn, systemImage: "camera.fill", action: onCheckIn)
+                hero
+            } else {
+                compact(state)
             }
         }
         .padding(Spacing.md)
-        .background(Color.app.surface, in: .rounded(Radius.lg))
+        .background(state == .open ? Color.app.accent : Color.app.surface, in: .rounded(Radius.lg))
         .overlay {
-            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                .strokeBorder(
-                    state == .open ? Color.app.accent : Color.app.separator,
-                    lineWidth: state == .open ? Sizes.emphasisStroke : Sizes.hairline
-                )
+            if state != .open {
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                    .strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
+            }
         }
     }
 
-    // MARK: Pieces
+    // MARK: Hero (open)
 
-    private func summary(_ state: TaskCardState) -> some View {
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
+                    Text(task.name)
+                        .font(Font.app.cardTitle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    StreakLabel.text(task.streak, style: .short, mode: settings.mode, flameColor: Color.app.onAccent)
+                        .font(Font.app.statValue)
+                }
+                .foregroundStyle(Color.app.onAccent)
+
+                Text(heroMeta)
+                    .font(Font.app.meta)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.app.onAccentMuted)
+            }
+            .modifier(OpensTask(label: accessibilityText(.open), action: onOpen))
+
+            PrimaryButton(Strings.Home.checkIn, systemImage: "camera.fill", inverted: true, action: onCheckIn)
+        }
+    }
+
+    /// "Closes in 1h 20m · 1 skip left"
+    private var heroMeta: String {
+        format.closesIn(minutes: task.minutesUntilClose(from: now)) + Strings.separator + format.skipsLeft(task.skipsLeft)
+    }
+
+    // MARK: Compact (every other state)
+
+    private func compact(_ state: TaskCardState) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
                 Text(task.name)
                     .font(Font.app.cardTitle)
-                    .foregroundStyle(isNotToday(state) ? Color.app.textTertiary : Color.app.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if let pill = pill(state) {
-                    StatusPill(kind: pill)
-                }
+                StreakLabel.text(task.streak, style: .short, mode: settings.mode)
+                    .font(Font.app.cardStreak)
             }
+            .foregroundStyle(nameColor(state))
 
-            if let meta = metaLine(state) {
-                meta
-                    .font(Font.app.meta)
-                    .foregroundStyle(Color.app.textSecondary)
+            let meta = metaText(state)
+            if pill(state) != nil || meta != nil {
+                AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .center) {
+                    if let pill = pill(state) {
+                        StatusPill(kind: pill)
+                    }
+                    if let meta {
+                        Text(meta)
+                            .font(Font.app.meta)
+                            .monospacedDigit()
+                            .foregroundStyle(Color.app.textSecondary)
+                    }
+                }
             }
 
             if let ended = task.streakEnded {
@@ -65,6 +99,15 @@ struct TaskCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(OpensTask(label: accessibilityText(state), action: onOpen))
+    }
+
+    private func nameColor(_ state: TaskCardState) -> Color {
+        switch state {
+        case .done: Color.app.textSecondary
+        case .notToday: Color.app.textTertiary
+        default: Color.app.textPrimary
+        }
     }
 
     private func pill(_ state: TaskCardState) -> StatusPill.Kind? {
@@ -78,63 +121,42 @@ struct TaskCard: View {
         }
     }
 
-    /// The meta line's parts, in order. `streak` marks where the flame label goes.
-    private enum MetaPart {
-        case text(String)
-        case streak
-    }
-
-    private func metaParts(_ state: TaskCardState) -> [MetaPart] {
+    private func metaText(_ state: TaskCardState) -> String? {
         switch state {
-        case .open:
-            [.text(Strings.Home.closes(format.time(task.window.end))), .streak, .text(format.skipsLeft(task.skipsLeft))]
-        case .done(let time):
-            [.text(Strings.Home.checkedIn(format.time(time))), .streak]
-        case .upcoming:
-            [.streak, .text(format.skipsLeft(task.skipsLeft))]
-        case .skipped:
-            [.streak, .text(format.skipsLeft(task.skipsLeft))]
-        case .missed:
-            []
-        case .notToday(let next):
-            [.text(Strings.Home.next(format.nextDay(next), format.window(task.window))), .streak]
+        case .open: heroMeta
+        case .done(let time): format.doneMeta(checkedInAt: time, next: task.nextDay(after: Weekday(now)))
+        case .upcoming, .skipped: format.skipsLeft(task.skipsLeft)
+        case .missed: nil
+        case .notToday(let next): Strings.Home.next(format.nextDay(next), format.window(task.window))
         }
     }
 
-    private func metaLine(_ state: TaskCardState) -> Text? {
-        let parts = metaParts(state)
-        guard !parts.isEmpty else { return nil }
-        var line = Text("")
-        for (index, part) in parts.enumerated() {
-            if index > 0 { line = line + Text(Strings.separator) }
-            switch part {
-            case .text(let string): line = line + Text(string).monospacedDigit()
-            case .streak: line = line + StreakLabel.text(task.streak, style: .short, mode: settings.mode)
-            }
-        }
-        return line
-    }
-
-    /// Reads as one sentence, e.g. "Gym. Open now. Closes 8:00 PM. Streak 12 days. 1 skip left."
+    /// Reads as one sentence, e.g. "Gym. Open now. Closes in 1h 30m · 1 skip left. Streak 3w 2d."
     private func accessibilityText(_ state: TaskCardState) -> String {
         var sentences = [task.name]
         if let pill = pill(state) { sentences.append(StatusPill(kind: pill).text) }
-        for part in metaParts(state) {
-            switch part {
-            case .text(let string): sentences.append(string)
-            case .streak:
-                sentences.append(Strings.Accessibility.streak(
-                    StreakLabel.string(task.streak, style: .short, mode: settings.mode)))
-            }
-        }
+        if let meta = metaText(state) { sentences.append(meta) }
+        sentences.append(Strings.Accessibility.streak(StreakLabel.string(task.streak, style: .short, mode: settings.mode)))
         if let ended = task.streakEnded {
             sentences.append(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
             sentences.append(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))
         }
         return sentences.joined(separator: ". ") + "."
     }
+}
 
-    private func isNotToday(_ state: TaskCardState) -> Bool {
-        if case .notToday = state { true } else { false }
+/// Tapping a card's text opens the task; VoiceOver reads it as one button. The Check in button stays separate.
+private struct OpensTask: ViewModifier {
+    let label: String
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { action() }
     }
 }
