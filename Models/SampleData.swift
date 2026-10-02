@@ -122,6 +122,26 @@ enum SampleData {
     /// Every Home state at once.
     static let allTasks = [skincare, guitar, run, gym, journal, climbing, walk]
 
+    /// Archived three weeks ago: no current streak, best streak and photos kept.
+    static let meditation = TaskSnapshot(
+        id: "meditation",
+        name: "Meditation",
+        days: [.monday, .wednesday, .friday],
+        window: TimeWindow(start: TimeOfDay(7), end: TimeOfDay(7, 30)),
+        skipsPerWeek: 1, skipsLeft: 1,
+        streak: .zero,
+        longest: Streak(weeks: 5, days: 1, totalCheckIns: 16),
+        today: .notToday(next: .tomorrow),
+        week: [],
+        checkIns: Array(checkIns(on: [.monday, .wednesday, .friday], at: TimeOfDay(7, 10), count: 25).dropFirst(9)),
+        isArchived: true)
+
+    /// What the app starts with: every Home state plus one archived habit.
+    static let allTasksWithArchived = allTasks + [meditation]
+
+    /// Rough size of one compressed check-in photo, for the Settings storage line until real photos exist.
+    static let estimatedPhotoBytes: Int64 = 270_000
+
     // MARK: Task screen variants
 
     /// Window open, no skips left.

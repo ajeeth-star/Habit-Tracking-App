@@ -8,7 +8,7 @@ struct TaskCard: View {
     let now: Date
     let onOpen: () -> Void
     let onCheckIn: () -> Void
-    @Environment(StreakDisplaySettings.self) private var settings
+    @Environment(AppSettings.self) private var settings
 
     private let format = Formatters.current
 
@@ -40,7 +40,7 @@ struct TaskCard: View {
                     Text(task.name)
                         .font(Font.app.cardTitle)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    StreakLabel.text(task.streak, style: .short, mode: settings.mode, flameColor: Color.app.onAccent)
+                    StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay, flameColor: Color.app.onAccent)
                         .font(Font.app.statValue)
                 }
                 .foregroundStyle(Color.app.onAccent)
@@ -69,7 +69,7 @@ struct TaskCard: View {
                 Text(task.name)
                     .font(Font.app.cardTitle)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                StreakLabel.text(task.streak, style: .short, mode: settings.mode)
+                StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay)
                     .font(Font.app.cardStreak)
             }
             .foregroundStyle(nameColor(state))
@@ -136,7 +136,7 @@ struct TaskCard: View {
         var sentences = [task.name]
         if let pill = pill(state) { sentences.append(StatusPill(kind: pill).text) }
         if let meta = metaText(state) { sentences.append(meta) }
-        sentences.append(Strings.Accessibility.streak(StreakLabel.string(task.streak, style: .short, mode: settings.mode)))
+        sentences.append(Strings.Accessibility.streak(StreakLabel.string(task.streak, style: .short, mode: settings.streakDisplay)))
         if let ended = task.streakEnded {
             sentences.append(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
             sentences.append(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))

@@ -15,18 +15,33 @@ struct TaskFormView: View {
         var skips = 0
     }
 
+    /// What the edit form's bottom buttons can do to the habit.
+    enum Removal: Hashable {
+        case archive, delete
+    }
+
     let mode: Mode
+    /// Called after Archive or Delete is confirmed, once the form has closed. Edit mode only.
+    var onRemove: (Removal) -> Void = { _ in }
+    /// Where the form starts scrolled to; `.bottom` shows the edit buttons (the Design Gallery uses this).
+    var scrollAnchor = UnitPoint.top
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft: Draft
     @State private var editingTime: TimeField?
+    @State private var confirming: Removal?
+    /// Set when a dialog's Archive / Delete is tapped; acted on once the dialog has closed.
+    @State private var confirmed: Removal?
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private enum TimeField { case start, end }
     private let format = Formatters.current
 
-    init(mode: Mode, draft: Draft? = nil) {
+    init(mode: Mode, draft: Draft? = nil, scrollAnchor: UnitPoint = .top,
+         onRemove: @escaping (Removal) -> Void = { _ in }) {
         self.mode = mode
+        self.scrollAnchor = scrollAnchor
+        self.onRemove = onRemove
         _draft = State(initialValue: draft ?? Self.initialDraft(for: mode))
     }
 
@@ -50,14 +65,22 @@ struct TaskFormView: View {
                     skipsField
                     PrimaryButton(isEditing ? Strings.Form.save : Strings.Form.create) { dismiss() }
                         .disabled(!isValid)
+                    if isEditing {
+                        removeButtons
+                            .padding(.top, Spacing.xxl - Spacing.xl)
+                    }
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.top, Spacing.md)
                 .padding(.bottom, Spacing.xl)
             }
             .scrollDismissesKeyboard(.interactively)
+            .defaultScrollAnchor(scrollAnchor)
         }
         .background(Color.app.background)
+        .dialogCover(isPresented: confirmingBinding, onDismiss: removeIfConfirmed) {
+            removalDialog
+        }
         .onChange(of: draft.days) { _, days in
             draft.skips = min(draft.skips, days.count)
         }
@@ -66,6 +89,41 @@ struct TaskFormView: View {
                 draft.name = String(name.prefix(Sizes.maxTaskNameLength))
             }
         }
+    }
+
+    // MARK: Archive and delete (edit mode)
+
+    private var removeButtons: some View {
+        VStack(spacing: Spacing.xs) {
+            SecondaryButton(Strings.Form.archiveHabit) { withoutAnimation { confirming = .archive } }
+            DangerTextButton(Strings.Form.deleteHabit) { withoutAnimation { confirming = .delete } }
+        }
+    }
+
+    private var confirmingBinding: Binding<Bool> {
+        Binding { confirming != nil } set: { if !$0 { confirming = nil } }
+    }
+
+    @ViewBuilder private var removalDialog: some View {
+        let name = original?.name ?? draft.name
+        switch confirming {
+        case .archive:
+            AppDialog(title: Strings.Dialog.archiveTitle(name), message: Strings.Dialog.archiveBody,
+                      actionTitle: Strings.Dialog.archive, actionStyle: .neutral) { confirmed = .archive }
+        case .delete:
+            AppDialog(title: Strings.Dialog.deleteTitle(name), message: Strings.Dialog.deleteBody,
+                      actionTitle: Strings.Dialog.delete, actionStyle: .destructive) { confirmed = .delete }
+        case nil:
+            EmptyView()
+        }
+    }
+
+    /// After the dialog closes: hand the archive or delete to whoever opened the form, and close it.
+    private func removeIfConfirmed() {
+        guard let removal = confirmed else { return }
+        confirmed = nil
+        onRemove(removal)
+        dismiss()
     }
 
     // MARK: Top bar

@@ -1,4 +1,4 @@
-import Observation
+import Foundation
 
 /// A streak as the app displays it (context.md §6).
 struct Streak: Hashable {
@@ -13,22 +13,8 @@ struct Streak: Hashable {
 }
 
 /// How streaks are shown: "3w 2d" or "17 days".
-enum StreakDisplayMode {
+enum StreakDisplayMode: String, CaseIterable {
     case weeksAndDays
     case daysOnly
 }
 
-/// The app-wide streak display choice. Tapping the Streak tile on the task screen flips it.
-/// Kept in memory only for now; remembering it between launches comes with real data.
-@Observable
-final class StreakDisplaySettings {
-    var mode: StreakDisplayMode
-
-    init(mode: StreakDisplayMode = .weeksAndDays) {
-        self.mode = mode
-    }
-
-    func toggle() {
-        mode = mode == .weeksAndDays ? .daysOnly : .weeksAndDays
-    }
-}

@@ -1,37 +1,51 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct HabitApp: App {
-    @State private var streakDisplay = StreakDisplaySettings()
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    @State private var settings = AppSettings()
+    @State private var store = TaskStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(streakDisplay)
+                .environment(settings)
+                .environment(store)
+                .environment(appDelegate.router)
+                .preferredColorScheme(settings.appearance.colorScheme)
         }
     }
 }
 
-/// Home, filled with sample data for now. In DEBUG builds, Home's paintbrush opens the Design Gallery.
-struct RootView: View {
-    #if DEBUG
-    /// `-galleryEntry <id>` on launch opens that gallery entry directly (used to screenshot every state).
-    private let launchEntryID = UserDefaults.standard.string(forKey: "galleryEntry")
-    @State private var showingGallery = UserDefaults.standard.string(forKey: "galleryEntry") != nil
-    #endif
+/// Owns the tab router and listens for taps on reminder notifications, which open the Today tab.
+/// No reminders are scheduled yet; that's the reminders phase.
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    let router = AppRouter()
 
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        await MainActor.run { router.openedFromNotification() }
+    }
+}
+
+/// The tab bar. In DEBUG builds, `-galleryEntry <id>` on launch shows that Design Gallery entry
+/// as the whole screen instead (used to screenshot every state).
+struct RootView: View {
     var body: some View {
-        NavigationStack {
-            #if DEBUG
-            HomeView(tasks: SampleData.allTasks, now: SampleData.today, onOpenGallery: { showingGallery = true })
-            #else
-            HomeView(tasks: SampleData.allTasks, now: SampleData.today)
-            #endif
-        }
         #if DEBUG
-        .fullScreenCover(isPresented: $showingGallery) {
-            DesignGalleryView(initialEntryID: launchEntryID)
+        if let id = UserDefaults.standard.string(forKey: "galleryEntry") {
+            GalleryEntryRoot(id: id)
+        } else {
+            MainTabView()
         }
+        #else
+        MainTabView()
         #endif
     }
 }

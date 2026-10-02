@@ -44,7 +44,7 @@ struct HistoryView: View {
             }
         }
         .fullScreenCover(item: $openedPhoto) { photo in
-            FullScreenPhoto(date: photo.date) { openedPhoto = nil }
+            PhotoViewer(date: photo.date) { openedPhoto = nil }
         }
     }
 
@@ -103,41 +103,3 @@ struct HistoryView: View {
     }
 }
 
-/// One check-in photo, full screen on black, with its date and a close button.
-private struct FullScreenPhoto: View {
-    let date: Date
-    let onClose: () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.app.cameraBackground.ignoresSafeArea()
-            PhotoThumbnail()
-                .padding(.horizontal, Spacing.lg)
-            VStack {
-                ZStack {
-                    Text(Formatters.current.photoDate(date))
-                        .font(Font.app.subhead)
-                        .monospacedDigit()
-                    HStack {
-                        Button(action: onClose) {
-                            Image(systemName: "xmark")
-                                .font(Font.app.button)
-                                .frame(width: Sizes.tapTarget, height: Sizes.tapTarget)
-                                .contentShape(Rectangle())
-                        }
-                        .accessibilityLabel(Strings.History.close)
-                        Spacer()
-                    }
-                }
-                .padding(.horizontal, Spacing.xs)
-                Spacer()
-            }
-        }
-        .foregroundStyle(Color.app.cameraForeground)
-        // Always black with white controls. The dark look stays local to this screen (a preferredColorScheme
-        // would leak into whatever the same full-screen presentation shows next), and the status bar is
-        // hidden, like the system Camera app.
-        .environment(\.colorScheme, .dark)
-        .statusBarHidden()
-    }
-}

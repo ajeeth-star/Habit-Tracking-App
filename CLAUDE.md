@@ -36,9 +36,11 @@ docs/design.md     Design spec (looks, component and screen names, copy)
 
 - Views never hard-code a color, font, spacing value, corner radius, or size: use `Color.app.*`, `Font.app.*`, `Spacing.*`, `Sizes.*`, `Radius.*`.
 - All user-facing text lives in `DesignSystem/Strings.swift`; text built from data goes through `Formatters`.
-- To check screens: in a DEBUG build, tap the paintbrush (top left of Home) to open the Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
+- To check screens: in a DEBUG build, open Settings → Developer → Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
 - Check-in flow UI test: `UITests/CheckInFlowUITests.swift` taps Check in → Use sample photo → Submit → celebration → Home. Set `TEST_RUNNER_SCREENSHOT_DIR=<folder>` on `xcodebuild test` to save a PNG of each step.
 - Animation timing lives in `DesignSystem/Motion.swift`; always check Reduce Motion before animating.
+- The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`).
+- App-wide state: `TaskStore` (habits, shared by all tabs), `AppSettings` (saved settings), `AppRouter` (selected tab). All three are put in the environment in `App/HabitApp.swift`.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 
 ## Commands

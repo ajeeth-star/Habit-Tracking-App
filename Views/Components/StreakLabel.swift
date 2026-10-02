@@ -11,10 +11,10 @@ struct StreakLabel: View {
 
     let streak: Streak
     var style: Style = .short
-    @Environment(StreakDisplaySettings.self) private var settings
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        StreakLabel.text(streak, style: style, mode: settings.mode)
+        StreakLabel.text(streak, style: style, mode: settings.streakDisplay)
     }
 
     static func string(_ streak: Streak, style: Style, mode: StreakDisplayMode) -> String {

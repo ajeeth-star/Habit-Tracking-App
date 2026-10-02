@@ -19,6 +19,8 @@ struct TaskSnapshot: Identifiable, Hashable {
     var week: [WeekDayEntry]
     /// Check-in photo times, newest first.
     var checkIns: [Date]
+    /// Archived habits leave Today, stop reminding, and keep their photos and best streak.
+    var isArchived = false
 }
 
 /// Where a task stands today.
@@ -166,5 +168,41 @@ extension TaskSnapshot {
             streak: after.streak,
             remainingThisWeek: scheduledDaysAfterToday.count,
             refundedSkipsLeft: today == .scheduled(.open, .skipped) ? after.skipsLeft : nil)
+    }
+}
+
+extension TaskSnapshot {
+    /// The next window strictly after today: how many days ahead (1…7) and when it starts.
+    func nextWindow(after today: Weekday) -> (daysAhead: Int, start: TimeOfDay)? {
+        guard let days = days.map({ today.daysUntil($0) }).min() else { return nil }
+        return (days, window.start)
+    }
+
+    /// The best streak so far, counting the current one.
+    var best: Streak {
+        streak.totalCheckIns > longest.totalCheckIns ? streak : longest
+    }
+
+    /// Archived: the current streak ends, the best streak and photos are kept, and it leaves Today.
+    func archived() -> TaskSnapshot {
+        var task = self
+        task.longest = best
+        task.streak = .zero
+        task.streakEnded = nil
+        task.isArchived = true
+        return task
+    }
+
+    /// Restored: a fresh streak starting from the next scheduled day after `weekday` (today); the best streak is kept.
+    func restored(on weekday: Weekday) -> TaskSnapshot {
+        var task = self
+        task.isArchived = false
+        task.streak = .zero
+        task.streakEnded = nil
+        task.skipsLeft = skipsPerWeek
+        task.today = .notToday(next: nextDay(after: weekday) ?? .tomorrow)
+        // This week only shows the scheduled days still to come.
+        task.week = days.filter { $0 > weekday }.map { WeekDayEntry(day: $0, status: .upcoming) }
+        return task
     }
 }

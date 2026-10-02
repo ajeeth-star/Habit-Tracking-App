@@ -62,15 +62,39 @@ All four fields are set on **one create screen**. Under the skips counter, a pla
 
 ## 5. The screens
 
-**Home screen (the hub)**
+The app has a **tab bar with four tabs: Today, Habits, History, Settings.** Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab.
 
-- Shows **all tasks** in two sections:
-  - **Today**: tasks scheduled today, always **sorted by window start time**. Done tasks stay in place rather than moving.
-  - **Not today**: other tasks, each showing when it's next scheduled, e.g. "Next: Friday, 8–10 PM".
-- Each task shows a status (open now / done with the check-in time / opens at a time) and its streak.
-- A task whose **window is open** is visually highlighted and has **a single "Check in" button** on its card. No skip button on the home screen.
+**Today tab (the hub)**
+
+- A summary card at the top: how many of today's tasks are checked in, and what's next.
+- **Today**: only tasks still ahead today (window open or opening later), always **sorted by window start time**. A task whose **window is open** is visually highlighted and has **a single "Check in" button** on its card. No skip button here.
+- Tasks **checked in or skipped today** collapse into one row at the bottom of the Today section ("Done today · 2"). Tapping it shows or hides them. Whether it's open is remembered until the app closes.
+- **Coming up**: every task not scheduled today, with its next window, sorted by soonest, e.g. "Guitar · Tomorrow, 9:00 PM".
+- Each task shows its status (open now / done with the check-in time / opens at a time) and its streak.
 - A **+** button creates a task.
 - **Empty state (first launch):** a large + in the middle with "Start your first habit" and a short line about picking days, a window, and skips. No intro or onboarding screens.
+
+**Habits tab**
+
+- Every active habit, sorted by current streak (highest first), with its schedule, today's status, current streak, and best streak. Tapping one opens its task screen.
+- **Archived** habits in a collapsed section at the bottom. Opening one offers **Restore** and **Delete permanently**.
+- A + button creates a task.
+
+**History tab**
+
+- Every check-in photo across all habits, newest first, grouped by day ("Today", "Yesterday", "Thursday, Sep 24"), with filter chips for one habit at a time.
+- Skips and misses show as small text lines without a photo.
+- The per-task history (from "See all" on a task screen) stays as it is.
+
+**Settings tab**
+
+- **Display:** show streaks as weeks and days (default) or days only; appearance System (default) / Light / Dark.
+- **Reminders:** repeat during the window every 10, 15 (default), or 30 minutes; last-call warning 10, 15 (default), or 30 minutes before the window closes. If iPhone notifications are off for the app, a warning with a button to the app's page in the iPhone Settings app.
+- **Feel:** vibrations on/off (all haptics); celebration animation on/off.
+- **Habits:** the archived habits list.
+- **Your data:** how many photos are stored and how much space they take; **Delete all data** (two confirmations).
+- **About:** app version.
+- Settings are saved on the device and remembered after the app closes.
 
 **Task screen**
 
@@ -79,9 +103,16 @@ All four fields are set on **one create screen**. Under the skips counter, a pla
 - **This week at a glance**: each scheduled day marked done, skipped, missed, today, or upcoming.
 - **Check in** and **Use a skip** buttons.
 - Recent check-in photos, leading to the full history.
-- Edit button.
+- Edit button. Editing also offers **Archive habit** and **Delete habit**.
 
-**Other screens:** create/edit task, camera → preview, skip confirmation, check-in confirmation, and full per-task history.
+**Archiving and deleting a habit**
+
+- **Archive:** the habit stops reminding and leaves the Today tab. It ends the current streak, but its best streak and all its photos are kept. It can be restored anytime (Habits tab or Settings).
+- **Restore:** the habit comes back with a fresh streak starting from its next scheduled day; its best streak is kept.
+- **Delete:** permanently removes the habit, its streaks, and all its photos. Always confirmed first.
+- **Delete all data** (Settings): permanently removes every habit, streak, and photo, after two confirmations, then shows the empty Today tab.
+
+**Other screens:** create/edit task, camera → preview, skip confirmation, streak celebration, and full per-task history.
 
 ## 6. Tracking progress: streaks
 
@@ -99,7 +130,7 @@ Streaks are the only progress tracking in v1. There are no charts, calendars, or
 - The default format is **weeks and days**, e.g. "3 weeks 2 days" or "3w 2d" where space is tight.
   - **Weeks** = full Monday–Sunday weeks completed, meaning every scheduled day was either checked in or skipped.
   - **Days** = check-ins so far in the current week.
-- There's a toggle to show **days only**, meaning total check-ins in the current streak, e.g. "14 days".
+- A setting shows **days only** instead, meaning total check-ins in the current streak, e.g. "14 days". It lives in **Settings → Display → "Show streaks as"** (decided), and applies everywhere except the check-in celebration, which always shows days.
 
 **Why no cap on skips is safe:** if a user sets skips equal to all their scheduled days, their streak can't break, but it also can't grow, because only check-ins add to it. The number stalls until they show up.
 
@@ -110,10 +141,11 @@ Streaks are the only progress tracking in v1. There are no charts, calendars, or
 - **Always on for every task.** No per-task toggle in v1.
 - **Only on scheduled days, and only if the task isn't already checked in or skipped:**
   - When the window opens.
-  - Repeats during the window, roughly every 15 minutes (exact interval is an engineering choice).
-  - A **last-call warning about 15 minutes before the window closes** that mentions skips, e.g. "Gym closes at 8. Check in or use a skip (1 left)."
+  - Repeats during the window every 15 minutes by default (the owner can pick 10, 15, or 30 in Settings).
+  - A **last-call warning 15 minutes before the window closes** by default (10, 15, or 30 in Settings) that mentions skips, e.g. "Gym closes at 8. Check in or use a skip (1 left)."
 - Reminders **stop** as soon as the task is checked in or skipped.
-- **Tapping a notification opens the home screen.** The open task is highlighted there, one tap from the camera.
+- **Tapping a notification opens the Today tab.** The open task is highlighted there, one tap from the camera.
+- **Archived habits never remind.**
 - Everything is local (scheduled on the phone). No server or push service.
 - Engineering note: iOS limits how many notifications an app can have scheduled at once (64), so scheduling has to be done in rolling batches rather than all at once.
 
@@ -125,7 +157,7 @@ Deferred (might come later):
 - Smart photo verification (on-device or AI)
 - App blocking (Screen Time / FamilyControls)
 - Location triggers
-- iCloud sync, export/backup
+- iCloud sync, export/backup (deleting data is in v1; exporting it isn't)
 - Insights, recaps, charts
 - Apple Watch app, Home Screen widgets
 - Public profiles
@@ -177,8 +209,9 @@ One phase at a time. Each phase ends with something runnable.
 
 1. Scaffold: empty app that builds, runs, and passes a test
 2. Design system and screens: the look of every screen from `docs/design.md`, filled with sample data (no saving or real logic), plus a DEBUG-only Design Gallery to check every state in the simulator
-3. Tasks: create, edit, list, and save (including the next-week edit rules)
-4. Home screen: Today / Not today, status per task, empty state
-5. Check-in: in-app camera, preview, window-only rule, photo storage, history
-6. Streaks and skips: counting rules, skip confirmation, refunds, broken state, display toggle
-7. Reminders: window open, repeats, last call, stop on check-in or skip
+3. Livelier home and streak celebration: today summary card, hero card for the open task, full-screen streak celebration after a check-in (sample data)
+4. App structure: tab bar (Today, Habits, History, Settings), Habits and History tabs, saved settings, archive / restore / delete for habits, delete all data (sample data)
+5. Tasks: create, edit, list, and save (including the next-week edit rules)
+6. Check-in: in-app camera, preview, window-only rule, photo storage, history
+7. Streaks and skips: counting rules, skip confirmation, refunds, broken state
+8. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today

@@ -33,6 +33,9 @@ enum Sizes {
     static let emptyStateCircle: CGFloat = 88
     static let emptyStateTextMaxWidth: CGFloat = 260
 
+    /// Photo thumbnail on a History tab row.
+    static let historyThumbnail: CGFloat = 56
+
     /// Progress ring on the today summary card: diameter and line width.
     static let progressRing: CGFloat = 56
     static let progressRingLine: CGFloat = 8

@@ -126,14 +126,19 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
   - `chevron.left` (back)
   - `camera.rotate` (flip camera)
   - `photo` (placeholder thumbnail)
+  - `sun.max.fill`, `flame.fill`, `photo.on.rectangle`, `gearshape.fill` (tab bar)
+  - `chevron.down` / `chevron.up` (collapsible "Done today" and "Archived" rows), `chevron.right` (rows that open a screen)
+  - `exclamationmark.triangle.fill` (notifications-off warning)
 
 ### 1.6 Motion and haptics
 
 - Keep motion subtle and quick: system default animations, about 0.25s.
 - **Streak celebration:** the flame scales from 0.5 to 1.0 with a spring, a **success haptic** plays, and the streak number counts up from the previous value. It closes on its own after **2.5 seconds** (tap anywhere to close sooner).
 - **Progress ring:** animates to its new value when a check-in completes.
-- **Closing a task:** back on Home after a check-in, the hero card animates into a compact done card in the same spot.
+- **Closing a task:** back on the Today tab after a check-in, the hero card animates out of the list and into the "Done today" row.
 - **Confirming "Use skip":** a **warning haptic** plays.
+- **Settings → Vibrations** off turns off every haptic in the app.
+- **Settings → Celebration animation** off shows the celebration's flame and number straight away, with no pop and no count-up (like Reduce Motion). It still closes on its own.
 - Respect the Reduce Motion setting: when it's on, skip the pop, the count-up, the ring animation, and the card animation, and just show the end state. The celebration still closes on its own.
 
 ---
@@ -188,6 +193,17 @@ Put each in its own file under `Views/Components/`, with these exact names:
   - Placeholder: `surfaceMuted` with a centered `photo` icon in `textTertiary`.
 - **`EmptyStateView`**
   - The first-launch view (section 4.2).
+- **`FilterChip`**
+  - Capsule with a label in `Font.app.subhead`, horizontal padding `sm`, vertical padding `xs`, 44pt tap target.
+  - Selected: `accent` fill, `onAccent` label. Unselected: `surface` fill, 0.5pt `separator` stroke, `textPrimary` label.
+- **`DisclosureRow`**
+  - A collapsible row: label in `meta` / `textSecondary` (e.g. "Done today · 2", "Archived · 1"), `chevron.down` / `chevron.up` on the right, 44pt tall. VoiceOver reads it as a button with "expanded" / "collapsed".
+- **`HabitRow`**
+  - The Habits tab card (section 4.10).
+- **`AppDialog`**
+  - The centered confirmation dialog over a `scrim` (layout as in section 4.5): title, body, then two stacked buttons. The **first, highlighted button is always the safe choice** ("Cancel", "Keep my skip") as a `PrimaryButton`; the second is the action, as a `SecondaryButton` (neutral) or `DangerTextButton` (destructive). Tapping the scrim counts as the safe choice. Used by the skip confirmation and every confirmation in sections 4.3, 4.11, and 4.13.
+- **`PhotoViewer`**
+  - One check-in photo full screen on black, its date and time at the top, and an `xmark` close button. Used by both History screens.
 
 ---
 
@@ -232,13 +248,36 @@ Put all of these in `DesignSystem/Formatters.swift`. Write unit tests for the st
 
 **Streak celebration number:** the streak in days, as a plain number ("23"), with "day streak" under it.
 
+**Coming up:** the next window's day and start time: "Tomorrow, 9:00 PM", otherwise the weekday name: "Sunday, 10:00 AM".
+
+**History day headers:** "Today", "Yesterday", otherwise weekday, short month, and day: "Thursday, Sep 24".
+
+**Best streak:** "Best: 5w 1d" (short style, or days-only following the setting; "Best: —" if there's never been a streak).
+
+**Collapsible rows:** "Done today · 2", "Archived · 1".
+
+**Photo storage:** "{n} photos · {size}" with the size from Apple's file-size formatter ("38 MB"); "1 photo"; "No photos" when there are none.
+
+**Version:** "{version} ({build})", e.g. "0.1.0 (1)".
+
 ---
 
 ## 4. Screens
 
 Put screens in `Views/<Area>/` with these exact names. Every screen uses `Color.app.background` behind its content and side padding of `Spacing.lg`.
 
-### 4.1 Home — `Views/Home/HomeView.swift`
+### 4.0 Tab bar — `App/MainTabView.swift`
+
+- The standard iOS tab bar with four tabs, tinted with `accentText` (the accent color for icons and text; the same purple as `accent` in light mode, lighter in dark mode so it reads on the dark tab bar):
+  1. **"Today"** — `sun.max.fill` — section 4.1
+  2. **"Habits"** — `flame.fill` — section 4.10
+  3. **"History"** — `photo.on.rectangle` — section 4.12
+  4. **"Settings"** — `gearshape.fill` — section 4.13
+- Each tab has its own navigation stack, so going back never jumps to another tab, and switching tabs keeps each tab where it was.
+- Tapping a reminder notification switches to the Today tab.
+- Screens presented full screen (camera, celebration, dialogs) cover the tab bar.
+
+### 4.1 Today tab — `Views/Home/HomeView.swift`
 
 **Header:**
 
@@ -257,10 +296,11 @@ Put screens in `Views/<Area>/` with these exact names. Every screen uses `Color.
 
 **Body:** a scrolling list with two sections, each headed with `sectionHeader` / `textTertiary`.
 
-- **"Today":** tasks scheduled today, **sorted by window start time**. Done tasks stay in place. The open task stays in its time-sorted spot too; it stands out through its hero styling.
-- **"Not today":** the remaining tasks, sorted by their next scheduled window. Hide this section if it's empty.
+- **"Today":** only tasks still ahead today — the open task (hero card) and tasks whose window opens later — **sorted by window start time**. A task that was **missed** today also stays here in its time-sorted spot, so its "Streak ended" lines stay visible.
+- **"Done today" row**, at the bottom of the Today section: tasks **checked in or skipped** today collapse into one row, "Done today · 2" in `meta` / `textSecondary`, with a `chevron.down` (collapsed) or `chevron.up` (expanded) on the right. Tapping it shows or hides their compact cards (done and skipped states below), in window order. It starts collapsed; whether it's open is remembered until the app closes. Hidden when nothing is done or skipped. If nothing is ahead or missed either, the Today section shows only this row.
+- **"Coming up":** one row per task **not scheduled today**, sorted by its next window (soonest first). Hide this section if it's empty. Each row: `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline; task name in `cardTitle` / `textPrimary` on the left; the next window's day and start time on the right in `meta` / `textSecondary` ("Tomorrow, 9:00 PM", "Sunday, 10:00 AM"). VoiceOver reads "Guitar · Tomorrow, 9:00 PM". Tapping it opens the task screen.
 
-Cards are separated by `Spacing.sm`. **Tapping anywhere on a card** (other than its button) opens that task's screen.
+Cards and rows are separated by `Spacing.sm`. **Tapping anywhere on a card** (other than its button) opens that task's screen.
 
 **Hero card** (the open task: window open, not checked in or skipped):
 
@@ -276,11 +316,10 @@ Cards are separated by `Spacing.sm`. **Tapping anywhere on a card** (other than 
 
 | State | Pill | Meta line | Notes |
 |---|---|---|---|
-| **Done** | `done` | "Checked in 6:42 PM · Next: Friday" | Task name and streak in `textSecondary`. The compact card a hero turns into after a check-in. |
+| **Done** | `done` | "Checked in 6:42 PM · Next: Friday" | Task name and streak in `textSecondary`. Shown inside the expanded "Done today" row. |
 | **Upcoming** (later today) | `upcoming` "Opens 9:00 PM" | "2 skips left" | — |
-| **Skipped today** | `skipped` | "No skips left" | — |
+| **Skipped today** | `skipped` | "No skips left" | Shown inside the expanded "Done today" row. |
 | **Missed today** | `missed` | — | Streak-ended lines (below) |
-| **Not today** | none | "Next: Friday, 8:00 – 10:00 PM" | Task name and streak in `textTertiary` |
 
 A done task can't be checked in again until its next scheduled window. On the task screen its Check in button stays disabled and reads "Done today".
 
@@ -338,6 +377,12 @@ One view serves both create and edit, presented as a sheet.
 - If the times are invalid, show "End time must be after start time." in `meta` / `danger` under the time window.
 - Windows that cross midnight are **(open)**. For now, they aren't allowed.
 
+
+**Edit mode only — archive and delete,** `Spacing.xxl` below the Save button, `Spacing.xs` apart:
+
+- **"Archive habit"** (`SecondaryButton`) → `AppDialog`: title "Archive Gym?", body "It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings." Buttons: **"Cancel"** (highlighted) and "Archive" (`SecondaryButton`). Archiving ends the current streak but keeps the best streak and all photos, closes the form, and returns to the tab's first screen.
+- **"Delete habit"** (`DangerTextButton`) → `AppDialog`: title "Delete Gym?", body "This permanently deletes the habit, its streaks, and all its photos." Buttons: **"Cancel"** (highlighted) and "Delete" (`DangerTextButton`). Deleting closes the form and returns to the tab's first screen.
+
 ### 4.4 Task screen — `Views/TaskDetail/TaskDetailView.swift`
 
 **Top bar:**
@@ -355,7 +400,7 @@ One view serves both create and edit, presented as a sheet.
      - "Streak" showing the short or days-only streak, e.g. "3w 2d"
      - "Skips left this week" showing "1 of 1"
    - `xs` below, in `caption` / `textTertiary`: "Longest: 5w 1d".
-   - **Days/weeks toggle (proposal):** tapping the Streak tile switches the format app-wide between weeks + days and days only, and the choice is remembered. Flag this to the owner, since where the toggle lives is **(open)**.
+   - The weeks/days format follows **Settings → Show streaks as**. The Streak tile is not tappable.
 3. **This week** (`Spacing.xl` above)
    - A `sectionHeader`, then one `WeekDayCircle` per **scheduled** day only, spread evenly. Unscheduled days are not shown.
 4. **Actions** (`Spacing.xl` above)
@@ -415,7 +460,7 @@ Shown full screen right after Submit. It replaces the old check-in success scree
 - Reduce Motion: no pop and no count-up; the final number shows straight away. It still closes on its own.
 - VoiceOver reads it as one element: "23 day streak. Gym done. 1 more to finish the week."
 
-**Closing the task.** Back on Home, the task animates from the hero card into a compact done card (section 4.1) in the same time-sorted spot, and the summary ring fills to its new value.
+**Closing the task.** Back on the Today tab, the hero card animates out of the Today list into the "Done today" row (its count goes up by one), and the summary ring fills to its new value.
 
 ### 4.9 History — `Views/History/HistoryView.swift`
 
@@ -424,6 +469,81 @@ Shown full screen right after Submit. It replaces the old check-in success scree
 - A 3-column grid of `PhotoThumbnail`s, `xs` gaps. Under each one, the date and time in `caption` / `textTertiary` ("Oct 1 · 6:42 PM").
 - Tapping a photo opens it full screen on black, with its date and time at the top and a close button.
 - Empty: "No check-ins yet. Your photos will show up here." in `subhead` / `textSecondary`, centered.
+
+---
+
+### 4.10 Habits — `Views/Habits/HabitsView.swift`
+
+**Header** (scrolls with the content, no navigation bar title): "Habits" in `screenTitle` on the left; a + button on the right (`plus`, `accentText`, 44pt), which opens Create Task.
+
+**"Active"** section (`sectionHeader` / `textTertiary`): every habit that isn't archived, sorted by current streak (total check-ins in the streak), highest first; ties keep their order. One `HabitRow` per habit, `Spacing.sm` apart:
+
+- `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline.
+- Left, stacked with `xxs` spacing: name in `cardTitle` / `textPrimary`; schedule summary in `meta` / `textSecondary` ("Mon, Tue, Thu, Fri · 6:00 – 8:00 PM"); today's `StatusPill` (open / done / upcoming / skipped / missed), or "Not today" in `meta` / `textTertiary` if it isn't scheduled today.
+- Right, trailing-aligned: `flame.fill` (`streak`) and the current streak in `cardStreak`, following Settings → Show streaks as; below it "Best: 5w 1d" in `caption` / `textTertiary`.
+- Tapping a row opens its task screen (section 4.4).
+
+**"Archived · 1"** `DisclosureRow` at the bottom, collapsed by default (remembered until the app closes). Hidden when nothing is archived. Expanded, it lists archived habits as rows: `surface` fill, `Radius.lg`, `Spacing.md` padding, separator outline; name in `cardTitle` / `textTertiary` on the left, "Best: 5w 1d" in `caption` / `textTertiary` on the right, `chevron.right`. Tapping one opens the archived habit screen (section 4.11).
+
+**Empty** (no active habits): `EmptyStateView` centered under the header. The Archived row still shows below it if anything is archived.
+
+### 4.11 Archived habit — `Views/Habits/ArchivedHabitView.swift`
+
+Pushed onto the navigation stack (back button `chevron.left`, `accentText`).
+
+- Name in `screenTitle`, schedule summary in `meta` / `textSecondary`, "Archived" in `caption` / `textTertiary`.
+- `StatTile` "Best streak" with the best streak (following Settings → Show streaks as), and `StatTile` "Photos" with the number of check-in photos kept, side by side.
+- `Spacing.xl` below: **"Restore"** (`PrimaryButton`). Restoring brings the habit back to the Active list right away with a fresh streak starting from its next scheduled day; the best streak is kept. Then it returns to the previous screen.
+- `Spacing.xs` below: **"Delete permanently"** (`DangerTextButton`) → the same "Delete Gym?" `AppDialog` as section 4.3.
+
+### 4.12 History tab — `Views/History/AllHistoryView.swift`
+
+**Header** (scrolls with the content): "History" in `screenTitle`.
+
+**Filter chips** in a horizontal scroll under the header (`Spacing.md` above, `Spacing.xs` apart): "All" first, then one `FilterChip` per habit that has anything in its history (archived habits included, since their photos are kept), in the Habits tab order. "All" is selected by default.
+
+**Timeline**, grouped by day, newest first. Day headers in `sectionHeader` / `textTertiary`: "Today", "Yesterday", then "Thursday, Sep 24". Within a day, newest first. Rows `Spacing.sm` apart:
+
+- **Check-in:** a 56pt `PhotoThumbnail` on the left; on the right, the task name in `cardTitle` / `textPrimary` and the time in `meta` / `textSecondary` ("6:42 PM"). Tapping it opens the photo in the `PhotoViewer`.
+- **Skip:** a text row with no photo: `minus` icon and "Skipped Gym" in `meta` / `textSecondary`.
+- **Miss:** a text row with no photo: `xmark` icon and "Missed Guitar · streak ended at 2w 1d" in `meta` / `danger` (just "Missed Guitar" if no streak ended).
+
+**Empty** (nothing for the current filter): "No check-ins yet. Your photos will show up here." in `subhead` / `textSecondary`, centered.
+
+### 4.13 Settings — `Views/Settings/SettingsView.swift`
+
+A standard iOS grouped list (inset grouped), on `background`, with rows on `surface`. Row labels in `body` / `textPrimary`, values in `body` / `textSecondary`, section headers in `sectionHeader` / `textTertiary`, footers in `meta` / `textSecondary`. Title: "Settings" in `screenTitle` above the list (scrolls with it). Pickers use the standard menu picker, tinted `accentText`. Everything here is saved on the device.
+
+**Display**
+- "Show streaks as" → "Weeks and days" (default) / "Days only". This is the only weeks/days switch in the app.
+- "Appearance" → "System" (default) / "Light" / "Dark".
+
+**Reminders**
+- Only when iPhone notifications are turned off for this app (denied in the iPhone's Settings): a warning row first, `dangerSoft` background, `exclamationmark.triangle.fill` in `danger`, "Notifications are off. Your streaks can end without a warning." in `subhead` / `textPrimary`, and a "Turn on" button in `accentText` that opens this app's page in the iPhone Settings app.
+- "Repeat during window" → "Every 10 min" / "Every 15 min" (default) / "Every 30 min".
+- "Last-call warning" → "10 min before" / "15 min before" (default) / "30 min before".
+- Footer: "Reminders are always on for every habit. They stop as soon as you check in or use a skip."
+
+**Feel**
+- "Vibrations" → toggle, on by default. Off turns off every haptic.
+- "Celebration animation" → toggle, on by default. Off: the celebration shows the flame and number without the pop and count-up.
+
+**Habits**
+- "Archived habits" → shows the count on the right and opens the archived list (the same rows as the Habits tab's Archived section, always expanded). Empty: "No archived habits." in `subhead` / `textSecondary`.
+
+**Your data**
+- "Photo storage" → read-only, e.g. "142 photos · 38 MB".
+- "Delete all data" in `body` / `danger` → two `AppDialog`s in a row:
+  1. "Delete everything?" / "All habits, streaks, and photos will be permanently deleted from this iPhone." — **"Cancel"** (highlighted) and "Continue" (`SecondaryButton`).
+  2. "This can't be undone." (no body) — **"Cancel"** (highlighted) and "Delete everything" (`DangerTextButton`).
+  Afterwards the app switches to the Today tab, which shows its empty state. Settings themselves are kept.
+- Footer: "Everything stays on this iPhone. Nothing is uploaded."
+
+**About**
+- "Version" → read-only, e.g. "0.1.0 (1)" (version and build number).
+
+**Developer** (DEBUG builds only, not compiled into Release)
+- "Design Gallery" → opens the gallery. There is no paintbrush button on the Today tab any more.
 
 ---
 
@@ -449,7 +569,7 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Pills | Open now · Done · Opens {time} · Skipped · Missed |
 | Today summary | {n} of {m} done today · All done for today · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} on {weekday} at {time} |
 | Hero card | Closes in {h}h {m}m · Closes in {h}h · Closes in {m}m · Check in |
-| Card meta | Checked in {time} · Next: {day} · Next: {day}, {window} · {n} skips left |
+| Card meta | Checked in {time} · Next: {day} · {n} skips left |
 | Streak ended | Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today |
 | Form | New task · Edit task · Cancel · Name · Which days · Time window · From · To · Skips per week · Create task · Save changes |
 | Form errors | End time must be after start time. |
@@ -461,3 +581,13 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Preview | Retake · Submit |
 | Celebration | {days} · day streak · {Task} done · {n} more to finish the week · Week complete · Your skip is back — {n} skip left |
 | History | {Task} History · No check-ins yet. Your photos will show up here. |
+| Tab bar | Today · Habits · History · Settings |
+| Today tab | Coming up · Done today · {n} · {day}, {time} |
+| Habits tab | Habits · Active · Archived · {n} · Not today · Best: {streak} |
+| Archived habit | Archived · Best streak · Photos · Restore · Delete permanently |
+| History tab | History · All · Today · Yesterday · Skipped {Task} · Missed {Task} · Missed {Task} · streak ended at {streak} · No check-ins yet. Your photos will show up here. |
+| Settings | Settings · Display · Show streaks as · Weeks and days · Days only · Appearance · System · Light · Dark · Reminders · Notifications are off. Your streaks can end without a warning. · Turn on · Repeat during window · Every 10 min · Every 15 min · Every 30 min · Last-call warning · 10 min before · 15 min before · 30 min before · Reminders are always on for every habit. They stop as soon as you check in or use a skip. · Feel · Vibrations · Celebration animation · Habits · Archived habits · No archived habits. · Your data · Photo storage · {n} photos · {size} · No photos · Delete all data · Everything stays on this iPhone. Nothing is uploaded. · About · Version · Developer · Design Gallery |
+| Edit task | Archive habit · Delete habit |
+| Archive dialog | Archive {Task}? · It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings. · Cancel · Archive |
+| Delete dialog | Delete {Task}? · This permanently deletes the habit, its streaks, and all its photos. · Cancel · Delete |
+| Delete-all dialogs | Delete everything? · All habits, streaks, and photos will be permanently deleted from this iPhone. · Cancel · Continue · This can't be undone. · Delete everything |

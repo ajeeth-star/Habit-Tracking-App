@@ -37,12 +37,17 @@ final class CheckInFlowUITests: XCTestCase {
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: dayStreak)
         wait(for: [gone], timeout: 5)
 
-        // Back on Home: no hero card left, and Gym reads as done.
-        let gymDone = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gym. Done. Checked in'")).firstMatch
-        XCTAssertTrue(gymDone.waitForExistence(timeout: 3), "Gym closed into a done card")
-        XCTAssertFalse(app.buttons["Check in"].exists, "No Check in button left on Home")
+        // Back on Today: no hero card left; Gym folded into "Done today" (skincare and the skipped run were already there).
+        let doneRow = app.buttons["Done today · 3"]
+        XCTAssertTrue(doneRow.waitForExistence(timeout: 3), "Gym moved into the Done today row")
+        XCTAssertFalse(app.buttons["Check in"].exists, "No Check in button left on Today")
         Thread.sleep(forTimeInterval: 0.8) // let the card animation settle
         snapshot("5-home-after")
+
+        doneRow.tap()
+        let gymDone = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gym. Done. Checked in'")).firstMatch
+        XCTAssertTrue(gymDone.waitForExistence(timeout: 3), "Gym shows as a done card when expanded")
+        snapshot("5b-done-expanded")
 
         // The task screen can't check in again today.
         gymDone.tap()

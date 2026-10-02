@@ -217,6 +217,58 @@ struct Formatters {
         return checkedIn + Strings.separator + Strings.Home.nextDay(nextDay(next))
     }
 
+    /// "Tomorrow, 9:00 PM" or "Sunday, 10:00 AM": a Coming up row's next window.
+    func comingUp(daysAhead: Int, weekday: Weekday, start: TimeOfDay) -> String {
+        let day = daysAhead == 1 ? Strings.Schedule.tomorrow : weekdayName(weekday)
+        return Strings.Today.dayAndTime(day, time(start))
+    }
+
+    // MARK: Habits and History tabs
+
+    /// "Best: 5w 1d" (or "Best: 21 days", following the setting).
+    func best(_ streak: Streak, mode: StreakDisplayMode) -> String {
+        Strings.Habits.best(streakCompact(streak, mode: mode))
+    }
+
+    /// "Today", "Yesterday", or "Thursday, Sep 24".
+    func historyDay(_ date: Date, now: Date) -> String {
+        if calendar.isDate(date, inSameDayAs: now) { return Strings.AllHistory.today }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(date, inSameDayAs: yesterday) {
+            return Strings.AllHistory.yesterday
+        }
+        return format(date, template: "EEEEMMMd")
+    }
+
+    /// "Skipped Gym", "Missed Guitar · streak ended at 2w 1d", or "Missed Guitar".
+    func historyNote(_ event: HistoryEvent) -> String {
+        switch event.kind {
+        case .checkIn: event.taskName
+        case .skip: Strings.AllHistory.skipped(event.taskName)
+        case .miss(let ended?): Strings.AllHistory.missedStreakEnded(event.taskName, streakShort(ended))
+        case .miss(nil): Strings.AllHistory.missed(event.taskName)
+        }
+    }
+
+    /// "6:42 PM": a history row's time.
+    func time(of date: Date) -> String {
+        time(TimeOfDay(date, calendar: calendar))
+    }
+
+    // MARK: Settings
+
+    /// "142 photos · 38 MB", "1 photo · 270 KB", or "No photos".
+    func photoStorage(count: Int, bytes: Int64) -> String {
+        guard count > 0 else { return Strings.Settings.noPhotos }
+        let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        return Strings.Settings.photoStorageValue(count, size)
+    }
+
+    /// "0.1.0 (1)".
+    func version(_ version: String, build: String) -> String {
+        Strings.Settings.versionValue(version, build)
+    }
+
     // MARK: Streak celebration
 
     /// "1 more to finish the week" or "Week complete".

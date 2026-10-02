@@ -8,11 +8,15 @@ struct TaskDetailView: View {
     var now: Date = SampleData.today
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(StreakDisplaySettings.self) private var settings
+    @Environment(AppSettings.self) private var settings
     @State private var showingEdit = false
     @State private var showingHistory = false
     @State private var showingCheckIn = false
     @State private var showingSkip = false
+    /// Set by the edit form's Archive or Delete; carried out once the form has closed.
+    @State private var pendingRemoval: TaskFormView.Removal?
+    /// Archives or deletes the task. The screen closes first, so nothing shows a task that's gone.
+    var onRemove: (TaskFormView.Removal) -> Void = { _ in }
 
     private let format = Formatters.current
 
@@ -54,16 +58,23 @@ struct TaskDetailView: View {
         .navigationDestination(isPresented: $showingHistory) {
             HistoryView(task: task)
         }
-        .sheet(isPresented: $showingEdit) {
-            TaskFormView(mode: .edit(task))
+        .sheet(isPresented: $showingEdit, onDismiss: removeIfAsked) {
+            TaskFormView(mode: .edit(task)) { pendingRemoval = $0 }
         }
         .fullScreenCover(isPresented: $showingCheckIn) {
             CheckInFlowView(task: task, now: now) { task = $0 }
         }
-        .fullScreenCover(isPresented: $showingSkip) {
+        .dialogCover(isPresented: $showingSkip) {
             SkipConfirmationView(prompt: task.skipPrompt)
-                .presentationBackground(.clear)
         }
+    }
+
+    /// After Archive or Delete in the edit form: close this screen, then archive or delete.
+    private func removeIfAsked() {
+        guard let removal = pendingRemoval else { return }
+        pendingRemoval = nil
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { onRemove(removal) }
     }
 
     // MARK: Sections
@@ -83,14 +94,10 @@ struct TaskDetailView: View {
     private var stats: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             AdaptiveStack(spacing: Spacing.sm) {
-                // Tapping the streak switches weeks + days ↔ days only, app-wide (open: where this toggle lives).
-                Button { settings.toggle() } label: {
-                    StatTile(label: Strings.Detail.streak) {
-                        Text(StreakLabel.string(task.streak, style: .short, mode: settings.mode))
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint(Strings.Detail.toggleStreakHint)
+                // The weeks/days format follows Settings → Show streaks as.
+                StatTile(
+                    label: Strings.Detail.streak,
+                    value: StreakLabel.string(task.streak, style: .short, mode: settings.streakDisplay))
 
                 StatTile(
                     label: Strings.Detail.skipsLeftThisWeek,
@@ -98,7 +105,7 @@ struct TaskDetailView: View {
             }
             .fixedSize(horizontal: false, vertical: true)
 
-            Text(Strings.Detail.longest(StreakLabel.string(task.longest, style: .short, mode: settings.mode)))
+            Text(Strings.Detail.longest(StreakLabel.string(task.longest, style: .short, mode: settings.streakDisplay)))
                 .font(Font.app.caption)
                 .foregroundStyle(Color.app.textTertiary)
         }
@@ -126,9 +133,7 @@ struct TaskDetailView: View {
 
             SecondaryButton(task.skipsLeft == 0 ? Strings.Detail.noSkipsLeft : Strings.Detail.useSkip) {
                 // The dialog fades in over this screen rather than sliding up.
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) { showingSkip = true }
+                withoutAnimation { showingSkip = true }
             }
             .disabled(!canSkip)
         }

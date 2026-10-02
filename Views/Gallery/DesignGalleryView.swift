@@ -3,17 +3,13 @@ import SwiftUI
 
 /// Developer tool, DEBUG builds only: every screen in every state, filled with `SampleData`,
 /// so the designs can be checked in the simulator (VS Code can't show SwiftUI previews).
-/// This file isn't compiled into Release builds.
+/// Opened from Settings → Developer → Design Gallery. This file isn't compiled into Release builds.
 struct DesignGalleryView: View {
-    /// Opens this entry straight away (used by the `-galleryEntry <id>` launch argument).
-    var initialEntryID: String?
-
     @Environment(\.dismiss) private var dismiss
-    @Environment(StreakDisplaySettings.self) private var settings
+    @Environment(AppSettings.self) private var settings
     @State private var appearance = Appearance.system
     @State private var path: [String] = []
     @State private var presented: GalleryEntry?
-    @State private var didOpenInitial = false
 
     enum Appearance: String, CaseIterable, Identifiable {
         case system = "System", light = "Light", dark = "Dark"
@@ -35,10 +31,12 @@ struct DesignGalleryView: View {
                     Picker("Appearance", selection: $appearance) {
                         ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
                     }
-                    Picker("Streaks", selection: $settings.mode) {
+                    Picker("Streaks", selection: $settings.streakDisplay) {
                         Text("Weeks + days").tag(StreakDisplayMode.weeksAndDays)
                         Text("Days only").tag(StreakDisplayMode.daysOnly)
                     }
+                } footer: {
+                    Text("Each entry gets its own copy of the sample data, so nothing you do here changes the app.")
                 }
                 ForEach(GalleryEntry.sections, id: \.self) { section in
                     Section(section) {
@@ -70,6 +68,7 @@ struct DesignGalleryView: View {
                 }
             }
         }
+        // Sheets can be swiped down to close, which the full-app entries rely on.
         .sheet(item: sheetBinding) { entry in
             entry.content { presented = nil }
                 .preferredColorScheme(appearance.scheme)
@@ -79,12 +78,6 @@ struct DesignGalleryView: View {
                 .preferredColorScheme(appearance.scheme)
         }
         .preferredColorScheme(appearance.scheme)
-        .onAppear {
-            guard !didOpenInitial, let id = initialEntryID,
-                  let entry = GalleryEntry.all.first(where: { $0.id == id }) else { return }
-            didOpenInitial = true
-            open(entry)
-        }
     }
 
     private func open(_ entry: GalleryEntry) {
@@ -100,6 +93,58 @@ struct DesignGalleryView: View {
 
     private var coverBinding: Binding<GalleryEntry?> {
         Binding { presented?.presentation == .cover ? presented : nil } set: { presented = $0 }
+    }
+}
+
+/// `-galleryEntry <id>` on launch: one entry as the whole screen, so it can be screenshotted.
+struct GalleryEntryRoot: View {
+    let id: String
+
+    var body: some View {
+        if let entry = GalleryEntry.all.first(where: { $0.id == id }) {
+            if entry.presentation == .push {
+                NavigationStack { entry.content {} }
+            } else {
+                entry.content {}
+            }
+        } else {
+            Text("No gallery entry \"\(id)\"")
+        }
+    }
+}
+
+/// Gives a gallery entry its own copy of the sample data (and its own tab selection), kept for as
+/// long as the entry is open, so trying things out never changes the app's real state.
+private struct SampleScope<Content: View>: View {
+    @State private var store: TaskStore
+    @State private var router: AppRouter
+    @ViewBuilder let content: Content
+
+    init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today,
+         tab: AppRouter.Tab = .today, @ViewBuilder content: () -> Content) {
+        _store = State(initialValue: TaskStore(tasks: tasks, now: now))
+        let router = AppRouter()
+        router.selectedTab = tab
+        _router = State(initialValue: router)
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .environment(store)
+            .environment(router)
+    }
+}
+
+/// A task screen bound to the entry's own sample store, so checking in from it sticks.
+private struct GalleryTaskDetail: View {
+    let id: String
+    @Environment(TaskStore.self) private var store
+
+    var body: some View {
+        if let task = store.binding(for: id) {
+            TaskDetailView(task: task, now: store.now())
+        }
     }
 }
 
@@ -122,24 +167,100 @@ struct GalleryEntry: Identifiable {
         return seen
     }
 
-    static let all: [GalleryEntry] = home + detail + form + skip + checkIn + history + components
+    static let all: [GalleryEntry] = today + habits + allHistory + settings + dialogs
+        + detail + form + skip + checkIn + history + components
 
-    // MARK: Entries
+    // MARK: Tabs (shown with the tab bar; swipe down to close)
 
-    private static let home: [GalleryEntry] = [
-        GalleryEntry(id: "home.all", section: "Home", title: "Every card state · summary in progress") { close in
-            AnyView(HomeView(tasks: SampleData.allTasks, now: SampleData.today, onOpenGallery: close))
-        },
-        GalleryEntry(id: "home.closingSoon", section: "Home", title: "Hero card · closes in under 15 min") { close in
-            AnyView(HomeView(tasks: SampleData.allTasks, now: SampleData.closingSoon, onOpenGallery: close))
-        },
-        GalleryEntry(id: "home.allDone", section: "Home", title: "Summary · all done for today") { close in
-            AnyView(HomeView(tasks: SampleData.allDoneTasks, now: SampleData.today, onOpenGallery: close))
-        },
-        GalleryEntry(id: "home.empty", section: "Home", title: "Empty (first launch)") { close in
-            AnyView(HomeView(tasks: [], now: SampleData.today, onOpenGallery: close))
+    private static func app(_ id: String, _ section: String, _ title: String,
+                            tasks: [TaskSnapshot] = SampleData.allTasksWithArchived,
+                            now: Date = SampleData.today, tab: AppRouter.Tab,
+                            start: MainTabView.StartState = .init()) -> GalleryEntry {
+        GalleryEntry(id: id, section: section, title: title, presentation: .sheet) { _ in
+            AnyView(SampleScope(tasks: tasks, now: now, tab: tab) { MainTabView(start: start) })
+        }
+    }
+
+    private static let today: [GalleryEntry] = [
+        app("today.busy", "Today tab", "Busy day · Done today collapsed", tab: .today),
+        app("today.doneOpen", "Today tab", "Done today expanded", tab: .today, start: .init(showsDone: true)),
+        app("today.closingSoon", "Today tab", "Hero card · closes in under 15 min", now: SampleData.closingSoon, tab: .today),
+        app("today.allDone", "Today tab", "All done for today", tasks: SampleData.allDoneTasks, tab: .today),
+        app("today.empty", "Today tab", "Empty (first launch)", tasks: [], tab: .today),
+    ]
+
+    private static let habits: [GalleryEntry] = [
+        app("habits.list", "Habits tab", "Active · Archived collapsed", tab: .habits),
+        app("habits.archivedOpen", "Habits tab", "Archived expanded", tab: .habits, start: .init(showsArchived: true)),
+        app("habits.onlyArchived", "Habits tab", "No active habits · one archived",
+            tasks: [SampleData.meditation], tab: .habits),
+        app("habits.empty", "Habits tab", "Empty", tasks: [], tab: .habits),
+        GalleryEntry(id: "habits.archivedScreen", section: "Habits tab", title: "Archived habit screen") { _ in
+            AnyView(SampleScope { ArchivedHabitView(task: SampleData.meditation) })
         },
     ]
+
+    private static let allHistory: [GalleryEntry] = [
+        app("allHistory.all", "History tab", "All habits", tab: .history),
+        app("allHistory.filtered", "History tab", "Filtered to Guitar (a miss)", tab: .history,
+            start: .init(historyFilter: SampleData.guitar.id)),
+        app("allHistory.empty", "History tab", "Empty", tasks: [], tab: .history),
+    ]
+
+    private static let settings: [GalleryEntry] = [
+        app("settings.default", "Settings tab", "Settings", tab: .settings, start: .init(notificationsOff: false)),
+        app("settings.notificationsOff", "Settings tab", "Notifications off warning", tab: .settings,
+            start: .init(notificationsOff: true)),
+        GalleryEntry(id: "settings.archived", section: "Settings tab", title: "Archived habits list") { _ in
+            AnyView(SampleScope { ArchivedHabitsScreen() })
+        },
+        GalleryEntry(id: "settings.archivedEmpty", section: "Settings tab", title: "Archived habits list · empty") { _ in
+            AnyView(SampleScope(tasks: SampleData.allTasks) { ArchivedHabitsScreen() })
+        },
+    ]
+
+    // MARK: Confirmations (over the screen they come from)
+
+    private static func dialog(_ id: String, _ title: String, @ViewBuilder background: @escaping () -> some View,
+                               @ViewBuilder dialog: @escaping () -> some View) -> GalleryEntry {
+        GalleryEntry(id: "dialog.\(id)", section: "Confirmations", title: title, presentation: .cover) { _ in
+            AnyView(SampleScope {
+                ZStack {
+                    background()
+                    dialog()
+                }
+            })
+        }
+    }
+
+    private static let dialogs: [GalleryEntry] = [
+        dialog("archive", "Archive Gym?") {
+            TaskFormView(mode: .edit(SampleData.gym), scrollAnchor: .bottom)
+        } dialog: {
+            AppDialog(title: Strings.Dialog.archiveTitle("Gym"), message: Strings.Dialog.archiveBody,
+                      actionTitle: Strings.Dialog.archive, actionStyle: .neutral) {}
+        },
+        dialog("delete", "Delete Gym?") {
+            TaskFormView(mode: .edit(SampleData.gym), scrollAnchor: .bottom)
+        } dialog: {
+            AppDialog(title: Strings.Dialog.deleteTitle("Gym"), message: Strings.Dialog.deleteBody,
+                      actionTitle: Strings.Dialog.delete, actionStyle: .destructive) {}
+        },
+        dialog("deleteAll1", "Delete all data · step 1") {
+            NavigationStack { SettingsView(notificationsOffOverride: false) }
+        } dialog: {
+            AppDialog(title: Strings.Dialog.deleteAllTitle, message: Strings.Dialog.deleteAllBody,
+                      actionTitle: Strings.Dialog.continue, actionStyle: .neutral) {}
+        },
+        dialog("deleteAll2", "Delete all data · step 2") {
+            NavigationStack { SettingsView(notificationsOffOverride: false) }
+        } dialog: {
+            AppDialog(title: Strings.Dialog.deleteAllFinalTitle,
+                      actionTitle: Strings.Dialog.deleteEverything, actionStyle: .destructive) {}
+        },
+    ]
+
+    // MARK: Task screen
 
     private static let detail: [GalleryEntry] = [
         detailEntry("open", "Open now · last skip", SampleData.gym),
@@ -154,9 +275,11 @@ struct GalleryEntry: Identifiable {
 
     private static func detailEntry(_ id: String, _ title: String, _ task: TaskSnapshot) -> GalleryEntry {
         GalleryEntry(id: "detail.\(id)", section: "Task screen", title: title) { _ in
-            AnyView(LiveTaskDetail(task: task))
+            AnyView(SampleScope(tasks: [task]) { GalleryTaskDetail(id: task.id) })
         }
     }
+
+    // MARK: Create / edit
 
     private static let form: [GalleryEntry] = [
         formEntry("create", "New task · empty", .create, nil),
@@ -170,17 +293,20 @@ struct GalleryEntry: Identifiable {
             name: "Run", days: [.tuesday],
             window: TimeWindow(start: TimeOfDay(19), end: TimeOfDay(17)), skips: 0)),
         formEntry("edit", "Edit · no changes", .edit(SampleData.gym), nil),
+        formEntry("editBottom", "Edit · Archive and Delete buttons", .edit(SampleData.gym), nil, anchor: .bottom),
         formEntry("editPending", "Edit · next-week changes", .edit(SampleData.gym), TaskFormView.Draft(
             name: "Gym", days: [.monday, .tuesday, .wednesday, .thursday, .friday],
             window: SampleData.gym.window, skips: 2)),
     ]
 
     private static func formEntry(_ id: String, _ title: String, _ mode: TaskFormView.Mode,
-                                  _ draft: TaskFormView.Draft?) -> GalleryEntry {
+                                  _ draft: TaskFormView.Draft?, anchor: UnitPoint = .top) -> GalleryEntry {
         GalleryEntry(id: "form.\(id)", section: "Create / edit task", title: title, presentation: .sheet) { _ in
-            AnyView(TaskFormView(mode: mode, draft: draft))
+            AnyView(SampleScope { TaskFormView(mode: mode, draft: draft, scrollAnchor: anchor) })
         }
     }
+
+    // MARK: Skip dialog
 
     private static let skip: [GalleryEntry] = [
         skipEntry("lastOneDay", "Last skip · one day left after today", SampleData.skipLastOneDayLeft),
@@ -190,13 +316,17 @@ struct GalleryEntry: Identifiable {
     ]
 
     private static func skipEntry(_ id: String, _ title: String, _ prompt: SkipPrompt) -> GalleryEntry {
-        GalleryEntry(id: "skip.\(id)", section: "Skip dialog", title: title, presentation: .cover) { close in
-            AnyView(ZStack {
-                NavigationStack { TaskDetailView(task: .constant(SampleData.gym)) }
-                SkipConfirmationView(prompt: prompt)
+        GalleryEntry(id: "skip.\(id)", section: "Skip dialog", title: title, presentation: .cover) { _ in
+            AnyView(SampleScope {
+                ZStack {
+                    NavigationStack { TaskDetailView(task: .constant(SampleData.gym)) }
+                    SkipConfirmationView(prompt: prompt)
+                }
             })
         }
     }
+
+    // MARK: Check-in
 
     private static let checkIn: [GalleryEntry] = [
         GalleryEntry(id: "camera", section: "Check-in", title: "Camera", presentation: .cover) { close in
@@ -228,14 +358,18 @@ struct GalleryEntry: Identifiable {
         }
     }
 
+    // MARK: Per-task history
+
     private static let history: [GalleryEntry] = [
-        GalleryEntry(id: "history.photos", section: "History", title: "With photos") { _ in
+        GalleryEntry(id: "history.photos", section: "Per-task history", title: "With photos") { _ in
             AnyView(HistoryView(task: SampleData.skincare))
         },
-        GalleryEntry(id: "history.empty", section: "History", title: "Empty") { _ in
+        GalleryEntry(id: "history.empty", section: "Per-task history", title: "Empty") { _ in
             AnyView(HistoryView(task: SampleData.reading))
         },
     ]
+
+    // MARK: Components
 
     private static let components: [GalleryEntry] = [
         GalleryEntry(id: "components", section: "Components", title: "All components") { _ in
@@ -244,9 +378,10 @@ struct GalleryEntry: Identifiable {
     ]
 }
 
-/// Every component in each of its states, on one scrolling page.
 private struct ComponentsGallery: View {
     @State private var selectedDays: Set<Weekday> = [.monday, .tuesday, .thursday, .friday]
+    @State private var expanded = false
+    @State private var chip: String?
 
     var body: some View {
         ScrollView {
@@ -316,6 +451,21 @@ private struct ComponentsGallery: View {
                         ForEach(0..<4, id: \.self) { _ in PhotoThumbnail() }
                     }
                 }
+                group("Filter chips") {
+                    HStack(spacing: Spacing.xs) {
+                        FilterChip(title: "All", isSelected: chip == nil) { chip = nil }
+                        FilterChip(title: "Gym", isSelected: chip == "gym") { chip = "gym" }
+                        FilterChip(title: "Guitar", isSelected: chip == "guitar") { chip = "guitar" }
+                    }
+                }
+                group("Disclosure row") {
+                    DisclosureRow(label: "Done today", count: 2, isExpanded: $expanded)
+                }
+                group("Habit rows") {
+                    HabitRow(task: SampleData.gym)
+                    HabitRow(task: SampleData.climbing)
+                    HabitRow(task: SampleData.meditation)
+                }
                 group("Empty state") {
                     EmptyStateView {}
                 }
@@ -336,15 +486,6 @@ private struct ComponentsGallery: View {
                 .padding(.top, Spacing.md)
             content()
         }
-    }
-}
-
-/// Holds a sample task in memory so a check-in started from the gallery shows up on the task screen.
-private struct LiveTaskDetail: View {
-    @State var task: TaskSnapshot
-
-    var body: some View {
-        TaskDetailView(task: $task)
     }
 }
 #endif

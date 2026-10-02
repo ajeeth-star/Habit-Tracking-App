@@ -9,11 +9,15 @@ struct StreakCelebrationView: View {
     let onDone: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppSettings.self) private var settings
     @State private var popped = false
     @State private var shownDays: Int?
     @State private var didClose = false
 
     private let format = Formatters.current
+
+    /// No pop or count-up with Reduce Motion, or with Settings → Celebration animation off.
+    private var animates: Bool { settings.celebrationAnimation && !reduceMotion }
 
     /// Always days, whatever the weeks/days toggle says.
     private var streakDays: Int { result.streak.totalCheckIns }
@@ -23,9 +27,9 @@ struct StreakCelebrationView: View {
             Image(systemName: "flame.fill")
                 .font(Font.app.celebrationIcon)
                 .foregroundStyle(Color.app.streak)
-                .scaleEffect(popped || reduceMotion ? 1 : Motion.popStartScale)
+                .scaleEffect(popped || !animates ? 1 : Motion.popStartScale)
 
-            Text("\(shownDays ?? (reduceMotion ? streakDays : result.previousStreakDays))")
+            Text("\(shownDays ?? (animates ? result.previousStreakDays : streakDays))")
                 .font(Font.app.celebrationNumber)
                 .foregroundStyle(Color.app.textPrimary)
                 .contentTransition(.numericText(value: Double(shownDays ?? result.previousStreakDays)))
@@ -59,9 +63,11 @@ struct StreakCelebrationView: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { close() }
-        .sensoryFeedback(.success, trigger: popped)
+        .sensoryFeedback(trigger: popped) { _, didPop in
+            settings.vibrations && didPop ? .success : nil
+        }
         .task {
-            if reduceMotion {
+            if !animates {
                 shownDays = streakDays
                 popped = true
             } else {

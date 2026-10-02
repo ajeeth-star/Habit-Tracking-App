@@ -182,6 +182,44 @@ struct FormattersTests {
         #expect(format.nextDay(.weekday(.friday)) == "Friday")
     }
 
+    @Test func comingUp() {
+        #expect(plain(format.comingUp(daysAhead: 1, weekday: .friday, start: TimeOfDay(21))) == "Tomorrow, 9:00 PM")
+        #expect(plain(format.comingUp(daysAhead: 3, weekday: .sunday, start: TimeOfDay(10))) == "Sunday, 10:00 AM")
+    }
+
+    @Test func bestStreak() {
+        #expect(format.best(Streak(weeks: 5, days: 1, totalCheckIns: 21), mode: .weeksAndDays) == "Best: 5w 1d")
+        #expect(format.best(Streak(weeks: 5, days: 1, totalCheckIns: 21), mode: .daysOnly) == "Best: 21 days")
+        #expect(format.best(.zero, mode: .weeksAndDays) == "Best: —")
+    }
+
+    @Test func historyDayHeaders() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1, hour: 18))!
+        let day = { (offset: Int) in calendar.date(byAdding: .day, value: offset, to: now)! }
+        #expect(format.historyDay(day(0), now: now) == "Today")
+        #expect(format.historyDay(day(-1), now: now) == "Yesterday")
+        #expect(format.historyDay(day(-7), now: now) == "Thursday, Sep 24")
+    }
+
+    @Test func historyNotes() {
+        let date = Date()
+        #expect(format.historyNote(HistoryEvent(taskID: "g", taskName: "Gym", date: date, kind: .skip)) == "Skipped Gym")
+        #expect(format.historyNote(HistoryEvent(taskID: "g", taskName: "Guitar", date: date,
+            kind: .miss(streakEnded: Streak(weeks: 2, days: 1, totalCheckIns: 9)))) == "Missed Guitar · streak ended at 2w 1d")
+        #expect(format.historyNote(HistoryEvent(taskID: "g", taskName: "Guitar", date: date, kind: .miss(streakEnded: nil)))
+            == "Missed Guitar")
+    }
+
+    @Test func settingsValues() {
+        #expect(format.photoStorage(count: 0, bytes: 0) == "No photos")
+        #expect(format.photoStorage(count: 142, bytes: 38_000_000).hasPrefix("142 photos · "))
+        #expect(format.photoStorage(count: 1, bytes: 270_000).hasPrefix("1 photo · "))
+        #expect(format.version("0.1.0", build: "1") == "0.1.0 (1)")
+        #expect(Strings.counted("Done today", 2) == "Done today · 2")
+    }
+
     @Test func dates() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!
