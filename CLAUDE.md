@@ -21,7 +21,7 @@ DesignSystem/      AppColors (Color.app.*), AppFonts (Font.app.*), Spacing + Siz
                    Strings (all user-facing text), Formatters (streaks, skips, times, schedules)
 Models/            Display types (TaskSnapshot, Streak, Weekday…) and SampleData (SwiftData models later)
 Views/Components/  Reusable pieces from design.md §2 (PrimaryButton, TaskCard, StatusPill…)
-Views/<Area>/      Screens: Home, TaskDetail, TaskForm, Skip, CheckIn, History
+Views/<Area>/      Screens: Home (Today), Habits (Streaks tab), History, Settings, TaskDetail, TaskForm, Skip, CheckIn
 Views/Gallery/     DesignGalleryView — DEBUG builds only (#if DEBUG)
 Services/          Non-UI logic (camera, notifications, streak rules…)
 Resources/         Assets.xcassets: app icon, AccentColor, Colors/ (light + dark color sets)
@@ -39,6 +39,8 @@ docs/design.md     Design spec (looks, component and screen names, copy)
 - To check screens: in a DEBUG build, open Settings → Developer → Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
 - Check-in flow UI test: `UITests/CheckInFlowUITests.swift` taps Check in → Use sample photo → Submit → celebration → Home. Set `TEST_RUNNER_SCREENSHOT_DIR=<folder>` on `xcodebuild test` to save a PNG of each step.
 - Animation timing lives in `DesignSystem/Motion.swift`; always check Reduce Motion before animating.
+- On screen a habit is called a **streak**; code keeps Task/Habit names. Each streak has a `StreakColor` and an SF Symbol icon (`DesignSystem/StreakPalette.swift`). Gradients are allowed only on the hero card, the center tab button, and the celebration glow.
+- Tabs: History, Today (center), Streaks — custom `AppTabBar`; Settings is a sheet from the gear on Today.
 - The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`).
 - App-wide state: `TaskStore` (habits, shared by all tabs), `AppSettings` (saved settings), `AppRouter` (selected tab). All three are put in the environment in `App/HabitApp.swift`.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.

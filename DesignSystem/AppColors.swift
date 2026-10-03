@@ -25,6 +25,10 @@ struct AppColors {
     let scrim = Color("scrim")
     /// Secondary text on the hero card: `onAccent` at 85%.
     let onAccentMuted = Color("onAccent").opacity(0.85)
+    /// The hero card's icon badge background: `onAccent` at 20%.
+    let onAccentFaint = Color("onAccent").opacity(0.2)
+    /// The lighter end of the center tab button's gradient.
+    let accentLight = Color("accentLight")
 
     /// Camera and photo-preview screens are always black with white controls, in both modes.
     let cameraBackground = Color.black
@@ -38,8 +42,8 @@ struct AppColors {
         "textPrimary", "textSecondary", "textTertiary",
         "accent", "accentText", "accentSoft", "onAccent",
         "success", "successSoft", "danger", "dangerSoft",
-        "streak", "scrim",
-    ]
+        "streak", "scrim", "accentLight",
+    ] + StreakColor.allCases.flatMap { [$0.assetName, $0.assetName + "Soft"] }
 }
 
 extension Color {

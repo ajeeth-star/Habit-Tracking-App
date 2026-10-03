@@ -122,7 +122,7 @@ struct AppStructureTests {
 
     @Test func notificationTapOpensToday() {
         let router = AppRouter()
-        router.selectedTab = .settings
+        router.selectedTab = .history
         router.openedFromNotification()
         #expect(router.selectedTab == .today)
     }

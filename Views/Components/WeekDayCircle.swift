@@ -4,6 +4,8 @@ import SwiftUI
 struct WeekDayCircle: View {
     let day: Weekday
     let status: WeekDayStatus
+    /// The streak's color: done days fill with it. Without one, done days use `success`.
+    var color: StreakColor?
 
     var body: some View {
         VStack(spacing: Spacing.xxs) {
@@ -22,8 +24,13 @@ struct WeekDayCircle: View {
     @ViewBuilder private var circle: some View {
         switch status {
         case .done:
-            Circle().fill(Color.app.successSoft)
-                .overlay { mark("checkmark", Color.app.success) }
+            if let color {
+                Circle().fill(color.solid)
+                    .overlay { mark("checkmark", Color.app.onAccent) }
+            } else {
+                Circle().fill(Color.app.successSoft)
+                    .overlay { mark("checkmark", Color.app.success) }
+            }
         case .skipped:
             Circle().fill(Color.app.surfaceMuted)
                 .overlay { mark("minus", Color.app.textSecondary) }

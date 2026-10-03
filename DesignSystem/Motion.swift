@@ -12,4 +12,8 @@ enum Motion {
     static let celebrationDuration: Duration = .seconds(2.5)
     /// The flame starts at this scale and springs to full size.
     static let popStartScale: CGFloat = 0.5
+    /// The center tab button while pressed.
+    static let pressedScale: CGFloat = 0.94
+    /// How strong the celebration glow is in its middle.
+    static let glowOpacity: Double = 0.35
 }

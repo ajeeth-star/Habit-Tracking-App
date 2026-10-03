@@ -7,9 +7,10 @@ enum Strings {
         static let title = "Today"
         static let todaySection = "Today"
         static let notTodaySection = "Not today"
-        static let emptyTitle = "Start your first habit"
+        static let emptyTitle = "Start your first streak"
         static let emptyBody = "Pick the days, a time window, and how many skips you get each week."
-        static let createTask = "Create task"
+        static let createTask = "Create streak"
+        static let settings = "Settings"
         static let checkIn = "Check in"
         static func checkedIn(_ time: String) -> String { "Checked in \(time)" }
         static func next(_ day: String, _ window: String) -> String { "Next: \(day), \(window)" }
@@ -37,10 +38,9 @@ enum Strings {
     }
 
     enum Tabs {
-        static let today = "Today"
-        static let habits = "Habits"
         static let history = "History"
-        static let settings = "Settings"
+        static let today = "Today"
+        static let streaks = "Streaks"
     }
 
     enum Today {
@@ -55,7 +55,7 @@ enum Strings {
     static let collapsed = "collapsed"
 
     enum Habits {
-        static let title = "Habits"
+        static let title = "Streaks"
         static let active = "Active"
         static let archived = "Archived"
         static let notToday = "Not today"
@@ -64,7 +64,7 @@ enum Strings {
         static let photos = "Photos"
         static let restore = "Restore"
         static let deletePermanently = "Delete permanently"
-        static let noArchived = "No archived habits."
+        static let noArchived = "No archived streaks."
     }
 
     enum AllHistory {
@@ -96,12 +96,13 @@ enum Strings {
         static func every(_ minutes: Int) -> String { "Every \(minutes) min" }
         static let lastCall = "Last-call warning"
         static func before(_ minutes: Int) -> String { "\(minutes) min before" }
-        static let remindersFooter = "Reminders are always on for every habit. They stop as soon as you check in or use a skip."
+        static let remindersFooter = "Reminders are always on for every streak. They stop as soon as you check in or use a skip."
         static let feel = "Feel"
         static let vibrations = "Vibrations"
         static let celebrationAnimation = "Celebration animation"
-        static let habits = "Habits"
-        static let archivedHabits = "Archived habits"
+        static let streaks = "Streaks"
+        static let archivedHabits = "Archived streaks"
+        static let done = "Done"
         static let yourData = "Your data"
         static let photoStorage = "Photo storage"
         static func photoStorageValue(_ count: Int, _ size: String) -> String {
@@ -123,13 +124,58 @@ enum Strings {
         static let archiveBody = "It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings."
         static let archive = "Archive"
         static func deleteTitle(_ task: String) -> String { "Delete \(task)?" }
-        static let deleteBody = "This permanently deletes the habit, its streaks, and all its photos."
+        static let deleteBody = "This permanently deletes the streak and all its photos."
         static let delete = "Delete"
         static let deleteAllTitle = "Delete everything?"
-        static let deleteAllBody = "All habits, streaks, and photos will be permanently deleted from this iPhone."
+        static let deleteAllBody = "All streaks and photos will be permanently deleted from this iPhone."
         static let `continue` = "Continue"
         static let deleteAllFinalTitle = "This can't be undone."
         static let deleteEverything = "Delete everything"
+    }
+
+    enum Greeting {
+        static let morning = "Good morning"
+        static let afternoon = "Good afternoon"
+        static let evening = "Good evening"
+    }
+
+    enum WeekStrip {
+        static func allDone(_ day: String) -> String { "\(day), all done" }
+        static func progress(_ day: String, _ done: Int, _ total: Int) -> String { "\(day), \(done) of \(total) done" }
+        static func today(_ day: String, _ done: Int, _ total: Int) -> String { "\(day), today, \(done) of \(total) done" }
+    }
+
+    enum StreakStyle {
+        static let section = "Color and icon"
+
+        static func colorName(_ color: StreakColor) -> String {
+            switch color {
+            case .coral: "Coral"
+            case .orange: "Orange"
+            case .green: "Green"
+            case .teal: "Teal"
+            case .blue: "Blue"
+            case .indigo: "Indigo"
+            case .pink: "Pink"
+            case .purple: "Purple"
+            }
+        }
+
+        /// What VoiceOver calls each streak icon.
+        static func iconName(_ symbol: String) -> String {
+            iconNames[symbol] ?? "Icon"
+        }
+
+        private static let iconNames = [
+            "dumbbell.fill": "Dumbbell", "figure.run": "Running", "figure.walk": "Walking",
+            "bicycle": "Bicycle", "drop.fill": "Drop", "sparkles": "Sparkles", "book.fill": "Book",
+            "pencil": "Pencil", "brain.head.profile": "Brain", "guitars.fill": "Guitar",
+            "music.note": "Music", "paintbrush.fill": "Paintbrush", "fork.knife": "Fork and knife",
+            "cup.and.saucer.fill": "Cup", "leaf.fill": "Leaf", "bed.double.fill": "Bed",
+            "moon.fill": "Moon", "sun.max.fill": "Sun", "heart.fill": "Heart",
+            "cross.case.fill": "First aid", "house.fill": "House", "cart.fill": "Cart",
+            "laptopcomputer": "Laptop", "star.fill": "Star",
+        ]
     }
 
     enum Pill {
@@ -164,8 +210,8 @@ enum Strings {
     }
 
     enum Form {
-        static let newTitle = "New task"
-        static let editTitle = "Edit task"
+        static let newTitle = "New streak"
+        static let editTitle = "Edit streak"
         static let cancel = "Cancel"
         static let name = "Name"
         static let namePlaceholder = "e.g. Gym"
@@ -174,12 +220,12 @@ enum Strings {
         static let from = "From"
         static let to = "To"
         static let skipsPerWeek = "Skips per week"
-        static let create = "Create task"
+        static let create = "Create streak"
         static let save = "Save changes"
         static let endBeforeStart = "End time must be after start time."
-        static let archiveHabit = "Archive habit"
-        static let deleteHabit = "Delete habit"
-        static let fallbackTaskName = "task"
+        static let archiveHabit = "Archive streak"
+        static let deleteHabit = "Delete streak"
+        static let fallbackTaskName = "streak"
         static let decreaseSkips = "Fewer skips"
         static let increaseSkips = "More skips"
         static func noSkips(_ name: String) -> String { "No skips — every \(name) day counts." }

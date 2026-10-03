@@ -28,6 +28,17 @@ struct StreakCelebrationView: View {
                 .font(Font.app.celebrationIcon)
                 .foregroundStyle(Color.app.streak)
                 .scaleEffect(popped || !animates ? 1 : Motion.popStartScale)
+                .background {
+                    // A soft glow in the streak's color, one of the three places gradients are allowed.
+                    Circle()
+                        .fill(RadialGradient(colors: [result.color.main.opacity(Motion.glowOpacity), .clear],
+                                             center: .center, startRadius: 0,
+                                             endRadius: Sizes.celebrationGlow / 2))
+                        .frame(width: Sizes.celebrationGlow, height: Sizes.celebrationGlow)
+                        .scaleEffect(popped || !animates ? 1 : Motion.popStartScale)
+                        .opacity(popped || !animates ? 1 : 0)
+                        .accessibilityHidden(true)
+                }
 
             Text("\(shownDays ?? (animates ? result.previousStreakDays : streakDays))")
                 .font(Font.app.celebrationNumber)

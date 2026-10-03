@@ -84,7 +84,9 @@ struct AllHistoryView: View {
             HStack(spacing: Spacing.xs) {
                 FilterChip(title: Strings.AllHistory.all, isSelected: filter == nil) { filter = nil }
                 ForEach(chipTasks) { task in
-                    FilterChip(title: task.name, isSelected: filter == task.id) { filter = task.id }
+                    FilterChip(title: task.name, isSelected: filter == task.id, selectedFill: task.color.solid) {
+                        filter = task.id
+                    }
                 }
             }
             .padding(.horizontal, Spacing.lg)
@@ -98,8 +100,9 @@ struct AllHistoryView: View {
         case .checkIn:
             Button { openedPhoto = event } label: {
                 HStack(spacing: Spacing.sm) {
-                    PhotoThumbnail()
-                        .frame(width: Sizes.historyThumbnail, height: Sizes.historyThumbnail)
+                    if let task = store.task(event.taskID) {
+                        IconBadge(task: task)
+                    }
                     VStack(alignment: .leading, spacing: Spacing.xxs) {
                         Text(event.taskName)
                             .font(Font.app.cardTitle)
@@ -110,6 +113,8 @@ struct AllHistoryView: View {
                             .foregroundStyle(Color.app.textSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    PhotoThumbnail()
+                        .frame(width: Sizes.historyThumbnail, height: Sizes.historyThumbnail)
                 }
                 .contentShape(Rectangle())
             }

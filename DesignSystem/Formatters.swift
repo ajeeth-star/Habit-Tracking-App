@@ -217,6 +217,36 @@ struct Formatters {
         return checkedIn + Strings.separator + Strings.Home.nextDay(nextDay(next))
     }
 
+    /// "Good morning" (5 AM–noon), "Good afternoon" (noon–5 PM), "Good evening" (5 PM–5 AM).
+    func greeting(_ date: Date) -> String {
+        switch calendar.component(.hour, from: date) {
+        case 5..<12: Strings.Greeting.morning
+        case 12..<17: Strings.Greeting.afternoon
+        default: Strings.Greeting.evening
+        }
+    }
+
+    /// "Monday 28": a week strip day for VoiceOver.
+    func weekStripDay(_ date: Date) -> String {
+        format(date, template: "EEEEd")
+    }
+
+    /// What VoiceOver says for a week strip day.
+    func weekStripLabel(_ day: WeekStripDay) -> String {
+        let name = weekStripDay(day.date)
+        switch day.kind {
+        case .today: return Strings.WeekStrip.today(name, day.done, day.total)
+        case .past where day.isComplete: return Strings.WeekStrip.allDone(name)
+        case .past: return Strings.WeekStrip.progress(name, day.done, day.total)
+        case .plain: return name
+        }
+    }
+
+    /// "28": the date number in a week strip circle.
+    func dayNumber(_ date: Date) -> String {
+        "\(calendar.component(.day, from: date))"
+    }
+
     /// "Tomorrow, 9:00 PM" or "Sunday, 10:00 AM": a Coming up row's next window.
     func comingUp(daysAhead: Int, weekday: Weekday, start: TimeOfDay) -> String {
         let day = daysAhead == 1 ? Strings.Schedule.tomorrow : weekdayName(weekday)

@@ -84,7 +84,7 @@ final class TaskStore {
 @Observable
 final class AppRouter {
     enum Tab: Hashable {
-        case today, habits, history, settings
+        case history, today, streaks
     }
 
     var selectedTab = Tab.today

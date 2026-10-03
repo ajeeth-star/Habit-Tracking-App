@@ -33,6 +33,29 @@ enum Sizes {
     static let emptyStateCircle: CGFloat = 88
     static let emptyStateTextMaxWidth: CGFloat = 260
 
+    /// A streak's icon badge.
+    static let iconBadge: CGFloat = 40
+
+    /// Streak style picker: color swatches, the ring around the selected one, and icon cells.
+    static let colorSwatch: CGFloat = 32
+    static let swatchRing: CGFloat = 2
+    static let swatchRingGap: CGFloat = 2
+    static let iconCell: CGFloat = 44
+
+    /// Week strip: day circles and their progress rings.
+    static let weekStripCircle: CGFloat = 36
+    static let weekStripRing: CGFloat = 3
+
+    /// Tab bar height (plus the bottom safe area), the raised center button, how far it rises
+    /// above the bar, and the background ring around it.
+    static let tabBarHeight: CGFloat = 64
+    static let centerTabButton: CGFloat = 64
+    static let centerTabRise: CGFloat = 16
+    static let centerTabRing: CGFloat = 4
+
+    /// The radial glow behind the celebration flame.
+    static let celebrationGlow: CGFloat = 280
+
     /// Photo thumbnail on a History tab row.
     static let historyThumbnail: CGFloat = 56
 

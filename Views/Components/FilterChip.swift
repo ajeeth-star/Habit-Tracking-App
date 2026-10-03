@@ -4,6 +4,8 @@ import SwiftUI
 struct FilterChip: View {
     let title: String
     let isSelected: Bool
+    /// The selected fill: a streak's color for its chip, the app accent for "All".
+    var selectedFill = Color.app.accent
     let action: () -> Void
 
     var body: some View {
@@ -16,7 +18,7 @@ struct FilterChip: View {
                 .padding(.vertical, Spacing.xs)
                 .background {
                     if isSelected {
-                        Capsule().fill(Color.app.accent)
+                        Capsule().fill(selectedFill)
                     } else {
                         Capsule().fill(Color.app.surface)
                             .overlay { Capsule().strokeBorder(Color.app.separator, lineWidth: Sizes.hairline) }

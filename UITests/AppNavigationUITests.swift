@@ -16,27 +16,44 @@ final class AppNavigationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Coming up"].waitForExistence(timeout: 5))
         snapshot("tabs-1-today")
 
-        tab("Habits")
+        tab("Streaks")
         XCTAssertTrue(app.staticTexts["Active"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Archived · 1"].exists)
-        snapshot("tabs-2-habits")
+        snapshot("tabs-2-streaks")
 
         tab("History")
         XCTAssertTrue(app.buttons["All"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Today"].exists)
         snapshot("tabs-3-history")
 
-        tab("Settings")
+        openSettings()
         XCTAssertTrue(app.staticTexts["Show streaks as"].waitForExistence(timeout: 3))
         snapshot("tabs-4-settings")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Coming up"].waitForExistence(timeout: 3), "Done closes Settings, back on Today")
 
-        // Each tab keeps its own place: open a habit on Habits, visit Today, come back.
-        tab("Habits")
+        // Each tab keeps its own place: open a streak on Streaks, visit Today, come back.
+        tab("Streaks")
         habitRow("Gym").tap()
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 3))
         tab("Today")
-        tab("Habits")
-        XCTAssertTrue(app.buttons["Edit"].exists, "Habits tab is still on the Gym screen")
+        tab("Streaks")
+        XCTAssertTrue(app.buttons["Edit"].exists, "Streaks tab is still on the Gym screen")
+    }
+
+    func testOpensOnTodayWithThreeTabs() {
+        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5) ||
+                      app.staticTexts["Good morning"].exists || app.staticTexts["Good afternoon"].exists)
+        let history = tabButton("History"), today = tabButton("Today"), streaks = tabButton("Streaks")
+        XCTAssertTrue(today.isSelected, "The app opens on Today")
+        XCTAssertTrue(history.exists && streaks.exists)
+        XCTAssertFalse(app.buttons["Settings"].frame.minY > app.buttons["Create streak"].frame.maxY,
+                       "Gear and + share the top row")
+        // Left to right: History, Today, Streaks; Today rises above the others.
+        XCTAssertLessThan(history.frame.midX, today.frame.midX)
+        XCTAssertLessThan(today.frame.midX, streaks.frame.midX)
+        XCTAssertLessThan(today.frame.minY, history.frame.minY)
+        XCTAssertLessThan(app.buttons["Settings"].frame.midX, app.buttons["Create streak"].frame.midX)
     }
 
     func testDoneTodayExpandsAndCollapses() {
@@ -77,18 +94,18 @@ final class AppNavigationUITests: XCTestCase {
     }
 
     func testArchiveAndRestore() {
-        tab("Habits")
+        tab("Streaks")
         habitRow("Gym").tap()
         app.buttons["Edit"].tap()
 
-        let archive = app.buttons["Archive habit"]
+        let archive = app.buttons["Archive streak"]
         XCTAssertTrue(archive.waitForExistence(timeout: 3))
         archive.tap()
         XCTAssertTrue(app.staticTexts["Archive Gym?"].waitForExistence(timeout: 2))
         snapshot("archive-dialog")
         app.buttons["Archive"].tap()
 
-        // Back on the Habits list, with Gym under Archived.
+        // Back on the Streaks list, with Gym under Archived.
         let archivedRow = app.buttons["Archived · 2"]
         XCTAssertTrue(archivedRow.waitForExistence(timeout: 5))
         archivedRow.tap()
@@ -103,8 +120,9 @@ final class AppNavigationUITests: XCTestCase {
     }
 
     func testDeleteAllDataNeedsTwoConfirmations() {
-        tab("Settings")
+        openSettings()
         let deleteAll = app.buttons["Delete all data"]
+        scrollTo(deleteAll)
         XCTAssertTrue(deleteAll.waitForExistence(timeout: 3))
         deleteAll.tap()
 
@@ -116,25 +134,47 @@ final class AppNavigationUITests: XCTestCase {
         snapshot("delete-all-2")
         app.buttons["Delete everything"].tap()
 
-        XCTAssertTrue(app.staticTexts["Start your first habit"].waitForExistence(timeout: 5),
+        XCTAssertTrue(app.staticTexts["Start your first streak"].waitForExistence(timeout: 5),
                       "Back on the empty Today tab")
-        XCTAssertTrue(app.tabBars.buttons["Today"].isSelected)
+        XCTAssertTrue(tabButton("Today").isSelected)
+        XCTAssertFalse(app.buttons["Done"].exists, "The Settings sheet closed")
         snapshot("delete-all-done")
     }
 
     func testCancelKeepsEverything() {
-        tab("Settings")
-        app.buttons["Delete all data"].tap()
+        openSettings()
+        let deleteAll = app.buttons["Delete all data"]
+        scrollTo(deleteAll)
+        deleteAll.tap()
         XCTAssertTrue(app.staticTexts["Delete everything?"].waitForExistence(timeout: 2))
         app.buttons["Cancel"].tap()
-        tab("Today")
+        app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["Coming up"].waitForExistence(timeout: 3), "Nothing was deleted")
     }
 
     // MARK: Helpers
 
     private func tab(_ name: String) {
-        app.tabBars.buttons[name].tap()
+        tabButton(name).tap()
+    }
+
+    private func tabButton(_ name: String) -> XCUIElement {
+        app.buttons["tab." + name]
+    }
+
+    /// Settings rows below the fold aren't loaded until scrolled to.
+    private func scrollTo(_ element: XCUIElement) {
+        for _ in 0..<6 where !element.exists {
+            app.swipeUp()
+        }
+    }
+
+    /// Settings opens from the gear at the top left of Today.
+    private func openSettings() {
+        tab("Today")
+        let gear = app.buttons["Settings"]
+        XCTAssertTrue(gear.waitForExistence(timeout: 3))
+        gear.tap()
     }
 
     private func habitRow(_ name: String) -> XCUIElement {

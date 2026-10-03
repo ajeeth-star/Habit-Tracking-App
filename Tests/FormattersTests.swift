@@ -84,7 +84,7 @@ struct FormattersTests {
         #expect(format.skipHelper(taskName: "Gym", skips: 4, dayCount: 4)
             == "You can skip every Gym day. Your streak won't break — but it won't grow either.")
         #expect(format.skipHelper(taskName: "  ", skips: 0, dayCount: 3)
-            == "No skips — every task day counts.")
+            == "No skips — every streak day counts.")
     }
 
     @Test func nextWeekNote() {

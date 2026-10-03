@@ -13,6 +13,7 @@ struct HomeView: View {
     /// Set on Submit, applied once the celebration closes, so the hero card closes in front of you.
     @State private var pendingCheckIn: TaskSnapshot?
     @State private var showingCreate = false
+    @State private var showingSettings = false
 
     init(showsDone: Bool = false) {
         _showsDone = State(initialValue: showsDone)
@@ -38,6 +39,9 @@ struct HomeView: View {
         .sheet(isPresented: $showingCreate) {
             TaskFormView(mode: .create)
         }
+        .sheet(isPresented: $showingSettings) {
+            NavigationStack { SettingsView(showsDone: true) }
+        }
         .fullScreenCover(item: $checkInTask, onDismiss: applyPendingCheckIn) { task in
             CheckInFlowView(task: task, now: store.now()) { pendingCheckIn = $0 }
         }
@@ -58,6 +62,8 @@ struct HomeView: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     header(now: now)
+                    WeekStrip(days: WeekProgress.days(for: store.tasks, now: now))
+                        .padding(.top, Spacing.md)
                     let summary = TodaySummary(tasks: store.active, now: now)
                     if summary.total > 0 {
                         TodaySummaryCard(summary: summary)
@@ -75,27 +81,38 @@ struct HomeView: View {
     // MARK: Header
 
     private func header(now: Date) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(Strings.Home.title)
-                    .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.textPrimary)
-                    .accessibilityAddTraits(.isHeader)
-                Text(Formatters.current.homeDate(now))
-                    .font(Font.app.subhead)
-                    .foregroundStyle(Color.app.textSecondary)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Button { showingSettings = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(Font.app.button)
+                        .foregroundStyle(Color.app.textSecondary)
+                        .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(Strings.Home.settings)
+                Spacer()
+                Button { showingCreate = true } label: {
+                    Image(systemName: "plus")
+                        .font(Font.app.screenTitle)
+                        .foregroundStyle(Color.app.accentText)
+                        .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(Strings.Home.createTask)
             }
-            Spacer()
-            Button { showingCreate = true } label: {
-                Image(systemName: "plus")
-                    .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.accentText)
-                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(Strings.Home.createTask)
+
+            Text(Formatters.current.greeting(now))
+                .font(Font.app.subhead)
+                .foregroundStyle(Color.app.textSecondary)
+            Text(Strings.Home.title)
+                .font(Font.app.screenTitle)
+                .foregroundStyle(Color.app.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            Text(Formatters.current.homeDate(now))
+                .font(Font.app.subhead)
+                .foregroundStyle(Color.app.textSecondary)
         }
-        .padding(.top, Spacing.xs)
     }
 
     // MARK: Today
@@ -211,7 +228,8 @@ private struct ComingUpRow: View {
         let next = Formatters.current.comingUp(
             daysAhead: daysAhead, weekday: weekdayOfNext, start: task.window.start)
         Button(action: onOpen) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                IconBadge(task: task)
                 Text(task.name)
                     .font(Font.app.cardTitle)
                     .foregroundStyle(Color.app.textPrimary)

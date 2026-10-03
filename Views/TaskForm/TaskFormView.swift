@@ -13,6 +13,8 @@ struct TaskFormView: View {
         var days: Set<Weekday> = []
         var window = TimeWindow(start: TimeOfDay(7), end: TimeOfDay(9))
         var skips = 0
+        var color = StreakColor.coral
+        var icon = StreakIcon.fallback
     }
 
     /// What the edit form's bottom buttons can do to the habit.
@@ -27,11 +29,16 @@ struct TaskFormView: View {
     var scrollAnchor = UnitPoint.top
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(TaskStore.self) private var store
     @State private var draft: Draft
     @State private var editingTime: TimeField?
     @State private var confirming: Removal?
     /// Set when a dialog's Archive / Delete is tapped; acted on once the dialog has closed.
     @State private var confirmed: Removal?
+    /// Once an icon is tapped (or when editing), the icon stops following the name.
+    @State private var iconPickedByHand: Bool
+    /// A brand-new streak picks its color when the form first appears.
+    @State private var needsDefaultColor: Bool
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private enum TimeField { case start, end }
@@ -42,7 +49,16 @@ struct TaskFormView: View {
         self.mode = mode
         self.scrollAnchor = scrollAnchor
         self.onRemove = onRemove
-        _draft = State(initialValue: draft ?? Self.initialDraft(for: mode))
+        let isCreate: Bool
+        if case .create = mode { isCreate = true } else { isCreate = false }
+        var start = draft ?? Self.initialDraft(for: mode)
+        // A new streak that arrives with a name already filled in still gets its icon guessed.
+        if isCreate, start.icon == StreakIcon.fallback {
+            start.icon = StreakIcon.guess(for: start.name)
+        }
+        _draft = State(initialValue: start)
+        _iconPickedByHand = State(initialValue: !isCreate)
+        _needsDefaultColor = State(initialValue: isCreate && draft == nil)
     }
 
     static func initialDraft(for mode: Mode) -> Draft {
@@ -50,7 +66,8 @@ struct TaskFormView: View {
         case .create:
             Draft()
         case .edit(let task):
-            Draft(name: task.name, days: Set(task.days), window: task.window, skips: task.skipsPerWeek)
+            Draft(name: task.name, days: Set(task.days), window: task.window, skips: task.skipsPerWeek,
+                  color: task.color, icon: task.icon)
         }
     }
 
@@ -60,6 +77,7 @@ struct TaskFormView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
                     nameField
+                    styleField
                     daysField
                     timeField
                     skipsField
@@ -88,6 +106,14 @@ struct TaskFormView: View {
             if name.count > Sizes.maxTaskNameLength {
                 draft.name = String(name.prefix(Sizes.maxTaskNameLength))
             }
+            if !iconPickedByHand {
+                draft.icon = StreakIcon.guess(for: name)
+            }
+        }
+        .onAppear {
+            guard needsDefaultColor else { return }
+            needsDefaultColor = false
+            draft.color = StreakColor.nextUnused(after: store.active.map(\.color))
         }
     }
 
@@ -180,6 +206,12 @@ struct TaskFormView: View {
                 .padding(Sizes.fieldPadding)
                 .background(Color.app.surface, in: .rounded(Radius.md))
                 .overlay(outline)
+        }
+    }
+
+    private var styleField: some View {
+        field(Strings.StreakStyle.section) {
+            StreakStylePicker(color: $draft.color, icon: $draft.icon) { iconPickedByHand = true }
         }
     }
 

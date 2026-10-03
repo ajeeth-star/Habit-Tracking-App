@@ -21,6 +21,9 @@ struct TaskSnapshot: Identifiable, Hashable {
     var checkIns: [Date]
     /// Archived habits leave Today, stop reminding, and keep their photos and best streak.
     var isArchived = false
+    /// The streak's color and SF Symbol icon (design.md §1.1b).
+    var color = StreakColor.indigo
+    var icon = StreakIcon.fallback
 }
 
 /// Where a task stands today.
@@ -116,6 +119,8 @@ extension TaskSnapshot {
 /// What the streak celebration shows.
 struct CheckInResult: Hashable {
     var taskName: String
+    /// The streak's color, for the glow behind the flame.
+    var color = StreakColor.indigo
     /// The streak in days before this check-in, for the count-up.
     var previousStreakDays: Int
     var streak: Streak
@@ -164,6 +169,7 @@ extension TaskSnapshot {
         let after = checkedIn(at: date)
         return CheckInResult(
             taskName: name,
+            color: color,
             previousStreakDays: streak.totalCheckIns,
             streak: after.streak,
             remainingThisWeek: scheduledDaysAfterToday.count,

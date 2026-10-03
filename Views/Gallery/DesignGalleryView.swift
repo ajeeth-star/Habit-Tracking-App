@@ -190,31 +190,39 @@ struct GalleryEntry: Identifiable {
     ]
 
     private static let habits: [GalleryEntry] = [
-        app("habits.list", "Habits tab", "Active · Archived collapsed", tab: .habits),
-        app("habits.archivedOpen", "Habits tab", "Archived expanded", tab: .habits, start: .init(showsArchived: true)),
-        app("habits.onlyArchived", "Habits tab", "No active habits · one archived",
-            tasks: [SampleData.meditation], tab: .habits),
-        app("habits.empty", "Habits tab", "Empty", tasks: [], tab: .habits),
-        GalleryEntry(id: "habits.archivedScreen", section: "Habits tab", title: "Archived habit screen") { _ in
+        app("streaks.list", "Streaks tab", "Active · Archived collapsed", tab: .streaks),
+        app("streaks.archivedOpen", "Streaks tab", "Archived expanded", tab: .streaks, start: .init(showsArchived: true)),
+        app("streaks.onlyArchived", "Streaks tab", "No active streaks · one archived",
+            tasks: [SampleData.meditation], tab: .streaks),
+        app("streaks.empty", "Streaks tab", "Empty", tasks: [], tab: .streaks),
+        GalleryEntry(id: "streaks.archivedScreen", section: "Streaks tab", title: "Archived streak screen") { _ in
             AnyView(SampleScope { ArchivedHabitView(task: SampleData.meditation) })
         },
     ]
 
     private static let allHistory: [GalleryEntry] = [
-        app("allHistory.all", "History tab", "All habits", tab: .history),
+        app("allHistory.all", "History tab", "All streaks", tab: .history),
         app("allHistory.filtered", "History tab", "Filtered to Guitar (a miss)", tab: .history,
             start: .init(historyFilter: SampleData.guitar.id)),
         app("allHistory.empty", "History tab", "Empty", tasks: [], tab: .history),
     ]
 
+    private static func settingsSheet(_ id: String, _ title: String, notificationsOff: Bool) -> GalleryEntry {
+        GalleryEntry(id: id, section: "Settings (sheet from the gear)", title: title, presentation: .sheet) { _ in
+            AnyView(SampleScope {
+                NavigationStack { SettingsView(notificationsOffOverride: notificationsOff, showsDone: true) }
+            })
+        }
+    }
+
     private static let settings: [GalleryEntry] = [
-        app("settings.default", "Settings tab", "Settings", tab: .settings, start: .init(notificationsOff: false)),
-        app("settings.notificationsOff", "Settings tab", "Notifications off warning", tab: .settings,
-            start: .init(notificationsOff: true)),
-        GalleryEntry(id: "settings.archived", section: "Settings tab", title: "Archived habits list") { _ in
+        settingsSheet("settings.default", "Settings", notificationsOff: false),
+        settingsSheet("settings.notificationsOff", "Notifications off warning", notificationsOff: true),
+        GalleryEntry(id: "settings.archived", section: "Settings (sheet from the gear)", title: "Archived streaks list") { _ in
             AnyView(SampleScope { ArchivedHabitsScreen() })
         },
-        GalleryEntry(id: "settings.archivedEmpty", section: "Settings tab", title: "Archived habits list · empty") { _ in
+        GalleryEntry(id: "settings.archivedEmpty", section: "Settings (sheet from the gear)",
+                     title: "Archived streaks list · empty") { _ in
             AnyView(SampleScope(tasks: SampleData.allTasks) { ArchivedHabitsScreen() })
         },
     ]
@@ -247,13 +255,13 @@ struct GalleryEntry: Identifiable {
                       actionTitle: Strings.Dialog.delete, actionStyle: .destructive) {}
         },
         dialog("deleteAll1", "Delete all data · step 1") {
-            NavigationStack { SettingsView(notificationsOffOverride: false) }
+            NavigationStack { SettingsView(notificationsOffOverride: false, showsDone: true) }
         } dialog: {
             AppDialog(title: Strings.Dialog.deleteAllTitle, message: Strings.Dialog.deleteAllBody,
                       actionTitle: Strings.Dialog.continue, actionStyle: .neutral) {}
         },
         dialog("deleteAll2", "Delete all data · step 2") {
-            NavigationStack { SettingsView(notificationsOffOverride: false) }
+            NavigationStack { SettingsView(notificationsOffOverride: false, showsDone: true) }
         } dialog: {
             AppDialog(title: Strings.Dialog.deleteAllFinalTitle,
                       actionTitle: Strings.Dialog.deleteEverything, actionStyle: .destructive) {}
@@ -288,10 +296,10 @@ struct GalleryEntry: Identifiable {
             window: TimeWindow(start: TimeOfDay(18), end: TimeOfDay(20)), skips: 1)),
         formEntry("allSkips", "New task · skips = days", .create, TaskFormView.Draft(
             name: "Guitar", days: [.wednesday, .saturday],
-            window: TimeWindow(start: TimeOfDay(12), end: TimeOfDay(13)), skips: 2)),
+            window: TimeWindow(start: TimeOfDay(12), end: TimeOfDay(13)), skips: 2, color: .purple)),
         formEntry("invalid", "New task · end before start", .create, TaskFormView.Draft(
             name: "Run", days: [.tuesday],
-            window: TimeWindow(start: TimeOfDay(19), end: TimeOfDay(17)), skips: 0)),
+            window: TimeWindow(start: TimeOfDay(19), end: TimeOfDay(17)), skips: 0, color: .green)),
         formEntry("edit", "Edit · no changes", .edit(SampleData.gym), nil),
         formEntry("editBottom", "Edit · Archive and Delete buttons", .edit(SampleData.gym), nil, anchor: .bottom),
         formEntry("editPending", "Edit · next-week changes", .edit(SampleData.gym), TaskFormView.Draft(
@@ -382,10 +390,35 @@ private struct ComponentsGallery: View {
     @State private var selectedDays: Set<Weekday> = [.monday, .tuesday, .thursday, .friday]
     @State private var expanded = false
     @State private var chip: String?
+    @State private var tab = AppRouter.Tab.today
+    @State private var pickedColor = StreakColor.teal
+    @State private var pickedIcon = "leaf.fill"
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
+                group("Tab bar (tap to switch)") {
+                    AppTabBar(selection: $tab)
+                        .padding(.top, Sizes.centerTabRise + Sizes.centerTabRing)
+                }
+                group("Week strip · every day state") {
+                    WeekStrip(days: Self.sampleWeek)
+                }
+                group("Icon badges · every color") {
+                    HStack(spacing: Spacing.xs) {
+                        ForEach(StreakColor.allCases) { color in
+                            IconBadge(icon: StreakIcon.all[StreakColor.allCases.firstIndex(of: color)! * 3], color: color)
+                        }
+                    }
+                }
+                group("Hero cards · four colors") {
+                    ForEach([StreakColor.coral, .green, .blue, .purple], id: \.self) { color in
+                        TaskCard(task: Self.hero(color), now: SampleData.today, onOpen: {}, onCheckIn: {})
+                    }
+                }
+                group("Color and icon picker") {
+                    StreakStylePicker(color: $pickedColor, icon: $pickedIcon)
+                }
                 group("Today summary card") {
                     TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allTasks, now: SampleData.today))
                     TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allDoneTasks, now: SampleData.today))
@@ -476,6 +509,26 @@ private struct ComponentsGallery: View {
         .background(Color.app.background)
         .navigationTitle("Components")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Mon full, Tue partly done, Wed nothing scheduled, Thu today, Fri–Sun still to come.
+    private static let sampleWeek: [WeekStripDay] = {
+        let monday = Calendar.current.date(byAdding: .day, value: -3, to: Calendar.current.startOfDay(for: SampleData.today))!
+        func day(_ weekday: Weekday, _ kind: WeekStripDay.Kind, _ done: Int, _ total: Int) -> WeekStripDay {
+            WeekStripDay(weekday: weekday,
+                         date: Calendar.current.date(byAdding: .day, value: weekday.rawValue - 1, to: monday)!,
+                         kind: kind, done: done, total: total)
+        }
+        return [day(.monday, .past, 3, 3), day(.tuesday, .past, 1, 3), day(.wednesday, .plain, 0, 0),
+                day(.thursday, .today, 1, 4), day(.friday, .plain, 0, 0), day(.saturday, .plain, 0, 0),
+                day(.sunday, .plain, 0, 0)]
+    }()
+
+    /// The open Gym task, recolored.
+    private static func hero(_ color: StreakColor) -> TaskSnapshot {
+        var task = SampleData.gym
+        task.color = color
+        return task
     }
 
     private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

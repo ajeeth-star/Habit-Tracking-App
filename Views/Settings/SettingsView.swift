@@ -7,11 +7,14 @@ struct SettingsView: View {
     /// Forces the "Notifications are off" warning on or off (the Design Gallery uses this);
     /// nil asks the iPhone.
     var notificationsOffOverride: Bool?
+    /// Shown as a sheet from Today's gear: a "Done" button at the top right closes it.
+    var showsDone = false
 
     @Environment(AppSettings.self) private var settings
     @Environment(TaskStore.self) private var store
     @Environment(AppRouter.self) private var router
     @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var notificationsDenied = false
     @State private var deleteStep: DeleteStep?
@@ -89,7 +92,7 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.app.surface)
             } header: {
-                header(Strings.Settings.habits)
+                header(Strings.Settings.streaks)
             }
 
             Section {
@@ -137,8 +140,22 @@ struct SettingsView: View {
         .tint(Color.app.accentText)
         .scrollContentBackground(.hidden)
         .background(Color.app.background)
-        .toolbar(.hidden, for: .navigationBar)
-        .statusBarBackdrop()
+        .toolbar {
+            if showsDone {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Text(Strings.Settings.done)
+                            .font(Font.app.button)
+                            .foregroundStyle(Color.app.accentText)
+                            .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
+                            .contentShape(Rectangle())
+                    }
+                }
+            }
+        }
+        .toolbar(showsDone ? .visible : .hidden, for: .navigationBar)
+        .toolbarBackground(Color.app.background, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
         .task(id: scenePhase) {
             // Checked again whenever the app comes back, e.g. after turning notifications on.
             guard notificationsOffOverride == nil, scenePhase == .active else { return }
@@ -226,6 +243,7 @@ struct SettingsView: View {
         deleteAllConfirmed = false
         store.deleteAll()
         router.selectedTab = .today
+        if showsDone { dismiss() }
     }
 }
 

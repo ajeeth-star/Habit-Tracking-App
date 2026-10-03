@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A task on the home screen (design.md §4.1). The open task is the hero card: accent fill, a live
+/// A task on the home screen (design.md §4.1). The open task is the hero card: its streak's color, a live
 /// "Closes in" countdown, and the Check in button. Every other state is a compact surface card.
 struct TaskCard: View {
     let task: TaskSnapshot
@@ -22,7 +22,16 @@ struct TaskCard: View {
             }
         }
         .padding(Spacing.md)
-        .background(state == .open ? Color.app.accent : Color.app.surface, in: .rounded(Radius.lg))
+        .background {
+            if state == .open {
+                // One of the three places gradients are allowed (design.md §1.5).
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                    .fill(LinearGradient(colors: [task.color.solid, task.color.deep],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+            } else {
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous).fill(Color.app.surface)
+            }
+        }
         .overlay {
             if state != .open {
                 RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
@@ -35,24 +44,29 @@ struct TaskCard: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
-                    Text(task.name)
-                        .font(Font.app.cardTitle)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay, flameColor: Color.app.onAccent)
-                        .font(Font.app.statValue)
-                }
-                .foregroundStyle(Color.app.onAccent)
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                IconBadge(task: task, onHero: true)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
+                        Text(task.name)
+                            .font(Font.app.cardTitle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay,
+                                         flameColor: Color.app.onAccent)
+                            .font(Font.app.statValue)
+                    }
+                    .foregroundStyle(Color.app.onAccent)
 
-                Text(heroMeta)
-                    .font(Font.app.meta)
-                    .monospacedDigit()
-                    .foregroundStyle(Color.app.onAccentMuted)
+                    Text(heroMeta)
+                        .font(Font.app.meta)
+                        .monospacedDigit()
+                        .foregroundStyle(Color.app.onAccentMuted)
+                }
             }
             .modifier(OpensTask(label: accessibilityText(.open), action: onOpen))
 
-            PrimaryButton(Strings.Home.checkIn, systemImage: "camera.fill", inverted: true, action: onCheckIn)
+            PrimaryButton(Strings.Home.checkIn, systemImage: "camera.fill", inverted: true,
+                          invertedLabel: task.color.solid, action: onCheckIn)
         }
     }
 
@@ -64,41 +78,44 @@ struct TaskCard: View {
     // MARK: Compact (every other state)
 
     private func compact(_ state: TaskCardState) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
-                Text(task.name)
-                    .font(Font.app.cardTitle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay)
-                    .font(Font.app.cardStreak)
-            }
-            .foregroundStyle(nameColor(state))
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            IconBadge(task: task)
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
+                    Text(task.name)
+                        .font(Font.app.cardTitle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay)
+                        .font(Font.app.cardStreak)
+                }
+                .foregroundStyle(nameColor(state))
 
-            let meta = metaText(state)
-            if pill(state) != nil || meta != nil {
-                AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .center) {
-                    if let pill = pill(state) {
-                        StatusPill(kind: pill)
-                    }
-                    if let meta {
-                        Text(meta)
-                            .font(Font.app.meta)
-                            .monospacedDigit()
-                            .foregroundStyle(Color.app.textSecondary)
+                let meta = metaText(state)
+                if pill(state) != nil || meta != nil {
+                    AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .center) {
+                        if let pill = pill(state) {
+                            StatusPill(kind: pill)
+                        }
+                        if let meta {
+                            Text(meta)
+                                .font(Font.app.meta)
+                                .monospacedDigit()
+                                .foregroundStyle(Color.app.textSecondary)
+                        }
                     }
                 }
-            }
 
-            if let ended = task.streakEnded {
-                Text(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
-                    .font(Font.app.meta)
-                    .foregroundStyle(Color.app.danger)
-                Text(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))
-                    .font(Font.app.meta)
-                    .foregroundStyle(Color.app.textSecondary)
+                if let ended = task.streakEnded {
+                    Text(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
+                        .font(Font.app.meta)
+                        .foregroundStyle(Color.app.danger)
+                    Text(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))
+                        .font(Font.app.meta)
+                        .foregroundStyle(Color.app.textSecondary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(OpensTask(label: accessibilityText(state), action: onOpen))
     }
 

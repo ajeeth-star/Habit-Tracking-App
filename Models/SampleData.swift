@@ -24,7 +24,8 @@ enum SampleData {
             .init(day: .friday, status: .upcoming), .init(day: .saturday, status: .upcoming),
             .init(day: .sunday, status: .upcoming),
         ],
-        checkIns: checkIns(on: Weekday.allCases, at: TimeOfDay(7, 42), count: 32))
+        checkIns: checkIns(on: Weekday.allCases, at: TimeOfDay(7, 42), count: 32),
+        color: .pink, icon: "drop.fill")
 
     /// Window closed at lunchtime with no check-in: missed, streak ended.
     static let guitar = TaskSnapshot(
@@ -41,7 +42,8 @@ enum SampleData {
             .init(day: .monday, status: .done), .init(day: .wednesday, status: .done),
             .init(day: .thursday, status: .missed), .init(day: .saturday, status: .upcoming),
         ],
-        checkIns: checkIns(on: [.monday, .wednesday, .thursday, .saturday], at: TimeOfDay(12, 20), count: 15, skippingToday: true))
+        checkIns: checkIns(on: [.monday, .wednesday, .thursday, .saturday], at: TimeOfDay(12, 20), count: 15, skippingToday: true),
+        color: .purple, icon: "guitars.fill")
 
     /// Skipped today, but the window is still open (checking in would give the skip back).
     static let run = TaskSnapshot(
@@ -57,7 +59,8 @@ enum SampleData {
             .init(day: .tuesday, status: .done), .init(day: .thursday, status: .skipped),
             .init(day: .saturday, status: .upcoming),
         ],
-        checkIns: checkIns(on: [.tuesday, .thursday, .saturday], at: TimeOfDay(17, 35), count: 12, skippingToday: true))
+        checkIns: checkIns(on: [.tuesday, .thursday, .saturday], at: TimeOfDay(17, 35), count: 12, skippingToday: true),
+        color: .green, icon: "figure.run")
 
     /// Window open now, last skip left.
     static let gym = TaskSnapshot(
@@ -73,24 +76,26 @@ enum SampleData {
             .init(day: .monday, status: .done), .init(day: .tuesday, status: .done),
             .init(day: .thursday, status: .today), .init(day: .friday, status: .upcoming),
         ],
-        checkIns: checkIns(on: [.monday, .tuesday, .thursday, .friday], at: TimeOfDay(18, 42), count: 14))
+        checkIns: checkIns(on: [.monday, .tuesday, .thursday, .friday], at: TimeOfDay(18, 42), count: 14),
+        color: .coral, icon: "dumbbell.fill")
 
-    /// Opens later tonight.
+    // Opens later tonight. Skipped on Wednesday, so that day in the week strip is only partly done.
     static let journal = TaskSnapshot(
         id: "journal",
         name: "Journal",
         days: [.monday, .tuesday, .wednesday, .thursday, .friday],
         window: TimeWindow(start: TimeOfDay(21), end: TimeOfDay(22)),
-        skipsPerWeek: 2, skipsLeft: 2,
-        streak: Streak(weeks: 0, days: 3, totalCheckIns: 3),
+        skipsPerWeek: 2, skipsLeft: 1,
+        streak: Streak(weeks: 0, days: 2, totalCheckIns: 2),
         longest: Streak(weeks: 2, days: 0, totalCheckIns: 10),
         today: .scheduled(.before, .none),
         week: [
             .init(day: .monday, status: .done), .init(day: .tuesday, status: .done),
-            .init(day: .wednesday, status: .done), .init(day: .thursday, status: .today),
+            .init(day: .wednesday, status: .skipped), .init(day: .thursday, status: .today),
             .init(day: .friday, status: .upcoming),
         ],
-        checkIns: checkIns(on: [.monday, .tuesday, .wednesday, .thursday, .friday], at: TimeOfDay(21, 15), count: 3))
+        checkIns: checkIns(on: [.monday, .tuesday, .thursday, .friday], at: TimeOfDay(21, 15), count: 2),
+        color: .teal, icon: "pencil")
 
     // MARK: Home — Not today
 
@@ -104,7 +109,8 @@ enum SampleData {
         longest: Streak(weeks: 1, days: 1, totalCheckIns: 4),
         today: .notToday(next: .tomorrow),
         week: [.init(day: .tuesday, status: .done), .init(day: .friday, status: .upcoming)],
-        checkIns: checkIns(on: [.tuesday, .friday], at: TimeOfDay(20, 30), count: 4))
+        checkIns: checkIns(on: [.tuesday, .friday], at: TimeOfDay(20, 30), count: 4),
+        color: .blue, icon: "heart.fill")
 
     /// A long name, to check wrapping.
     static let walk = TaskSnapshot(
@@ -117,7 +123,8 @@ enum SampleData {
         longest: .zero,
         today: .notToday(next: .weekday(.sunday)),
         week: [.init(day: .sunday, status: .upcoming)],
-        checkIns: [])
+        checkIns: [],
+        color: .orange, icon: "figure.walk")
 
     /// Every Home state at once.
     static let allTasks = [skincare, guitar, run, gym, journal, climbing, walk]
@@ -134,7 +141,8 @@ enum SampleData {
         today: .notToday(next: .tomorrow),
         week: [],
         checkIns: Array(checkIns(on: [.monday, .wednesday, .friday], at: TimeOfDay(7, 10), count: 25).dropFirst(9)),
-        isArchived: true)
+        isArchived: true,
+        color: .indigo, icon: "brain.head.profile")
 
     /// What the app starts with: every Home state plus one archived habit.
     static let allTasksWithArchived = allTasks + [meditation]
@@ -162,7 +170,8 @@ enum SampleData {
         longest: .zero,
         today: .scheduled(.before, .none),
         week: [.init(day: .thursday, status: .today), .init(day: .saturday, status: .upcoming)],
-        checkIns: [])
+        checkIns: [],
+        color: .orange, icon: "book.fill")
 
     // MARK: Skip dialog variants
 
@@ -191,10 +200,10 @@ enum SampleData {
     /// Gym, 14 → 15 days, Friday still to go.
     static let celebrationMidWeek = gym.checkInResult(at: today)
     static let celebrationTwoLeft = CheckInResult(
-        taskName: "Journal", previousStreakDays: 3, streak: Streak(weeks: 0, days: 4, totalCheckIns: 4),
+        taskName: "Journal", color: .teal, previousStreakDays: 3, streak: Streak(weeks: 0, days: 4, totalCheckIns: 4),
         remainingThisWeek: 2)
     static let celebrationWeekComplete = CheckInResult(
-        taskName: "Climbing", previousStreakDays: 4, streak: Streak(weeks: 1, days: 0, totalCheckIns: 5),
+        taskName: "Climbing", color: .blue, previousStreakDays: 4, streak: Streak(weeks: 1, days: 0, totalCheckIns: 5),
         remainingThisWeek: 0)
     /// Run was skipped earlier today; checking in gives the skip back.
     static let celebrationSkipRefunded = run.checkInResult(at: today)

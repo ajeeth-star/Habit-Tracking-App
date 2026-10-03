@@ -6,12 +6,16 @@ struct PrimaryButton: View {
     var systemImage: String?
     /// The hero-card variant: white fill, accent label.
     var inverted = false
+    /// The inverted label color: the streak's color on a hero card (accent if nil).
+    var invertedLabel: Color?
     let action: () -> Void
 
-    init(_ title: String, systemImage: String? = nil, inverted: Bool = false, action: @escaping () -> Void) {
+    init(_ title: String, systemImage: String? = nil, inverted: Bool = false, invertedLabel: Color? = nil,
+         action: @escaping () -> Void) {
         self.title = title
         self.systemImage = systemImage
         self.inverted = inverted
+        self.invertedLabel = invertedLabel
         self.action = action
     }
 
@@ -21,7 +25,7 @@ struct PrimaryButton: View {
         }
         .buttonStyle(AppButtonStyle(
             fill: inverted ? Color.app.onAccent : Color.app.accent,
-            label: inverted ? Color.app.accent : Color.app.onAccent,
+            label: inverted ? (invertedLabel ?? Color.app.accent) : Color.app.onAccent,
             disabledFill: Color.app.surfaceMuted,
             outline: nil
         ))

@@ -22,16 +22,18 @@ The single most important moment the app has to get right: **6 PM on a Thursday,
 
 ## 3. What a habit (task) looks like
 
+**On screen, each habit is called a "streak"** ("New streak", "Archive streak", the Streaks tab). In the code and in these docs it's still a task or habit.
+
 Each task has:
 
 - **A name**, e.g. "Gym".
-- **Scheduled days**: any set of weekdays, e.g. Mon, Tue, Thu, Fri.
+- **A color and an icon**, picked on the create screen from 8 colors and a set of icons. A new streak starts with the next color not already in use and an icon guessed from its name (it can be changed). The color marks the streak everywhere it appears; the app's own purple stays for app-wide controls.- **Scheduled days**: any set of weekdays, e.g. Mon, Tue, Thu, Fri.
 - **One time window per day**, e.g. 6:00–8:00 PM. The same window applies to every scheduled day. Multiple windows per day are out of v1.
 - **Skips per week**, chosen by the user. Any number from 0 up to the number of scheduled days, with no stricter cap (see streak rules for why that's safe).
 
 Tasks are fully independent. Each has its own schedule, skips, streak, and history.
 
-All four fields are set on **one create screen**. Under the skips counter, a plain-language line explains the choice, e.g. "You can miss 1 of your 4 gym days each week and keep your streak." It updates live.
+All fields are set on **one create screen**. Under the skips counter, a plain-language line explains the choice, e.g. "You can miss 1 of your 4 gym days each week and keep your streak." It updates live.
 
 **Editing a task:**
 
@@ -62,11 +64,13 @@ All four fields are set on **one create screen**. Under the skips counter, a pla
 
 ## 5. The screens
 
-The app has a **tab bar with four tabs: Today, Habits, History, Settings.** Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab.
+The app has a **tab bar with three tabs: History (left), Today (center, a raised round button), and Streaks (right).** The app always opens on Today. Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab. **Settings** opens from a gear button at the top left of Today.
 
 **Today tab (the hub)**
 
-- A summary card at the top: how many of today's tasks are checked in, and what's next.
+- A greeting ("Good morning", "Good afternoon", "Good evening") above the title.
+- A Monday–Sunday strip for the current week: each past day shows how much of what was scheduled got done, today shows its progress so far. Not tappable yet.
+- A summary card: how many of today's tasks are checked in, and what's next.
 - **Today**: only tasks still ahead today (window open or opening later), always **sorted by window start time**. A task whose **window is open** is visually highlighted and has **a single "Check in" button** on its card. No skip button here.
 - Tasks **checked in or skipped today** collapse into one row at the bottom of the Today section ("Done today · 2"). Tapping it shows or hides them. Whether it's open is remembered until the app closes.
 - **Coming up**: every task not scheduled today, with its next window, sorted by soonest, e.g. "Guitar · Tomorrow, 9:00 PM".
@@ -74,7 +78,7 @@ The app has a **tab bar with four tabs: Today, Habits, History, Settings.** Each
 - A **+** button creates a task.
 - **Empty state (first launch):** a large + in the middle with "Start your first habit" and a short line about picking days, a window, and skips. No intro or onboarding screens.
 
-**Habits tab**
+**Streaks tab**
 
 - Every active habit, sorted by current streak (highest first), with its schedule, today's status, current streak, and best streak. Tapping one opens its task screen.
 - **Archived** habits in a collapsed section at the bottom. Opening one offers **Restore** and **Delete permanently**.
@@ -86,12 +90,12 @@ The app has a **tab bar with four tabs: Today, Habits, History, Settings.** Each
 - Skips and misses show as small text lines without a photo.
 - The per-task history (from "See all" on a task screen) stays as it is.
 
-**Settings tab**
+**Settings** (a sheet from the gear on Today, with a Done button)
 
 - **Display:** show streaks as weeks and days (default) or days only; appearance System (default) / Light / Dark.
 - **Reminders:** repeat during the window every 10, 15 (default), or 30 minutes; last-call warning 10, 15 (default), or 30 minutes before the window closes. If iPhone notifications are off for the app, a warning with a button to the app's page in the iPhone Settings app.
 - **Feel:** vibrations on/off (all haptics); celebration animation on/off.
-- **Habits:** the archived habits list.
+- **Streaks:** the archived streaks list.
 - **Your data:** how many photos are stored and how much space they take; **Delete all data** (two confirmations).
 - **About:** app version.
 - Settings are saved on the device and remembered after the app closes.
@@ -107,7 +111,7 @@ The app has a **tab bar with four tabs: Today, Habits, History, Settings.** Each
 
 **Archiving and deleting a habit**
 
-- **Archive:** the habit stops reminding and leaves the Today tab. It ends the current streak, but its best streak and all its photos are kept. It can be restored anytime (Habits tab or Settings).
+- **Archive:** the habit stops reminding and leaves the Today tab. It ends the current streak, but its best streak and all its photos are kept. It can be restored anytime (Streaks tab or Settings).
 - **Restore:** the habit comes back with a fresh streak starting from its next scheduled day; its best streak is kept.
 - **Delete:** permanently removes the habit, its streaks, and all its photos. Always confirmed first.
 - **Delete all data** (Settings): permanently removes every habit, streak, and photo, after two confirmations, then shows the empty Today tab.
@@ -211,7 +215,8 @@ One phase at a time. Each phase ends with something runnable.
 2. Design system and screens: the look of every screen from `docs/design.md`, filled with sample data (no saving or real logic), plus a DEBUG-only Design Gallery to check every state in the simulator
 3. Livelier home and streak celebration: today summary card, hero card for the open task, full-screen streak celebration after a check-in (sample data)
 4. App structure: tab bar (Today, Habits, History, Settings), Habits and History tabs, saved settings, archive / restore / delete for habits, delete all data (sample data)
-5. Tasks: create, edit, list, and save (including the next-week edit rules)
-6. Check-in: in-app camera, preview, window-only rule, photo storage, history
-7. Streaks and skips: counting rules, skip confirmation, refunds, broken state
-8. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+5. Navigation and color: three-tab bar with a raised Today button, Settings behind a gear, a color and icon per streak, week strip and greeting on Today, colored hero card and celebration (sample data)
+6. Tasks: create, edit, list, and save (including the next-week edit rules)
+7. Check-in: in-app camera, preview, window-only rule, photo storage, history
+8. Streaks and skips: counting rules, skip confirmation, refunds, broken state
+9. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today

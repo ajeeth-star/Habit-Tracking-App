@@ -10,6 +10,7 @@ struct HabitRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
+            IconBadge(task: task)
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(task.name)
                     .font(Font.app.cardTitle)

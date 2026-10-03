@@ -80,14 +80,17 @@ struct TaskDetailView: View {
     // MARK: Sections
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(task.name)
-                .font(Font.app.screenTitle)
-                .foregroundStyle(Color.app.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Text(format.schedule(days: task.days, window: task.window))
-                .font(Font.app.meta)
-                .foregroundStyle(Color.app.textSecondary)
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            IconBadge(task: task)
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(task.name)
+                    .font(Font.app.screenTitle)
+                    .foregroundStyle(Color.app.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Text(format.schedule(days: task.days, window: task.window))
+                    .font(Font.app.meta)
+                    .foregroundStyle(Color.app.textSecondary)
+            }
         }
     }
 
@@ -116,7 +119,7 @@ struct TaskDetailView: View {
             sectionHeader(Strings.Detail.thisWeek)
             HStack(spacing: 0) {
                 ForEach(task.week) { entry in
-                    WeekDayCircle(day: entry.day, status: entry.status)
+                    WeekDayCircle(day: entry.day, status: entry.status, color: task.color)
                         .frame(maxWidth: .infinity)
                 }
             }
