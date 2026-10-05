@@ -44,6 +44,24 @@ struct AppStructureTests {
         #expect(!reopened.celebrationAnimation)
     }
 
+    @Test func nameIsOptionalSavedAndTrimmed() {
+        let defaults = freshDefaults()
+        let settings = AppSettings(defaults: defaults)
+        #expect(settings.name.isEmpty)
+        #expect(settings.greetingName == nil)
+
+        settings.name = "   Ajeeth"
+        #expect(settings.name == "Ajeeth", "Leading spaces are dropped while typing")
+        settings.name = "Ajeeth  "
+        #expect(settings.greetingName == "Ajeeth")
+        settings.finishEditingName()
+        #expect(settings.name == "Ajeeth")
+        #expect(AppSettings(defaults: defaults).name == "Ajeeth", "Remembered after the app closes")
+
+        settings.name = String(repeating: "a", count: 40)
+        #expect(settings.name.count == 30)
+    }
+
     @Test func unknownSavedValuesFallBackToDefaults() {
         let defaults = freshDefaults()
         defaults.set(7, forKey: "settings.repeatMinutes")
@@ -122,7 +140,7 @@ struct AppStructureTests {
 
     @Test func notificationTapOpensToday() {
         let router = AppRouter()
-        router.selectedTab = .history
+        router.selectedTab = .streaks
         router.openedFromNotification()
         #expect(router.selectedTab == .today)
     }

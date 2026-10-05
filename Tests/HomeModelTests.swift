@@ -72,7 +72,13 @@ struct HomeModelTests {
         #expect(summary.total == 5)   // skincare, guitar, run, gym, journal
         #expect(summary.done == 1)    // skincare
         #expect(!summary.isAllDone)
-        // Gym is open (the hero shows it), so next up is Journal later today.
+        // Gym is open right now, so that's what the status line names.
+        #expect(summary.nextUp == .init(taskName: "Gym", day: nil, start: TimeOfDay(18), isOpenNow: true))
+    }
+
+    @Test func summaryAfterTheOpenOneIsDone() {
+        let summary = TodaySummary(tasks: SampleData.inProgressTasks, now: now)
+        #expect(summary.done == 2)
         #expect(summary.nextUp == .init(taskName: "Journal", day: nil, start: TimeOfDay(21)))
     }
 
@@ -87,6 +93,13 @@ struct HomeModelTests {
     @Test func summaryWithNothingToday() {
         let summary = TodaySummary(tasks: [SampleData.climbing, SampleData.walk], now: now)
         #expect(summary.total == 0)
+        #expect(summary.isRestDay)
         #expect(summary.nextUp == .init(taskName: "Climbing", day: .tomorrow, start: TimeOfDay(20)))
+    }
+
+    @Test func restDayNextOnALaterWeekday() {
+        let summary = TodaySummary(tasks: SampleData.restDayLaterTasks, now: now)
+        #expect(summary.isRestDay)
+        #expect(summary.nextUp == .init(taskName: SampleData.walk.name, day: .weekday(.sunday), start: TimeOfDay(10)))
     }
 }

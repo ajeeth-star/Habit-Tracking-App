@@ -84,10 +84,13 @@ final class TaskStore {
 @Observable
 final class AppRouter {
     enum Tab: Hashable {
-        case history, today, streaks
+        case today, streaks
     }
 
     var selectedTab = Tab.today
+
+    /// True while a full-page screen (History) is pushed: the tab bar slides away.
+    var hidesTabBar = false
 
     /// Tapping a reminder notification opens the Today tab.
     func openedFromNotification() {

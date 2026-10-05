@@ -61,9 +61,8 @@ Each streak has one of 8 colors. They are color sets in `Resources/Assets.xcasse
 
 Rules:
 
-- A streak's color marks **that streak** (its icon badge, its done days, its History chip, its hero card, its celebration glow). The app's `accent` stays the brand color for everything app-wide: the tab bar, the gear, +, the week strip, the summary ring, and primary buttons outside a specific streak.
+- A streak's color marks **that streak** (its icon badge, its done days, its History chip, its hero card, its celebration glow). The app's `accent` stays the brand color for everything app-wide: the tab bar, the gear, +, the History link, the week strip, and primary buttons outside a specific streak.
 - The `flame.fill` streak icon keeps the `streak` color everywhere.
-- **Accent light** (`accentLight`, `#8C84FF` in both modes) is the lighter end of the center tab button's gradient.
 
 **Streak icons** (SF Symbols, all available on iOS 17): `dumbbell.fill`, `figure.run`, `figure.walk`, `bicycle`, `drop.fill`, `sparkles`, `book.fill`, `pencil`, `brain.head.profile`, `guitars.fill`, `music.note`, `paintbrush.fill`, `fork.knife`, `cup.and.saucer.fill`, `leaf.fill`, `bed.double.fill`, `moon.fill`, `sun.max.fill`, `heart.fill`, `cross.case.fill`, `house.fill`, `cart.fill`, `laptopcomputer`, `star.fill`.
 
@@ -81,9 +80,9 @@ Use the system font through **Dynamic Type text styles**, so text scales with th
 | `successTitle` | `.title2`, bold | Rounded | 22 | "Gym done" |
 | `emptyTitle` | `.title3`, semibold | Rounded | 20 | "Start your first streak" |
 | `statValue` | `.title3`, semibold, monospaced digits | Rounded | 20 | "3w 2d", "1 of 1", the streak on the hero card |
-| `cardTitle` | `.headline` (semibold) | Rounded | 17 | Task name on a card, summary card title, dialog title, form screen title |
+| `cardTitle` | `.headline` (semibold) | Rounded | 17 | Task name on a card, dialog title, form screen title |
 | `cardStreak` | `.headline` (semibold), monospaced digits | Rounded | 17 | The streak on the right of a (non-hero) task card |
-| `ringCount` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | "2/3" inside the progress ring |
+| `statusCount` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | The "2 of 3" count in Today's status line |
 | `celebrationNumber` | bold, monospaced digits, fixed size | Rounded | 64 | The big streak number on the celebration |
 | `celebrationIcon` | fixed size | — | 96 | The big flame on the celebration |
 | `button` | `.body`, semibold | Regular | 17 | All button labels |
@@ -96,7 +95,6 @@ Use the system font through **Dynamic Type text styles**, so text scales with th
 | `badgeIcon` | `.body`, semibold | — | 17 | The icon inside an `IconBadge` |
 | `weekStripNumber` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | Date numbers in the week strip |
 | `tabIcon` | fixed size | — | 22 | Side tab icons |
-| `centerTabIcon` | fixed size | — | 26 | The center Today button's sun |
 
 `celebrationNumber` and `celebrationIcon` are fixed sizes: they're decorative and already very large. The text around them still scales.
 
@@ -145,12 +143,11 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
 - **Buttons:** 50pt tall, full width of their container unless side by side.
 - **Tap targets:** at least 44×44pt everywhere, including icon-only buttons like + and Back.
 - **Card outline:** a 0.5pt `separator` stroke. The hero card (open task) has no outline; its gradient fill sets it apart.
-- **Progress ring:** 56pt across, 8pt line, round line caps.
 - **Celebration:** 96pt flame, 64pt streak number.
 - **Shadows:** none.
-- **Gradients:** allowed **only** on the hero card (its streak's `solid` → `deep`, top-left to bottom-right), the center tab button (`accent` → `accentLight`, top-left to bottom-right), and the celebration screen (a soft radial glow). Nowhere else.
+- **Gradients:** allowed **only** on the hero card (its streak's `solid` → `deep`, top-left to bottom-right) and the celebration screen (a soft radial glow). Nowhere else.
 - **Icon badge:** 40pt square, `Radius.md`, the streak's `soft` fill, its icon in the streak's `main`.
-- **Tab bar:** 64pt tall plus the bottom safe area; center button 64pt, rising 16pt above the bar, with a 4pt `background` ring.
+- **Tab bar:** 64pt tall plus the bottom safe area.
 - **Week strip:** 36pt day circles, 3pt progress rings.
 - **Icons:** SF Symbols only, sized to match the text next to them.
   - `plus` (create task, empty state)
@@ -162,7 +159,8 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
   - `chevron.left` (back)
   - `camera.rotate` (flip camera)
   - `photo` (placeholder thumbnail)
-  - `clock.arrow.circlepath`, `sun.max.fill`, `flame.fill` (tab bar), `gearshape` (Settings button)
+  - `sun.max.fill`, `flame.fill` (tab bar), `gearshape` (Settings button), `chevron.right` (History link)
+  - `moon.fill` (rest day), `checkmark` in `success` (all done) on the status line
   - The streak icons in section 1.1b
   - `chevron.down` / `chevron.up` (collapsible "Done today" and "Archived" rows), `chevron.right` (rows that open a screen)
   - `exclamationmark.triangle.fill` (notifications-off warning)
@@ -171,14 +169,13 @@ Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous co
 
 - Keep motion subtle and quick: system default animations, about 0.25s.
 - **Streak celebration:** the flame scales from 0.5 to 1.0 with a spring, a **success haptic** plays, and the streak number counts up from the previous value. It closes on its own after **2.5 seconds** (tap anywhere to close sooner).
-- **Progress ring:** animates to its new value when a check-in completes.
-- **Closing a task:** back on the Today tab after a check-in, the hero card animates out of the list and into the "Done today" row.
+- **Week strip, today:** its progress ring animates to the new amount when a check-in completes.
+- **Closing a task:** back on Today after a check-in, the hero card animates away and into the "Done today" row.
 - **Confirming "Use skip":** a **warning haptic** plays.
-- **Center tab button:** scales to 0.94 while pressed, with a **light haptic**.
 - **Celebration glow:** fades and grows in behind the flame with the pop.
 - **Settings → Vibrations** off turns off every haptic in the app.
 - **Settings → Celebration animation** off shows the celebration's flame and number straight away, with no pop and no count-up (like Reduce Motion). It still closes on its own.
-- Respect the Reduce Motion setting: when it's on, skip the pop, the count-up, the ring animation, and the card animation, and just show the end state. The tab button doesn't scale and the glow is simply there. The celebration still closes on its own.
+- Respect the Reduce Motion setting: when it's on, skip the pop, the count-up, the ring animation, and the card animation, and just show the end state. The glow is simply there. The celebration still closes on its own.
 
 ---
 
@@ -208,11 +205,6 @@ Put each in its own file under `Views/Components/`, with these exact names:
   - Has a `short` style ("3w 2d") and a `long` style ("3 weeks 2 days").
 - **`TaskCard`**
   - The home-screen card, including the hero (open) card. Every state is described in section 4.1.
-- **`ProgressRing`**
-  - 56pt circle, 8pt line with round caps: `surfaceMuted` track, `accent` progress, starting at the top and going clockwise.
-  - Center: the count ("2/3") in `Font.app.ringCount` / `textPrimary`; when complete, a `checkmark` in `accentText` instead.
-- **`TodaySummaryCard`**
-  - The card at the top of Home (section 4.1): a `ProgressRing` on the left; the summary line and the next-up line stacked on the right.
 - **`StatTile`**
   - `surfaceMuted` fill, `Radius.md`, padding `sm` (12).
   - Label in `Font.app.caption` / `textSecondary`, with the value below it in `Font.app.statValue` / `textPrimary`.
@@ -248,9 +240,9 @@ Put each in its own file under `Views/Components/`, with these exact names:
   - **On the hero card:** `onAccent` at 20% (`Color.app.onAccentFaint`) with the icon in `onAccent`.
   - Decorative: VoiceOver skips it (the name next to it says what it is).
 - **`AppTabBar`**
-  - The custom tab bar (section 4.0).
+  - The custom two-tab bar (section 4.0).
 - **`WeekStrip`**
-  - The Monday–Sunday strip on Today (section 4.1).
+  - The Monday–Sunday strip on Today (section 4.1). Past days are tappable.
 - **`StreakStylePicker`**
   - The "Color and icon" section of the form (section 4.3): a row of 8 color swatches and a 6-column icon grid.
 
@@ -288,12 +280,13 @@ Put all of these in `DesignSystem/Formatters.swift`. Write unit tests for the st
 
 **Closes in** (hero card countdown, rounded up to the next whole minute): "Closes in 1h 20m"; whole hours drop the minutes ("Closes in 2h"); under an hour it's minutes only ("Closes in 12m", "Closes in 1m").
 
-**Today summary:** "2 of 3 done today"; when every task scheduled today is checked in, "All done for today".
+**Status line** (Today, under the week strip): "{count} done today · {next}", where the count is "2 of 3". Every streak scheduled today checked in: "All done for today · {next}". None scheduled today: "Rest day · {next}". With nothing coming up at all, just the first half.
 
-**Next up** (summary card): the next task still to come, by window start:
+**Next** (the status line's second half), in this order:
+- A streak open right now (not checked in or skipped): "Gym is open now" (only while some are still to do, so never on "All done" or "Rest day")
 - Later today: "Next: Journal at 9:00 PM"
 - Tomorrow: "Next: Guitar tomorrow at 9:00 PM"
-- Later this week: "Next: Walk on Sunday at 10:00 AM"
+- Later this week: "Next: Walk Sunday at 10:00 AM"
 
 **Streak celebration number:** the streak in days, as a plain number ("23"), with "day streak" under it.
 
@@ -309,7 +302,7 @@ Put all of these in `DesignSystem/Formatters.swift`. Write unit tests for the st
 
 **Version:** "{version} ({build})", e.g. "0.1.0 (1)".
 
-**Greeting:** "Good morning" from 5:00 AM, "Good afternoon" from noon, "Good evening" from 5:00 PM until 5:00 AM.
+**Greeting:** "Good morning" from 5:00 AM, "Good afternoon" from noon, "Good evening" from 5:00 PM until 5:00 AM; with a name set, ", {name}" follows ("Good evening, Ajeeth"). The name is trimmed of leading and trailing spaces; an empty name means no name.
 
 ---
 
@@ -319,49 +312,54 @@ Put screens in `Views/<Area>/` with these exact names. Every screen uses `Color.
 
 ### 4.0 Tab bar — `App/MainTabView.swift`, `Views/Components/AppTabBar.swift`
 
-A custom tab bar with three tabs, left to right:
+A custom tab bar with two tabs, left to right:
 
-1. **History** — `clock.arrow.circlepath`, label "History" — section 4.12
-2. **Today** — the raised center button, no label (VoiceOver: "Today") — section 4.1
-3. **Streaks** — `flame.fill`, label "Streaks" — section 4.10
+1. **Today** — `sun.max.fill`, label "Today" — section 4.1
+2. **Streaks** — `flame.fill`, label "Streaks" — section 4.10
 
-The app always opens on **Today**. Each tab has its own navigation stack, so going back never jumps to another tab, and switching tabs keeps each tab where it was. Tapping a reminder notification switches to Today. Screens presented full screen (camera, celebration, dialogs) and sheets cover the tab bar.
+The app always opens on **Today**. Each tab has its own navigation stack, so going back never jumps to another tab, and switching tabs keeps each tab where it was. Tapping a reminder notification switches to Today. Screens presented full screen (camera, celebration, dialogs) and sheets cover the tab bar. **The tab bar hides while History is open** (section 4.12) and slides back when you return to Today.
 
 **Look:**
 
 - `surface` background reaching into the bottom safe area, a 0.5pt `separator` line along the top, 64pt tall plus the safe area.
-- **Side tabs:** a 22pt icon (`Font.app.tabIcon`) with its label in `caption` underneath. Selected: `accentText`. Unselected: `textTertiary`. The whole half of the bar beside the center button is the tap target.
-- **Center Today button:** a 64pt circle that rises 16pt above the bar, ringed by 4pt of `background` so it looks cut out of the bar. Fill: a gradient from `accent` to `accentLight`, top-left to bottom-right. Icon: `sun.max.fill`, 26pt (`Font.app.centerTabIcon`), `onAccent`. While pressed it scales to 0.94 with a light haptic (section 1.6). It looks the same whether or not Today is selected.
-- VoiceOver reads the three as tabs, with the current one marked selected.
+- **Each tab:** a 22pt icon (`Font.app.tabIcon`) with its label in `caption` underneath. Selected: `accentText`. Unselected: `textTertiary`. Each half of the bar is its tab's tap target.
+- VoiceOver reads them as tabs, with the current one marked selected.
+
+**Planned, not built:** a third **Friends** tab comes with shared folders. Then Today moves to the center as a raised round button. Nothing for it exists in this version.
 
 ### 4.1 Today tab — `Views/Home/HomeView.swift`
 
+Top to bottom: header → "This week" row → week strip → status line → hero card(s) → Today → Coming up. On a rest day there's no hero card and no Today section.
 **Header** (scrolls with the content, no navigation bar title):
 
 - Top row: a **gear** button on the left (`gearshape`, `textSecondary`, 44pt tap target, VoiceOver "Settings") opens Settings as a sheet (section 4.13). A **+** button on the right (`plus`, `accentText`, 44pt) opens Create Task.
-- Below it, stacked: the greeting in `subhead` / `textSecondary` — "Good morning" (5:00 AM to before noon), "Good afternoon" (noon to before 5:00 PM), "Good evening" (5:00 PM to before 5:00 AM); then "Today" in `screenTitle`; then the date in `subhead` / `textSecondary`, e.g. "Thursday, October 1".
+- Below it, stacked: the greeting in `subhead` / `textSecondary` — "Good morning" (5:00 AM to before noon), "Good afternoon" (noon to before 5:00 PM), "Good evening" (5:00 PM to before 5:00 AM), followed by ", {name}" when a name is set in Settings ("Good evening, Ajeeth"); then "Today" in `screenTitle`; then the date in `subhead` / `textSecondary`, e.g. "Thursday, October 1".
 
-**Week strip** (`WeekStrip`), `Spacing.md` below the date, above the summary card:
+**"This week" row**, `Spacing.md` below the date: "This week" in `sectionHeader` / `textTertiary` on the left; on the right, **"History"** and a `chevron.right` in `meta` / `accentText`, with a 44pt tap target. Tapping it opens History (section 4.12).
+
+**Week strip** (`WeekStrip`), directly below that row:
 
 - Seven equal columns, Monday to Sunday of the current week. Each column: the weekday letter in `caption` / `textTertiary`, `Spacing.xxs` above a 36pt circle with the date number in `Font.app.weekStripNumber` (rounded semibold, monospaced digits).
 - Progress for a day = streaks checked in that day ÷ streaks scheduled that day (archived streaks left out; skips and misses don't count as done).
 - **Past days with something scheduled:** a 3pt ring around the circle, `accent` on a `surfaceMuted` track, filled to that day's progress; number in `textPrimary`. **Fully done:** a filled `accent` circle with the number in `onAccent`.
-- **Today:** a 1.5pt `accent` ring on the circle, number in `accentText`, and its 3pt progress ring around it (filled `accent` circle once everything is done).
+- **Today:** a 1.5pt `accent` ring on the circle, number in `accentText`, and its 3pt progress ring around it (filled `accent` circle once everything is done). When a check-in completes, the ring animates to the new amount (not with Reduce Motion). This is the screen's progress indicator.
 - **Future days, and days with nothing scheduled:** the plain number in `textTertiary`, no ring.
-- Not tappable in this phase. VoiceOver reads each day, e.g. "Monday 28, all done", "Thursday 1, today, 1 of 5 done", "Saturday 3".
+- **Tapping a past day** (with or without anything scheduled) opens History scrolled to that day (section 4.12). Today and future days do nothing when tapped.
+- VoiceOver: past days read "Tuesday, 2 of 3 done. Opens history." ("Monday, all done. Opens history.", "Wednesday, nothing scheduled. Opens history."), with the button trait. Today reads "Thursday, today, 1 of 5 done"; future days just "Saturday".
 
-**Today summary card** (`TodaySummaryCard`), `Spacing.md` below the week strip:
+**Status line**, `Spacing.sm` below the week strip: one line (wrapping if needed) in `subhead` / `textSecondary`.
 
-- `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline.
-- Left: a `ProgressRing` showing tasks checked in today out of tasks scheduled today, with the count in the middle ("2/3").
-- Right, stacked with `xxs` spacing: "2 of 3 done today" in `cardTitle` / `textPrimary`, then the next-up line in `meta` / `textSecondary` (e.g. "Next: Gym at 6:00 PM"; rules in section 3). The next-up line skips the task whose window is open right now, since the hero card already shows it. Hide the line if nothing is coming up.
-- **All done** (every task scheduled today is checked in): a full ring with a `checkmark` in the middle, "All done for today", and the next-up line below (e.g. "Next: Guitar tomorrow at 9:00 PM").
-- **No tasks scheduled today:** hide the card.
-- The ring animates to its new value when a check-in completes (not with Reduce Motion).
+- **In progress:** "2 of 3 done today · Next: Gym at 6:00 PM" — the count ("2 of 3") in `Font.app.statusCount` (rounded semibold) / `textPrimary`. If a streak's window is **open right now** (and it isn't checked in or skipped), the second half names it instead: "2 of 3 done today · Gym is open now". Otherwise the next streak later today, then tomorrow ("Next: Guitar tomorrow at 9:00 PM"), then later this week ("Next: Walk Sunday at 10:00 AM"). Text rules in section 3.
+- **All done** (every streak scheduled today is checked in): a small `checkmark` in `success` at the start, then "All done for today · Next: Guitar tomorrow at 9:00 PM".
+- **Rest day** (streaks exist, none scheduled today): a `moon.fill` in `textTertiary` at the start, then "Rest day · Next: Gym tomorrow at 6:00 PM" or "Rest day · Next: Gym Friday at 6:00 PM".
+- If nothing at all is coming up, the part after " · " is left off.
+- VoiceOver reads the line as one sentence.
 
-**Body:** a scrolling list with two sections, each headed with `sectionHeader` / `textTertiary`.
+**Hero card(s)**, `Spacing.md` below the status line: every streak whose window is open right now (and isn't checked in or skipped), in window order. This is the visual focus of the screen. Look: see "Hero card" below.
 
-- **"Today":** only tasks still ahead today — the open task (hero card) and tasks whose window opens later — **sorted by window start time**. A task that was **missed** today also stays here in its time-sorted spot, so its "Streak ended" lines stay visible.
+**Body:** two sections below the hero card(s), each headed with `sectionHeader` / `textTertiary` (`Spacing.xl` above, `Spacing.xs` below).
+
+- **"Today":** the other tasks still ahead today (window opens later) — **sorted by window start time**. Open tasks aren't repeated here; they're the hero cards above. Hidden on a rest day, and when it would have no cards and no "Done today" row. A task that was **missed** today also stays here in its time-sorted spot, so its "Streak ended" lines stay visible.
 - **"Done today" row**, at the bottom of the Today section: tasks **checked in or skipped** today collapse into one row, "Done today · 2" in `meta` / `textSecondary`, with a `chevron.down` (collapsed) or `chevron.up` (expanded) on the right. Tapping it shows or hides their compact cards (done and skipped states below), in window order. It starts collapsed; whether it's open is remembered until the app closes. Hidden when nothing is done or skipped. If nothing is ahead or missed either, the Today section shows only this row.
 - **"Coming up":** one row per task **not scheduled today**, sorted by its next window (soonest first). Hide this section if it's empty. Each row: `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline; the streak's `IconBadge`, then its name in `cardTitle` / `textPrimary` on the left; the next window's day and start time on the right in `meta` / `textSecondary` ("Tomorrow, 9:00 PM", "Sunday, 10:00 AM"). VoiceOver reads "Guitar · Tomorrow, 9:00 PM". Tapping it opens the task screen.
 
@@ -396,7 +394,7 @@ A done task can't be checked in again until its next scheduled window. On the ta
 
 ### 4.2 Home, empty state
 
-This is shown when there are no tasks. The header stays (Today, the date, and +). The rest of the screen is centered vertically and horizontally:
+This is shown when there are no active streaks at all. The header stays (gear, greeting, Today, the date, and +); the "This week" row, the week strip, and the status line are hidden. The rest of the screen is centered vertically and horizontally:
 
 - An 88pt circle in `accent` fill with a 32pt `plus` icon in `onAccent`. Tapping it opens Create Task.
 - `Spacing.lg` below the circle: "Start your first streak" in `emptyTitle` / `textPrimary`.
@@ -569,11 +567,15 @@ Pushed onto the navigation stack (back button `chevron.left`, `accentText`).
 - `Spacing.xl` below: **"Restore"** (`PrimaryButton`). Restoring brings the habit back to the Active list right away with a fresh streak starting from its next scheduled day; the best streak is kept. Then it returns to the previous screen.
 - `Spacing.xs` below: **"Delete permanently"** (`DangerTextButton`) → the same "Delete Gym?" `AppDialog` as section 4.3.
 
-### 4.12 History tab — `Views/History/AllHistoryView.swift`
+### 4.12 History — `Views/History/AllHistoryView.swift`
 
-**Header** (scrolls with the content): "History" in `screenTitle`.
+Not a tab. **Pushed from Today** with a standard navigation push: the "History" link above the week strip, or a tapped past day in the week strip.
 
-**Filter chips** in a horizontal scroll under the header (`Spacing.md` above, `Spacing.xs` apart): "All" first, then one `FilterChip` per habit that has anything in its history (archived habits included, since their photos are kept), in the Streaks tab order. "All" is selected by default. A selected streak chip uses that streak's `solid` fill with an `onAccent` label; a selected "All" uses `accent`.
+- Standard navigation bar: the system back button at the top left (chevron with "Today"), and swiping from the left edge goes back. Title **"History"** in the large title style.
+- **The tab bar hides** on this screen so it feels like its own page; it comes back when you return to Today.
+- **Opened from a tapped day:** it scrolls so that day's header sits at the top. If that day has nothing in the timeline, its header still shows, with "Nothing scheduled" (nothing was scheduled that day) or "No check-ins" (something was, but nothing was checked in, skipped, or missed) in `meta` / `textTertiary` under it.
+
+**Filter chips** in a horizontal scroll under the title (`Spacing.xs` apart): "All" first, then one `FilterChip` per habit that has anything in its history (archived habits included, since their photos are kept), in the Streaks tab order. "All" is selected by default. A selected streak chip uses that streak's `solid` fill with an `onAccent` label; a selected "All" uses `accent`.
 
 **Timeline**, grouped by day, newest first. Day headers in `sectionHeader` / `textTertiary`: "Today", "Yesterday", then "Thursday, Sep 24". Within a day, newest first. Rows `Spacing.sm` apart:
 
@@ -588,6 +590,10 @@ Pushed onto the navigation stack (back button `chevron.left`, `accentText`).
 Opened from the gear on Today, as a sheet (swipe down or "Done" to close). The navigation bar shows only **"Done"** at the top right (`body`, semibold, `accentText`); everything below is unchanged.
 
 A standard iOS grouped list (inset grouped), on `background`, with rows on `surface`. Row labels in `body` / `textPrimary`, values in `body` / `textSecondary`, section headers in `sectionHeader` / `textTertiary`, footers in `meta` / `textSecondary`. Title: "Settings" in `screenTitle` above the list (scrolls with it). Pickers use the standard menu picker, tinted `accentText`. Everything here is saved on the device.
+
+**You** (the first section)
+- "Your name" on the left in `body` / `textPrimary`; a text field on the right, right-aligned, placeholder "Optional", in `body` / `textSecondary`. Up to 30 characters; leading and trailing spaces are trimmed. Saved on the device.
+- Footer: "Only used for your greeting. It stays on this iPhone."
 
 **Display**
 - "Show streaks as" → "Weeks and days" (default) / "Days only". This is the only weeks/days switch in the app.
@@ -642,7 +648,8 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Section headers | Today · Not today · This week · Recent check-ins |
 | Empty state | Start your first streak / Pick the days, a time window, and how many skips you get each week. |
 | Pills | Open now · Done · Opens {time} · Skipped · Missed |
-| Today summary | {n} of {m} done today · All done for today · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} on {weekday} at {time} |
+| Today status line | {n} of {m} done today · All done for today · Rest day · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} {weekday} at {time} · {task} is open now |
+| This week row | This week · History |
 | Hero card | Closes in {h}h {m}m · Closes in {h}h · Closes in {m}m · Check in |
 | Card meta | Checked in {time} · Next: {day} · {n} skips left |
 | Streak ended | Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today |
@@ -656,16 +663,17 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Preview | Retake · Submit |
 | Celebration | {days} · day streak · {Task} done · {n} more to finish the week · Week complete · Your skip is back — {n} skip left |
 | History | {Task} History · No check-ins yet. Your photos will show up here. |
-| Tab bar | History · Today (VoiceOver only) · Streaks |
-| Today header | Settings (VoiceOver, gear) · Create streak (VoiceOver, +) · Good morning · Good afternoon · Good evening · Today |
-| Week strip (VoiceOver) | {weekday} {date}, all done · {weekday} {date}, {n} of {m} done · {weekday} {date}, today, {n} of {m} done · {weekday} {date} |
+| Tab bar | Today · Streaks |
+| Today header | Settings (VoiceOver, gear) · Create streak (VoiceOver, +) · Good morning · Good afternoon · Good evening · , {name} · Today |
+| Week strip (VoiceOver) | {weekday}, all done. Opens history. · {weekday}, {n} of {m} done. Opens history. · {weekday}, nothing scheduled. Opens history. · {weekday}, today, {n} of {m} done · {weekday} |
+| History screen | History · Nothing scheduled · No check-ins |
 | Colors (VoiceOver) | Coral · Orange · Green · Teal · Blue · Indigo · Pink · Purple |
 | Icons (VoiceOver) | Dumbbell · Running · Walking · Bicycle · Drop · Sparkles · Book · Pencil · Brain · Guitar · Music · Paintbrush · Fork and knife · Cup · Leaf · Bed · Moon · Sun · Heart · First aid · House · Cart · Laptop · Star |
 | Today tab | Coming up · Done today · {n} · {day}, {time} |
 | Streaks tab | Streaks · Active · Archived · {n} · Not today · Best: {streak} |
 | Archived streak | Archived · Best streak · Photos · Restore · Delete permanently |
 | History tab | History · All · Today · Yesterday · Skipped {Task} · Missed {Task} · Missed {Task} · streak ended at {streak} · No check-ins yet. Your photos will show up here. |
-| Settings | Settings · Display · Show streaks as · Weeks and days · Days only · Appearance · System · Light · Dark · Reminders · Notifications are off. Your streaks can end without a warning. · Turn on · Repeat during window · Every 10 min · Every 15 min · Every 30 min · Last-call warning · 10 min before · 15 min before · 30 min before · Reminders are always on for every streak. They stop as soon as you check in or use a skip. · Feel · Vibrations · Celebration animation · Streaks · Archived streaks · No archived streaks. · Your data · Photo storage · {n} photos · {size} · No photos · Delete all data · Everything stays on this iPhone. Nothing is uploaded. · About · Version · Developer · Design Gallery · Done |
+| Settings | Settings · You · Your name · Optional · Only used for your greeting. It stays on this iPhone. · Display · Show streaks as · Weeks and days · Days only · Appearance · System · Light · Dark · Reminders · Notifications are off. Your streaks can end without a warning. · Turn on · Repeat during window · Every 10 min · Every 15 min · Every 30 min · Last-call warning · 10 min before · 15 min before · 30 min before · Reminders are always on for every streak. They stop as soon as you check in or use a skip. · Feel · Vibrations · Celebration animation · Streaks · Archived streaks · No archived streaks. · Your data · Photo storage · {n} photos · {size} · No photos · Delete all data · Everything stays on this iPhone. Nothing is uploaded. · About · Version · Developer · Design Gallery · Done |
 | Edit streak | Archive streak · Delete streak |
 | Archive dialog | Archive {Task}? · It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings. · Cancel · Archive |
 | Delete dialog | Delete {Task}? · This permanently deletes the streak and all its photos. · Cancel · Delete |

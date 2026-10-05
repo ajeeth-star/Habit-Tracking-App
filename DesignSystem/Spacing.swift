@@ -46,22 +46,14 @@ enum Sizes {
     static let weekStripCircle: CGFloat = 36
     static let weekStripRing: CGFloat = 3
 
-    /// Tab bar height (plus the bottom safe area), the raised center button, how far it rises
-    /// above the bar, and the background ring around it.
+    /// Tab bar height, plus the bottom safe area.
     static let tabBarHeight: CGFloat = 64
-    static let centerTabButton: CGFloat = 64
-    static let centerTabRise: CGFloat = 16
-    static let centerTabRing: CGFloat = 4
 
     /// The radial glow behind the celebration flame.
     static let celebrationGlow: CGFloat = 280
 
     /// Photo thumbnail on a History tab row.
     static let historyThumbnail: CGFloat = 56
-
-    /// Progress ring on the today summary card: diameter and line width.
-    static let progressRing: CGFloat = 56
-    static let progressRingLine: CGFloat = 8
 
     /// Skip dialog: screen width minus this, capped at `dialogMaxWidth`.
     static let dialogHorizontalInset: CGFloat = 48

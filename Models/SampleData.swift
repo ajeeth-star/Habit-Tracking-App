@@ -195,6 +195,15 @@ enum SampleData {
         walk,
     ]
 
+    /// Gym already checked in: nothing open right now, next is Journal at 9 PM.
+    static let inProgressTasks = allTasksWithArchived.map { $0.id == gym.id ? gym.checkedIn(at: time(18, 12)) : $0 }
+
+    /// Nothing scheduled today (Thursday): Climbing is next, tomorrow.
+    static let restDayTasks = [climbing, walk, meditation]
+
+    /// Nothing scheduled today, and nothing tomorrow either: the next one is Sunday.
+    static let restDayLaterTasks = [walk]
+
     // MARK: Streak celebration variants
 
     /// Gym, 14 → 15 days, Friday still to go.

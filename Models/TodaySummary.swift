@@ -10,12 +10,16 @@ struct TodaySummary: Hashable {
 
     struct NextUp: Hashable {
         var taskName: String
-        /// Nil means later today.
+        /// Nil means today.
         var day: NextDay?
         var start: TimeOfDay
+        /// Its window is open right now.
+        var isOpenNow = false
     }
 
     var isAllDone: Bool { total > 0 && done == total }
+    /// Streaks exist, but none is scheduled today.
+    var isRestDay: Bool { total == 0 }
     var progress: Double { total == 0 ? 0 : Double(done) / Double(total) }
 
     init(done: Int, total: Int, nextUp: NextUp?) {
@@ -30,7 +34,13 @@ struct TodaySummary: Hashable {
         total = scheduledToday.count
         done = scheduledToday.filter { if case .done = $0.cardState { true } else { false } }.count
 
-        // Later today: windows that haven't opened yet. The open task is left out; the hero card shows it.
+        // Open right now and not done yet: that's what's next.
+        if let open = scheduledToday.filter({ $0.cardState == .open }).min(by: { $0.window.start < $1.window.start }) {
+            nextUp = NextUp(taskName: open.name, day: nil, start: open.window.start, isOpenNow: true)
+            return
+        }
+
+        // Later today: windows that haven't opened yet.
         let laterToday = scheduledToday
             .filter { $0.cardState == .upcoming }
             .min { $0.window.start < $1.window.start }

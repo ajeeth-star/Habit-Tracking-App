@@ -19,15 +19,23 @@ enum Strings {
         static func nextDay(_ day: String) -> String { "Next: \(day)" }
     }
 
+    /// Today's status line (design.md §3).
     enum Summary {
-        static func doneToday(_ done: Int, _ total: Int) -> String { "\(done) of \(total) done today" }
+        static func doneCount(_ done: Int, _ total: Int) -> String { "\(done) of \(total)" }
+        static let doneTodaySuffix = " done today"
         static let allDone = "All done for today"
-        static func ringCount(_ done: Int, _ total: Int) -> String { "\(done)/\(total)" }
+        static let restDay = "Rest day"
+        static func openNow(_ task: String) -> String { "\(task) is open now" }
         static func nextToday(_ task: String, _ time: String) -> String { "Next: \(task) at \(time)" }
         static func nextTomorrow(_ task: String, _ time: String) -> String { "Next: \(task) tomorrow at \(time)" }
         static func nextOn(_ task: String, _ weekday: String, _ time: String) -> String {
-            "Next: \(task) on \(weekday) at \(time)"
+            "Next: \(task) \(weekday) at \(time)"
         }
+    }
+
+    enum ThisWeek {
+        static let title = "This week"
+        static let history = "History"
     }
 
     enum Hero {
@@ -38,7 +46,6 @@ enum Strings {
     }
 
     enum Tabs {
-        static let history = "History"
         static let today = "Today"
         static let streaks = "Streaks"
     }
@@ -81,6 +88,10 @@ enum Strings {
 
     enum Settings {
         static let title = "Settings"
+        static let you = "You"
+        static let yourName = "Your name"
+        static let namePlaceholder = "Optional"
+        static let nameFooter = "Only used for your greeting. It stays on this iPhone."
         static let display = "Display"
         static let showStreaksAs = "Show streaks as"
         static let weeksAndDays = "Weeks and days"
@@ -134,6 +145,7 @@ enum Strings {
     }
 
     enum Greeting {
+        static func withName(_ greeting: String, _ name: String) -> String { "\(greeting), \(name)" }
         static let morning = "Good morning"
         static let afternoon = "Good afternoon"
         static let evening = "Good evening"
@@ -142,7 +154,9 @@ enum Strings {
     enum WeekStrip {
         static func allDone(_ day: String) -> String { "\(day), all done" }
         static func progress(_ day: String, _ done: Int, _ total: Int) -> String { "\(day), \(done) of \(total) done" }
+        static func nothingScheduled(_ day: String) -> String { "\(day), nothing scheduled" }
         static func today(_ day: String, _ done: Int, _ total: Int) -> String { "\(day), today, \(done) of \(total) done" }
+        static func opensHistory(_ label: String) -> String { "\(label). Opens history." }
     }
 
     enum StreakStyle {
@@ -299,6 +313,8 @@ enum Strings {
         static func title(_ task: String) -> String { "\(task) History" }
         static let empty = "No check-ins yet. Your photos will show up here."
         static let close = "Close"
+        static let nothingScheduled = "Nothing scheduled"
+        static let noCheckIns = "No check-ins"
     }
 
     enum Accessibility {

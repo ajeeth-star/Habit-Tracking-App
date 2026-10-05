@@ -1,7 +1,8 @@
 import XCTest
 
-/// Walks through the app structure like a person would: every tab, the "Done today" row, History
-/// filters, archiving and restoring a habit, and deleting all data. Saves a screenshot of each step
+/// Walks through the app structure like a person would: both tabs, History (pushed from Today, from
+/// the link or a tapped day), the status line, the greeting name, the "Done today" row, History filters,
+/// archiving and restoring a streak, and deleting all data. Saves a screenshot of each step
 /// when SCREENSHOT_DIR (TEST_RUNNER_SCREENSHOT_DIR for xcodebuild) is set.
 final class AppNavigationUITests: XCTestCase {
     private var app: XCUIApplication!
@@ -9,6 +10,8 @@ final class AppNavigationUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
+        // Start every run without a saved name, whatever an earlier run left behind.
+        app.launchArguments = ["-settings.name", ""]
         app.launch()
     }
 
@@ -21,10 +24,11 @@ final class AppNavigationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Archived · 1"].exists)
         snapshot("tabs-2-streaks")
 
-        tab("History")
+        tab("Today")
+        openHistory()
         XCTAssertTrue(app.buttons["All"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Today"].exists)
         snapshot("tabs-3-history")
+        app.navigationBars.buttons["Today"].tap()
 
         openSettings()
         XCTAssertTrue(app.staticTexts["Show streaks as"].waitForExistence(timeout: 3))
@@ -41,19 +45,95 @@ final class AppNavigationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Edit"].exists, "Streaks tab is still on the Gym screen")
     }
 
-    func testOpensOnTodayWithThreeTabs() {
-        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5) ||
-                      app.staticTexts["Good morning"].exists || app.staticTexts["Good afternoon"].exists)
-        let history = tabButton("History"), today = tabButton("Today"), streaks = tabButton("Streaks")
+    func testOpensOnTodayWithTwoTabs() {
+        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5))
+        let today = tabButton("Today"), streaks = tabButton("Streaks")
         XCTAssertTrue(today.isSelected, "The app opens on Today")
-        XCTAssertTrue(history.exists && streaks.exists)
-        XCTAssertFalse(app.buttons["Settings"].frame.minY > app.buttons["Create streak"].frame.maxY,
-                       "Gear and + share the top row")
-        // Left to right: History, Today, Streaks; Today rises above the others.
-        XCTAssertLessThan(history.frame.midX, today.frame.midX)
-        XCTAssertLessThan(today.frame.midX, streaks.frame.midX)
-        XCTAssertLessThan(today.frame.minY, history.frame.minY)
+        XCTAssertTrue(streaks.exists)
+        XCTAssertFalse(tabButton("History").exists, "History is no longer a tab")
+        XCTAssertLessThan(today.frame.midX, streaks.frame.midX, "Today on the left, Streaks on the right")
+        XCTAssertEqual(today.frame.minY, streaks.frame.minY, accuracy: 1, "No raised button")
         XCTAssertLessThan(app.buttons["Settings"].frame.midX, app.buttons["Create streak"].frame.midX)
+    }
+
+    func testStatusLine() {
+        let status = app.descendants(matching: .any)["today.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertEqual(status.label, "1 of 5 done today · Gym is open now")
+        // The hero card comes right after the status line.
+        XCTAssertLessThan(status.frame.maxY, app.buttons["Check in"].frame.minY)
+        XCTAssertFalse(app.staticTexts["1/5"].exists, "The old summary ring is gone")
+    }
+
+    func testHistoryLinkPushesAndHidesTheTabBar() {
+        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 5))
+        openHistory()
+        XCTAssertTrue(app.navigationBars["History"].waitForExistence(timeout: 3), "Large title \"History\"")
+        XCTAssertFalse(tabButton("Today").exists, "The tab bar hides on History")
+        snapshot("history-pushed")
+
+        // The standard back button says "Today" and brings the tab bar back.
+        let back = app.navigationBars.buttons["Today"]
+        XCTAssertTrue(back.exists)
+        back.tap()
+        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 3), "The tab bar comes back")
+        XCTAssertFalse(app.navigationBars["History"].exists)
+
+        // Swiping from the left edge goes back too.
+        openHistory()
+        XCTAssertTrue(app.navigationBars["History"].waitForExistence(timeout: 3))
+        // The robot's synthetic edge swipe sometimes starts the gesture but lets it snap back, so try a few times.
+        let window = app.windows.firstMatch
+        for _ in 0..<3 where app.navigationBars["History"].exists {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
+                .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)),
+                       withVelocity: .default, thenHoldForDuration: 0)
+            _ = tabButton("Today").waitForExistence(timeout: 2)
+        }
+        XCTAssertFalse(app.navigationBars["History"].exists, "Swiping from the left edge goes back")
+        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 3), "Swiped back to Today, tab bar back")
+    }
+
+    func testTappingAPastDayOpensHistoryAtThatDay() {
+        // Sample today is Thursday, October 1; Tuesday is September 29.
+        let tuesday = app.buttons["weekStrip.2"]
+        XCTAssertTrue(tuesday.waitForExistence(timeout: 5))
+        XCTAssertEqual(tuesday.label, "Tuesday, all done. Opens history.")
+        tuesday.tap()
+        let header = app.staticTexts["Tuesday, Sep 29"]
+        XCTAssertTrue(header.waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 0.5)
+        let bar = app.navigationBars["History"].frame
+        XCTAssertLessThan(header.frame.minY - bar.maxY, 120, "Tuesday's header is scrolled to the top")
+        XCTAssertFalse(app.staticTexts["Yesterday"].isHittable, "Newer days are above, scrolled out of view")
+        snapshot("history-tuesday")
+
+        // Today and future days aren't buttons.
+        app.navigationBars.buttons["Today"].tap()
+        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["weekStrip.4"].exists, "Thursday (today) isn't tappable")
+        XCTAssertFalse(app.buttons["weekStrip.6"].exists, "Saturday isn't tappable")
+    }
+
+    func testGreetingUsesTheName() {
+        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5))
+        openSettings()
+        let field = app.textFields["Your name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.tap()
+        field.typeText("  Ajeeth  \n")
+        app.navigationBars.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Good evening, Ajeeth"].waitForExistence(timeout: 3))
+        snapshot("greeting-named")
+
+        // Clear it again.
+        openSettings()
+        field.tap()
+        field.press(forDuration: 1.0)
+        if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
+        field.typeText(XCUIKeyboardKey.delete.rawValue)
+        app.navigationBars.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 3))
     }
 
     func testDoneTodayExpandsAndCollapses() {
@@ -72,7 +152,7 @@ final class AppNavigationUITests: XCTestCase {
     }
 
     func testFilteringHistory() {
-        tab("History")
+        openHistory()
         let guitar = app.buttons["Guitar"]
         XCTAssertTrue(guitar.waitForExistence(timeout: 3))
         // The chips scroll sideways; Guitar starts off screen.
@@ -167,6 +247,13 @@ final class AppNavigationUITests: XCTestCase {
         for _ in 0..<6 where !element.exists {
             app.swipeUp()
         }
+    }
+
+    /// History is pushed from the "History" link on Today.
+    private func openHistory() {
+        let link = app.buttons["today.history"]
+        XCTAssertTrue(link.waitForExistence(timeout: 3))
+        link.tap()
     }
 
     /// Settings opens from the gear at the top left of Today.

@@ -37,6 +37,25 @@ struct SettingsView: View {
             }
 
             Section {
+                HStack {
+                    Text(Strings.Settings.yourName)
+                    TextField(Strings.Settings.namePlaceholder, text: $settings.name)
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(Color.app.textSecondary)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .onSubmit { settings.finishEditingName() }
+                        .accessibilityLabel(Strings.Settings.yourName)
+                }
+                .listRowBackground(Color.app.surface)
+            } header: {
+                header(Strings.Settings.you)
+            } footer: {
+                footer(Strings.Settings.nameFooter)
+            }
+
+            Section {
                 Group {
                     Picker(Strings.Settings.showStreaksAs, selection: $settings.streakDisplay) {
                         Text(Strings.Settings.weeksAndDays).tag(StreakDisplayMode.weeksAndDays)
@@ -156,6 +175,7 @@ struct SettingsView: View {
         .toolbar(showsDone ? .visible : .hidden, for: .navigationBar)
         .toolbarBackground(Color.app.background, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { settings.finishEditingName() }
         .task(id: scenePhase) {
             // Checked again whenever the app comes back, e.g. after turning notifications on.
             guard notificationsOffOverride == nil, scenePhase == .active else { return }

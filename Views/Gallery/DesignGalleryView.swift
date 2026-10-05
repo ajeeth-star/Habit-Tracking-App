@@ -118,21 +118,32 @@ struct GalleryEntryRoot: View {
 private struct SampleScope<Content: View>: View {
     @State private var store: TaskStore
     @State private var router: AppRouter
+    /// Only when the entry sets a name: its own settings, kept off the device.
+    @State private var namedSettings: AppSettings?
     @ViewBuilder let content: Content
 
     init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today,
-         tab: AppRouter.Tab = .today, @ViewBuilder content: () -> Content) {
+         tab: AppRouter.Tab = .today, name: String? = nil, @ViewBuilder content: () -> Content) {
         _store = State(initialValue: TaskStore(tasks: tasks, now: now))
         let router = AppRouter()
         router.selectedTab = tab
         _router = State(initialValue: router)
+        _namedSettings = State(initialValue: name.map { name in
+            let suite = "gallery.\(UUID().uuidString)"
+            let settings = AppSettings(defaults: UserDefaults(suiteName: suite)!)
+            settings.name = name
+            UserDefaults().removePersistentDomain(forName: suite)
+            return settings
+        })
         self.content = content()
     }
 
     var body: some View {
-        content
-            .environment(store)
-            .environment(router)
+        if let namedSettings {
+            content.environment(store).environment(router).environment(namedSettings)
+        } else {
+            content.environment(store).environment(router)
+        }
     }
 }
 
@@ -175,18 +186,24 @@ struct GalleryEntry: Identifiable {
     private static func app(_ id: String, _ section: String, _ title: String,
                             tasks: [TaskSnapshot] = SampleData.allTasksWithArchived,
                             now: Date = SampleData.today, tab: AppRouter.Tab,
-                            start: MainTabView.StartState = .init()) -> GalleryEntry {
+                            start: MainTabView.StartState = .init(), name: String? = nil) -> GalleryEntry {
         GalleryEntry(id: id, section: section, title: title, presentation: .sheet) { _ in
-            AnyView(SampleScope(tasks: tasks, now: now, tab: tab) { MainTabView(start: start) })
+            AnyView(SampleScope(tasks: tasks, now: now, tab: tab, name: name) { MainTabView(start: start) })
         }
     }
 
     private static let today: [GalleryEntry] = [
-        app("today.busy", "Today tab", "Busy day · Done today collapsed", tab: .today),
+        app("today.busy", "Today tab", "Status · Gym is open now", tab: .today),
+        app("today.inProgress", "Today tab", "Status · in progress, next later today",
+            tasks: SampleData.inProgressTasks, tab: .today),
+        app("today.allDone", "Today tab", "Status · all done", tasks: SampleData.allDoneTasks, tab: .today),
+        app("today.restDay", "Today tab", "Status · rest day (next tomorrow)", tasks: SampleData.restDayTasks, tab: .today),
+        app("today.restDayLater", "Today tab", "Status · rest day (next on a weekday)",
+            tasks: SampleData.restDayLaterTasks, tab: .today),
+        app("today.empty", "Today tab", "Empty (no streaks)", tasks: [], tab: .today),
+        app("today.named", "Today tab", "Greeting with a name", tab: .today, name: "Ajeeth"),
         app("today.doneOpen", "Today tab", "Done today expanded", tab: .today, start: .init(showsDone: true)),
         app("today.closingSoon", "Today tab", "Hero card · closes in under 15 min", now: SampleData.closingSoon, tab: .today),
-        app("today.allDone", "Today tab", "All done for today", tasks: SampleData.allDoneTasks, tab: .today),
-        app("today.empty", "Today tab", "Empty (first launch)", tasks: [], tab: .today),
     ]
 
     private static let habits: [GalleryEntry] = [
@@ -200,11 +217,27 @@ struct GalleryEntry: Identifiable {
         },
     ]
 
+    /// History as it looks pushed from Today (in the app the tab bar is hidden there).
+    private static func historyEntry(_ id: String, _ title: String, tasks: [TaskSnapshot] = SampleData.allTasksWithArchived,
+                                     filter: String? = nil, focus: HistoryFocus? = nil) -> GalleryEntry {
+        GalleryEntry(id: "allHistory.\(id)", section: "History (pushed from Today)", title: title) { _ in
+            AnyView(SampleScope(tasks: tasks) { AllHistoryView(filter: filter, focus: focus) })
+        }
+    }
+
+    private static func day(_ offset: Int) -> Date {
+        Calendar.current.date(byAdding: .day, value: offset, to: Calendar.current.startOfDay(for: SampleData.today))!
+    }
+
     private static let allHistory: [GalleryEntry] = [
-        app("allHistory.all", "History tab", "All streaks", tab: .history),
-        app("allHistory.filtered", "History tab", "Filtered to Guitar (a miss)", tab: .history,
-            start: .init(historyFilter: SampleData.guitar.id)),
-        app("allHistory.empty", "History tab", "Empty", tasks: [], tab: .history),
+        historyEntry("all", "All streaks"),
+        historyEntry("filtered", "Filtered to Guitar (a miss)", filter: SampleData.guitar.id),
+        historyEntry("tuesday", "Opened from Tuesday", focus: HistoryFocus(day: day(-2), nothingScheduled: false)),
+        historyEntry("nothingScheduled", "Opened from a day with nothing scheduled",
+                     tasks: [SampleData.climbing], focus: HistoryFocus(day: day(-1), nothingScheduled: true)),
+        historyEntry("noCheckIns", "Empty day · \"No check-ins\" wording",
+                     tasks: [SampleData.climbing], focus: HistoryFocus(day: day(-3), nothingScheduled: false)),
+        historyEntry("empty", "Empty", tasks: []),
     ]
 
     private static func settingsSheet(_ id: String, _ title: String, notificationsOff: Bool) -> GalleryEntry {
@@ -399,7 +432,6 @@ private struct ComponentsGallery: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 group("Tab bar (tap to switch)") {
                     AppTabBar(selection: $tab)
-                        .padding(.top, Sizes.centerTabRise + Sizes.centerTabRing)
                 }
                 group("Week strip · every day state") {
                     WeekStrip(days: Self.sampleWeek)
@@ -418,10 +450,6 @@ private struct ComponentsGallery: View {
                 }
                 group("Color and icon picker") {
                     StreakStylePicker(color: $pickedColor, icon: $pickedIcon)
-                }
-                group("Today summary card") {
-                    TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allTasks, now: SampleData.today))
-                    TodaySummaryCard(summary: TodaySummary(tasks: SampleData.allDoneTasks, now: SampleData.today))
                 }
                 group("Task cards") {
                     TaskCard(task: SampleData.gym, now: SampleData.today, onOpen: {}, onCheckIn: {})

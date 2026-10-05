@@ -1,19 +1,29 @@
 import SwiftUI
 
-/// The Today tab (design.md §4.1–4.2): today's summary, what's still ahead today, a collapsible
-/// "Done today" row, and "Coming up". Must sit inside a `NavigationStack`. Reads the shared `TaskStore`.
+/// The Today tab (design.md §4.1–4.2): greeting, this week, one status line, the open streak's hero
+/// card, the rest of today with a collapsible "Done today" row, and "Coming up". History is pushed from
+/// here. Must sit inside a `NavigationStack`. Reads the shared `TaskStore`.
 struct HomeView: View {
     @Environment(TaskStore.self) private var store
+    @Environment(AppSettings.self) private var settings
+    @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Kept for as long as the app is open (the tab stays alive while you switch tabs).
     @State private var showsDone: Bool
     @State private var openedTaskID: String?
+    @State private var history: HistoryRoute?
     @State private var checkInTask: TaskSnapshot?
     /// Set on Submit, applied once the celebration closes, so the hero card closes in front of you.
     @State private var pendingCheckIn: TaskSnapshot?
     @State private var showingCreate = false
     @State private var showingSettings = false
+
+    /// History, opened from the "History" link (no focus) or a tapped past day.
+    private struct HistoryRoute: Hashable, Identifiable {
+        var focus: HistoryFocus?
+        var id: Self { self }
+    }
 
     init(showsDone: Bool = false) {
         _showsDone = State(initialValue: showsDone)
@@ -24,6 +34,8 @@ struct HomeView: View {
             content(now: store.now(at: context.date))
         }
         .background(Color.app.background)
+        // Hidden bar, but the title names the back button on pushed screens ("< Today").
+        .navigationTitle(Strings.Home.title)
         .toolbar(.hidden, for: .navigationBar)
         .statusBarBackdrop()
         .navigationDestination(item: $openedTaskID) { id in
@@ -35,6 +47,13 @@ struct HomeView: View {
                     }
                 }
             }
+        }
+        .navigationDestination(item: $history) { route in
+            AllHistoryView(focus: route.focus)
+        }
+        // History is a page of its own: the tab bar slides away while it's open.
+        .onChange(of: history) { _, route in
+            router.hidesTabBar = route != nil
         }
         .sheet(isPresented: $showingCreate) {
             TaskFormView(mode: .create)
@@ -62,13 +81,14 @@ struct HomeView: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     header(now: now)
-                    WeekStrip(days: WeekProgress.days(for: store.tasks, now: now))
+                    thisWeekRow
                         .padding(.top, Spacing.md)
-                    let summary = TodaySummary(tasks: store.active, now: now)
-                    if summary.total > 0 {
-                        TodaySummaryCard(summary: summary)
-                            .padding(.top, Spacing.md)
+                    WeekStrip(days: WeekProgress.days(for: store.tasks, now: now)) { day in
+                        history = HistoryRoute(focus: HistoryFocus(day: day.date, nothingScheduled: day.total == 0))
                     }
+                    StatusLine(summary: TodaySummary(tasks: store.active, now: now))
+                        .padding(.top, Spacing.sm)
+                    heroCards(now: now)
                     todaySection(now: now)
                     comingUpSection(now: now)
                 }
@@ -102,7 +122,7 @@ struct HomeView: View {
                 .accessibilityLabel(Strings.Home.createTask)
             }
 
-            Text(Formatters.current.greeting(now))
+            Text(Formatters.current.greeting(now, name: settings.greetingName))
                 .font(Font.app.subhead)
                 .foregroundStyle(Color.app.textSecondary)
             Text(Strings.Home.title)
@@ -115,17 +135,47 @@ struct HomeView: View {
         }
     }
 
+    /// "This week" on the left, a "History" link on the right.
+    private var thisWeekRow: some View {
+        HStack {
+            Text(Strings.ThisWeek.title)
+                .font(Font.app.sectionHeader)
+                .foregroundStyle(Color.app.textTertiary)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+            Button { history = HistoryRoute() } label: {
+                HStack(spacing: Spacing.xxs) {
+                    Text(Strings.ThisWeek.history)
+                    Image(systemName: "chevron.right")
+                }
+                .font(Font.app.meta)
+                .foregroundStyle(Color.app.accentText)
+                .frame(minHeight: Sizes.tapTarget)
+                .contentShape(Rectangle())
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Strings.ThisWeek.history)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("today.history")
+        }
+    }
+
     // MARK: Today
 
     private var scheduledToday: [TaskSnapshot] {
         store.active.filter(\.isScheduledToday).sorted { $0.window.start < $1.window.start }
     }
 
-    /// Still ahead today (open or upcoming), plus missed tasks so their "Streak ended" lines stay visible.
+    /// Open right now and not done: the hero card(s), right under the status line.
+    private var openToday: [TaskSnapshot] {
+        scheduledToday.filter { $0.cardState == .open }
+    }
+
+    /// The rest of today still ahead, plus missed tasks so their "Streak ended" lines stay visible.
     private var aheadToday: [TaskSnapshot] {
         scheduledToday.filter {
             switch $0.cardState {
-            case .open, .upcoming, .missed: true
+            case .upcoming, .missed: true
             default: false
             }
         }
@@ -141,8 +191,17 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder private func heroCards(now: Date) -> some View {
+        if !openToday.isEmpty {
+            VStack(spacing: Spacing.sm) {
+                ForEach(openToday) { card($0, now: now) }
+            }
+            .padding(.top, Spacing.md)
+        }
+    }
+
     @ViewBuilder private func todaySection(now: Date) -> some View {
-        if !scheduledToday.isEmpty {
+        if !aheadToday.isEmpty || !doneToday.isEmpty {
             section(Strings.Home.todaySection) {
                 ForEach(aheadToday) { card($0, now: now) }
                 if !doneToday.isEmpty {
@@ -256,5 +315,33 @@ private struct ComingUpRow: View {
 
     private var weekdayOfNext: Weekday {
         Weekday(rawValue: (today.rawValue - 1 + daysAhead) % 7 + 1) ?? today
+    }
+}
+
+/// Today's one-line status (design.md §4.1): "2 of 3 done today · Next: Gym at 6:00 PM",
+/// "All done for today · …" with a checkmark, or "Rest day · …" with a moon.
+private struct StatusLine: View {
+    let summary: TodaySummary
+
+    var body: some View {
+        let parts = Formatters.current.statusLine(summary)
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+            if summary.isRestDay {
+                Image(systemName: "moon.fill")
+                    .foregroundStyle(Color.app.textTertiary)
+            } else if summary.isAllDone {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(Color.app.success)
+            }
+            (Text(parts.emphasis ?? "").font(Font.app.statusCount).foregroundStyle(Color.app.textPrimary)
+                + Text(parts.rest).foregroundStyle(Color.app.textSecondary))
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(Font.app.subhead)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Formatters.current.statusText(summary))
+        .accessibilityIdentifier("today.status")
     }
 }

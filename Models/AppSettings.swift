@@ -31,6 +31,23 @@ final class AppSettings {
     var vibrations: Bool { didSet { save(vibrations, Key.vibrations) } }
     /// Off shows the celebration without the pop and count-up.
     var celebrationAnimation: Bool { didSet { save(celebrationAnimation, Key.celebrationAnimation) } }
+    /// Only used for the greeting on Today. Up to 30 characters, no leading spaces while typing;
+    /// `greetingName` trims the rest.
+    var name: String {
+        didSet {
+            let cleaned = Self.clean(name)
+            if cleaned != name { name = cleaned; return }
+            save(name, Key.name)
+        }
+    }
+
+    /// The name as the greeting uses it: trimmed, or nil when empty.
+    var greetingName: String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    static let maxNameLength = 30
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -41,6 +58,7 @@ final class AppSettings {
         static let lastCallMinutes = "settings.lastCallMinutes"
         static let vibrations = "settings.vibrations"
         static let celebrationAnimation = "settings.celebrationAnimation"
+        static let name = "settings.name"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -51,6 +69,17 @@ final class AppSettings {
         lastCallMinutes = Self.choice(defaults.integer(forKey: Key.lastCallMinutes), in: Self.lastCallChoices, default: 15)
         vibrations = defaults.object(forKey: Key.vibrations) as? Bool ?? true
         celebrationAnimation = defaults.object(forKey: Key.celebrationAnimation) as? Bool ?? true
+        name = Self.clean(defaults.string(forKey: Key.name) ?? "")
+    }
+
+    /// No leading spaces, at most 30 characters.
+    private static func clean(_ name: String) -> String {
+        String(name.drop(while: \.isWhitespace).prefix(maxNameLength))
+    }
+
+    /// Trims trailing spaces too, e.g. when the name field is left.
+    func finishEditingName() {
+        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// A saved value only counts if it's still one of the choices.

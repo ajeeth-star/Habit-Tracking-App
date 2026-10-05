@@ -1,68 +1,106 @@
 import SwiftUI
 
-/// The History tab (design.md §4.12): every check-in across habits, grouped by day, with filter chips
-/// for one habit at a time. Skips and misses show as small text rows. Must sit inside a `NavigationStack`.
+/// Where History opens: a day tapped in Today's week strip, so it scrolls straight to that day.
+struct HistoryFocus: Hashable {
+    /// Start of the tapped day.
+    var day: Date
+    /// Nothing was scheduled that day (the empty header then says "Nothing scheduled", not "No check-ins").
+    var nothingScheduled: Bool
+}
+
+/// History (design.md §4.12): every check-in across streaks, grouped by day, with filter chips for one
+/// streak at a time. Skips and misses show as small text rows. Pushed from Today with a standard
+/// navigation bar and back button; must sit inside a `NavigationStack`.
 struct AllHistoryView: View {
     @Environment(TaskStore.self) private var store
     /// Nil means "All".
     @State private var filter: String?
     @State private var openedPhoto: HistoryEvent?
+    /// Opened from a tapped day: scroll there first.
+    var focus: HistoryFocus?
 
     private let format = Formatters.current
 
-    init(filter: String? = nil) {
+    init(filter: String? = nil, focus: HistoryFocus? = nil) {
         _filter = State(initialValue: filter)
+        self.focus = focus
     }
 
     var body: some View {
         let now = store.now()
-        let days = HistoryTimeline.days(for: filteredTasks, now: now)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(Strings.AllHistory.title)
-                    .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.textPrimary)
-                    .accessibilityAddTraits(.isHeader)
-                    .padding(.top, Spacing.xs)
-                    .padding(.horizontal, Spacing.lg)
+        let days = daysShown(now: now)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if !chipTasks.isEmpty {
+                        chips
+                    }
 
-                if !chipTasks.isEmpty {
-                    chips.padding(.top, Spacing.md)
-                }
-
-                if days.isEmpty {
-                    Text(Strings.History.empty)
-                        .font(Font.app.subhead)
-                        .foregroundStyle(Color.app.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, Spacing.xxxl)
-                        .padding(.horizontal, Spacing.lg)
-                } else {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(days, id: \.date) { day in
-                            Text(format.historyDay(day.date, now: now))
-                                .font(Font.app.sectionHeader)
-                                .foregroundStyle(Color.app.textTertiary)
-                                .accessibilityAddTraits(.isHeader)
-                                .padding(.top, Spacing.xl)
-                                .padding(.bottom, Spacing.xs)
-                            VStack(alignment: .leading, spacing: Spacing.sm) {
-                                ForEach(day.events) { row($0) }
+                    if days.isEmpty {
+                        Text(Strings.History.empty)
+                            .font(Font.app.subhead)
+                            .foregroundStyle(Color.app.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, Spacing.xxxl)
+                            .padding(.horizontal, Spacing.lg)
+                    } else {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(days, id: \.date) { day in
+                                dayHeader(day.date, now: now)
+                                    .id(day.date)
+                                VStack(alignment: .leading, spacing: Spacing.sm) {
+                                    if day.events.isEmpty {
+                                        Text(focus?.nothingScheduled == true
+                                             ? Strings.History.nothingScheduled : Strings.History.noCheckIns)
+                                            .font(Font.app.meta)
+                                            .foregroundStyle(Color.app.textTertiary)
+                                    }
+                                    ForEach(day.events) { row($0) }
+                                }
                             }
                         }
+                        .padding(.horizontal, Spacing.lg)
                     }
-                    .padding(.horizontal, Spacing.lg)
+                }
+                .padding(.bottom, Spacing.xl)
+            }
+            .onAppear {
+                guard let focus else { return }
+                // Wait a moment so the push finishes and the rows exist, then jump to the day.
+                DispatchQueue.main.async {
+                    proxy.scrollTo(focus.day, anchor: .top)
                 }
             }
-            .padding(.bottom, Spacing.xl)
         }
         .background(Color.app.background)
-        .toolbar(.hidden, for: .navigationBar)
-        .statusBarBackdrop()
+        .navigationTitle(Strings.AllHistory.title)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(Color.app.background, for: .navigationBar)
         .fullScreenCover(item: $openedPhoto) { event in
             PhotoViewer(date: event.date) { openedPhoto = nil }
         }
+    }
+
+    /// The timeline, plus an empty section for the focused day if it has nothing in it.
+    private func daysShown(now: Date) -> [HistoryTimeline.Day] {
+        var days = HistoryTimeline.days(for: filteredTasks, now: now)
+        if let focus, !days.contains(where: { $0.date == focus.day }) {
+            days.append(HistoryTimeline.Day(date: focus.day, events: []))
+            days.sort { $0.date > $1.date }
+        }
+        return days
+    }
+
+    private func dayHeader(_ date: Date, now: Date) -> some View {
+        Text(format.historyDay(date, now: now))
+            .font(Font.app.sectionHeader)
+            .foregroundStyle(Color.app.textTertiary)
+            .accessibilityAddTraits(.isHeader)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, Spacing.xl)
+            .padding(.bottom, Spacing.xs)
     }
 
     // MARK: Filter

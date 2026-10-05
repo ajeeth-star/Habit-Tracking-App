@@ -62,6 +62,16 @@ struct StreakStyleTests {
         #expect(format.greeting(date) == expected)
     }
 
+    @Test func greetingWithName() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let evening = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1, hour: 18))!
+        #expect(format.greeting(evening, name: "Ajeeth") == "Good evening, Ajeeth")
+        #expect(format.greeting(evening, name: "  Ajeeth  ") == "Good evening, Ajeeth")
+        #expect(format.greeting(evening, name: "   ") == "Good evening")
+        #expect(format.greeting(evening, name: nil) == "Good evening")
+    }
+
     // MARK: Week strip
 
     @Test func weekStripDays() {
@@ -93,9 +103,17 @@ struct StreakStyleTests {
     @Test func weekStripVoiceOver() {
         let days = WeekProgress.days(for: SampleData.allTasks, now: SampleData.today)
         let local = Formatters(locale: Locale(identifier: "en_US"))
-        #expect(local.weekStripLabel(days[0]) == "Monday 28, all done")
-        #expect(local.weekStripLabel(days[2]) == "Wednesday 30, 2 of 3 done")
-        #expect(local.weekStripLabel(days[3]) == "Thursday 1, today, 1 of 5 done")
-        #expect(local.weekStripLabel(days[5]) == "Saturday 3")
+        #expect(local.weekStripLabel(days[0]) == "Monday, all done. Opens history.")
+        #expect(local.weekStripLabel(days[2]) == "Wednesday, 2 of 3 done. Opens history.")
+        #expect(local.weekStripLabel(days[3]) == "Thursday, today, 1 of 5 done")
+        #expect(local.weekStripLabel(days[5]) == "Saturday")
+        // A past day with nothing scheduled.
+        let rest = WeekProgress.days(for: [SampleData.climbing], now: SampleData.today)
+        #expect(local.weekStripLabel(rest[2]) == "Wednesday, nothing scheduled. Opens history.")
+    }
+
+    @Test func onlyPastDaysAreTappable() {
+        let days = WeekProgress.days(for: SampleData.allTasks, now: SampleData.today)
+        #expect(days.map(\.isPast) == [true, true, true, false, false, false, false])
     }
 }

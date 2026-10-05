@@ -123,9 +123,22 @@ struct FormattersTests {
         #expect(format.closesIn(minutes: minutes) == expected)
     }
 
-    @Test func summaryTitle() {
-        #expect(format.summaryTitle(TodaySummary(done: 2, total: 3, nextUp: nil)) == "2 of 3 done today")
-        #expect(format.summaryTitle(TodaySummary(done: 3, total: 3, nextUp: nil)) == "All done for today")
+    @Test func statusLine() {
+        let gym = TodaySummary.NextUp(taskName: "Gym", day: nil, start: TimeOfDay(18))
+        let open = TodaySummary.NextUp(taskName: "Gym", day: nil, start: TimeOfDay(18), isOpenNow: true)
+        let guitar = TodaySummary.NextUp(taskName: "Guitar", day: .tomorrow, start: TimeOfDay(21))
+        let friday = TodaySummary.NextUp(taskName: "Gym", day: .weekday(.friday), start: TimeOfDay(18))
+
+        let inProgress = format.statusLine(TodaySummary(done: 2, total: 3, nextUp: gym))
+        #expect(inProgress.emphasis == "2 of 3")
+        #expect(plain(inProgress.rest) == " done today · Next: Gym at 6:00 PM")
+        #expect(format.statusText(TodaySummary(done: 2, total: 3, nextUp: open)) == "2 of 3 done today · Gym is open now")
+        #expect(plain(format.statusText(TodaySummary(done: 3, total: 3, nextUp: guitar)))
+            == "All done for today · Next: Guitar tomorrow at 9:00 PM")
+        #expect(format.statusLine(TodaySummary(done: 3, total: 3, nextUp: guitar)).emphasis == nil)
+        #expect(plain(format.statusText(TodaySummary(done: 0, total: 0, nextUp: friday)))
+            == "Rest day · Next: Gym Friday at 6:00 PM")
+        #expect(format.statusText(TodaySummary(done: 1, total: 2, nextUp: nil)) == "1 of 2 done today")
     }
 
     @Test func nextUp() {
@@ -134,7 +147,7 @@ struct FormattersTests {
         let later = TodaySummary.NextUp(taskName: "Walk", day: .weekday(.sunday), start: TimeOfDay(10))
         #expect(plain(format.nextUp(today)) == "Next: Gym at 6:00 PM")
         #expect(plain(format.nextUp(tomorrow)) == "Next: Guitar tomorrow at 9:00 PM")
-        #expect(plain(format.nextUp(later)) == "Next: Walk on Sunday at 10:00 AM")
+        #expect(plain(format.nextUp(later)) == "Next: Walk Sunday at 10:00 AM")
     }
 
     @Test func doneMeta() {

@@ -195,13 +195,25 @@ struct Formatters {
         return Strings.Hero.closesIn(duration)
     }
 
-    /// "2 of 3 done today" or "All done for today".
-    func summaryTitle(_ summary: TodaySummary) -> String {
-        summary.isAllDone ? Strings.Summary.allDone : Strings.Summary.doneToday(summary.done, summary.total)
+    /// Today's status line in two parts: `emphasis` ("2 of 3", shown stronger) and the rest
+    /// (" done today · Next: Gym at 6:00 PM"). `emphasis` is nil for "All done" and "Rest day".
+    func statusLine(_ summary: TodaySummary) -> (emphasis: String?, rest: String) {
+        let next = summary.nextUp.map { Strings.separator + nextUp($0) } ?? ""
+        if summary.isRestDay { return (nil, Strings.Summary.restDay + next) }
+        if summary.isAllDone { return (nil, Strings.Summary.allDone + next) }
+        return (Strings.Summary.doneCount(summary.done, summary.total), Strings.Summary.doneTodaySuffix + next)
     }
 
-    /// "Next: Gym at 6:00 PM", "Next: Guitar tomorrow at 9:00 PM", or "Next: Walk on Sunday at 10:00 AM".
+    /// The whole status line as one string (VoiceOver, tests).
+    func statusText(_ summary: TodaySummary) -> String {
+        let parts = statusLine(summary)
+        return (parts.emphasis ?? "") + parts.rest
+    }
+
+    /// "Gym is open now", "Next: Gym at 6:00 PM", "Next: Guitar tomorrow at 9:00 PM",
+    /// or "Next: Walk Sunday at 10:00 AM".
     func nextUp(_ next: TodaySummary.NextUp) -> String {
+        if next.isOpenNow { return Strings.Summary.openNow(next.taskName) }
         let time = time(next.start)
         switch next.day {
         case nil: return Strings.Summary.nextToday(next.taskName, time)
@@ -217,29 +229,30 @@ struct Formatters {
         return checkedIn + Strings.separator + Strings.Home.nextDay(nextDay(next))
     }
 
-    /// "Good morning" (5 AM–noon), "Good afternoon" (noon–5 PM), "Good evening" (5 PM–5 AM).
-    func greeting(_ date: Date) -> String {
-        switch calendar.component(.hour, from: date) {
+    /// "Good morning" (5 AM–noon), "Good afternoon" (noon–5 PM), "Good evening" (5 PM–5 AM),
+    /// plus ", Ajeeth" when a name is set.
+    func greeting(_ date: Date, name: String? = nil) -> String {
+        let greeting = switch calendar.component(.hour, from: date) {
         case 5..<12: Strings.Greeting.morning
         case 12..<17: Strings.Greeting.afternoon
         default: Strings.Greeting.evening
         }
+        guard let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else { return greeting }
+        return Strings.Greeting.withName(greeting, name)
     }
 
-    /// "Monday 28": a week strip day for VoiceOver.
-    func weekStripDay(_ date: Date) -> String {
-        format(date, template: "EEEEd")
-    }
-
-    /// What VoiceOver says for a week strip day.
+    /// What VoiceOver says for a week strip day: "Tuesday, 2 of 3 done. Opens history.",
+    /// "Thursday, today, 1 of 5 done", or "Saturday".
     func weekStripLabel(_ day: WeekStripDay) -> String {
-        let name = weekStripDay(day.date)
+        let name = weekdayName(day.weekday)
+        let label: String
         switch day.kind {
-        case .today: return Strings.WeekStrip.today(name, day.done, day.total)
-        case .past where day.isComplete: return Strings.WeekStrip.allDone(name)
-        case .past: return Strings.WeekStrip.progress(name, day.done, day.total)
-        case .plain: return name
+        case .today: label = Strings.WeekStrip.today(name, day.done, day.total)
+        case .past where day.isComplete: label = Strings.WeekStrip.allDone(name)
+        case .past: label = Strings.WeekStrip.progress(name, day.done, day.total)
+        case .plain: label = day.isPast ? Strings.WeekStrip.nothingScheduled(name) : name
         }
+        return day.isPast ? Strings.WeekStrip.opensHistory(label) : label
     }
 
     /// "28": the date number in a week strip circle.

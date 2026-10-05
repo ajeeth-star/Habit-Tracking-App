@@ -64,19 +64,24 @@ All fields are set on **one create screen**. Under the skips counter, a plain-la
 
 ## 5. The screens
 
-The app has a **tab bar with three tabs: History (left), Today (center, a raised round button), and Streaks (right).** The app always opens on Today. Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab. **Settings** opens from a gear button at the top left of Today.
+The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The app always opens on Today. Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab. **Settings** opens from a gear button at the top left of Today. **History** opens from Today (a "History" link above the week strip, or by tapping a past day).
+
+**Planned, not built:** a third **Friends** tab arrives with shared folders. At that point Today moves back to the center as a raised round button. Nothing is built for it now.
 
 **Today tab (the hub)**
 
-- A greeting ("Good morning", "Good afternoon", "Good evening") above the title.
-- A Monday–Sunday strip for the current week: each past day shows how much of what was scheduled got done, today shows its progress so far. Not tappable yet.
-- A summary card: how many of today's tasks are checked in, and what's next.
-- **Today**: only tasks still ahead today (window open or opening later), always **sorted by window start time**. A task whose **window is open** is visually highlighted and has **a single "Check in" button** on its card. No skip button here.
+- A greeting ("Good morning", "Good afternoon", "Good evening") above the title, followed by the owner's name if one is set in Settings ("Good evening, Ajeeth").
+- A "This week" row with a **History** link on the right.
+- A Monday–Sunday strip for the current week: each past day shows how much of what was scheduled got done, today shows its progress so far. Tapping a past day opens History at that day.
+- **One status line** under the strip: how many of today's tasks are checked in and what's next ("2 of 3 done today · Next: Gym at 6:00 PM", "2 of 3 done today · Gym is open now", "All done for today · Next: Guitar tomorrow at 9:00 PM").
+- The task whose **window is open** comes right after the status line as the highlighted hero card with **a single "Check in" button**. No skip button here.
+- **Today**: the other tasks still ahead today, plus any missed today, **sorted by window start time**.
 - Tasks **checked in or skipped today** collapse into one row at the bottom of the Today section ("Done today · 2"). Tapping it shows or hides them. Whether it's open is remembered until the app closes.
 - **Coming up**: every task not scheduled today, with its next window, sorted by soonest, e.g. "Guitar · Tomorrow, 9:00 PM".
+- **Rest day** (streaks exist, none scheduled today): the status line reads "Rest day · Next: Gym tomorrow at 6:00 PM" (or "… Gym Friday at 6:00 PM"); no Today section or hero card; the week strip and Coming up show as normal.
 - Each task shows its status (open now / done with the check-in time / opens at a time) and its streak.
 - A **+** button creates a task.
-- **Empty state (first launch):** a large + in the middle with "Start your first habit" and a short line about picking days, a window, and skips. No intro or onboarding screens.
+- **Empty state (no streaks at all):** a large + in the middle with "Start your first streak" and a short line about picking days, a window, and skips. No week strip, History link, or status line. No intro or onboarding screens.
 
 **Streaks tab**
 
@@ -84,14 +89,16 @@ The app has a **tab bar with three tabs: History (left), Today (center, a raised
 - **Archived** habits in a collapsed section at the bottom. Opening one offers **Restore** and **Delete permanently**.
 - A + button creates a task.
 
-**History tab**
+**History** (pushed from Today; the tab bar hides while it's open)
 
+- Opened with the "History" link on Today, or by tapping a past day in the week strip (it then opens scrolled to that day). A standard back button returns to Today, and swiping from the left edge does too.
 - Every check-in photo across all habits, newest first, grouped by day ("Today", "Yesterday", "Thursday, Sep 24"), with filter chips for one habit at a time.
 - Skips and misses show as small text lines without a photo.
 - The per-task history (from "See all" on a task screen) stays as it is.
 
 **Settings** (a sheet from the gear on Today, with a Done button)
 
+- **You:** an optional name, used only for the greeting on Today. Stays on the iPhone.
 - **Display:** show streaks as weeks and days (default) or days only; appearance System (default) / Light / Dark.
 - **Reminders:** repeat during the window every 10, 15 (default), or 30 minutes; last-call warning 10, 15 (default), or 30 minutes before the window closes. If iPhone notifications are off for the app, a warning with a button to the app's page in the iPhone Settings app.
 - **Feel:** vibrations on/off (all haptics); celebration animation on/off.
@@ -216,7 +223,8 @@ One phase at a time. Each phase ends with something runnable.
 3. Livelier home and streak celebration: today summary card, hero card for the open task, full-screen streak celebration after a check-in (sample data)
 4. App structure: tab bar (Today, Habits, History, Settings), Habits and History tabs, saved settings, archive / restore / delete for habits, delete all data (sample data)
 5. Navigation and color: three-tab bar with a raised Today button, Settings behind a gear, a color and icon per streak, week strip and greeting on Today, colored hero card and celebration (sample data)
-6. Tasks: create, edit, list, and save (including the next-week edit rules)
-7. Check-in: in-app camera, preview, window-only rule, photo storage, history
-8. Streaks and skips: counting rules, skip confirmation, refunds, broken state
-9. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+6. Today cleanup: two tabs (Today, Streaks), History opened from Today, a status line instead of the summary card, an optional name for the greeting, rest days (sample data)
+7. Tasks: create, edit, list, and save (including the next-week edit rules)
+8. Check-in: in-app camera, preview, window-only rule, photo storage, history
+9. Streaks and skips: counting rules, skip confirmation, refunds, broken state
+10. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today

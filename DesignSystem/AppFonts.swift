@@ -11,17 +11,16 @@ struct AppFonts {
     let statValue = Font.system(.title3, design: .rounded, weight: .semibold).monospacedDigit()
     let cardTitle = Font.system(.headline, design: .rounded, weight: .semibold)
     let cardStreak = Font.system(.headline, design: .rounded, weight: .semibold).monospacedDigit()
-    let ringCount = Font.system(.subheadline, design: .rounded, weight: .semibold).monospacedDigit()
+    /// The "2 of 3" count in Today's status line.
+    let statusCount = Font.system(.subheadline, design: .rounded, weight: .semibold).monospacedDigit()
     /// Fixed size: decorative and already very large.
     let celebrationNumber = Font.system(size: 64, weight: .bold, design: .rounded).monospacedDigit()
     /// Fixed size: the big flame on the celebration.
     let celebrationIcon = Font.system(size: 96)
     /// Date numbers in the week strip.
     let weekStripNumber = Font.system(.subheadline, design: .rounded, weight: .semibold).monospacedDigit()
-    /// Fixed size: side tab icons.
+    /// Fixed size: tab bar icons.
     let tabIcon = Font.system(size: 22)
-    /// Fixed size: the sun on the center Today button.
-    let centerTabIcon = Font.system(size: 26, weight: .semibold)
 
     // Regular SF Pro: buttons, body, and supporting text
     let button = Font.body.weight(.semibold)

@@ -17,6 +17,8 @@ struct WeekStripDay: Hashable, Identifiable {
     var done: Int
     /// Streaks scheduled that day.
     var total: Int
+    /// Before today: tapping it opens History at that day.
+    var isPast = false
 
     var id: Weekday { weekday }
     var progress: Double { total == 0 ? 0 : Double(done) / Double(total) }
@@ -47,7 +49,7 @@ enum WeekProgress {
             let entries = active.compactMap { $0.week.first { $0.day == weekday } }
             let done = entries.filter { $0.status == .done }.count
             return WeekStripDay(weekday: weekday, date: date, kind: entries.isEmpty ? .plain : .past,
-                                done: done, total: entries.count)
+                                done: done, total: entries.count, isPast: true)
         }
     }
 }
