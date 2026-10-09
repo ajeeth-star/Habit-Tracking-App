@@ -6,8 +6,7 @@ enum Strings {
     enum Home {
         static let title = "Today"
         static let notTodaySection = "Not today"
-        static let emptyTitle = "Start your first streak"
-        static let emptyBody = "Pick the days, a time window, and how many skips you get each week."
+        static let createAStreak = "Create a streak"
         static let createTask = "Create streak"
         static let settings = "Settings"
         static let checkIn = "Check in"
@@ -303,11 +302,97 @@ enum Strings {
     }
 
     enum Celebration {
-        static let dayStreak = "day streak"
         static func done(_ task: String) -> String { "\(task) done" }
         static func moreToFinish(_ n: Int) -> String { "\(n) more to finish the week" }
         static let weekComplete = "Week complete"
         static func skipBack(_ n: Int) -> String { "Your skip is back — \(n) \(n == 1 ? "skip" : "skips") left" }
+        /// "Gym streak", shown ALL CAPS under the streak's count.
+        static func streakName(_ task: String) -> String { "\(task) streak" }
+        static let flameBack = "Your flame is back!"
+        static func becameForm(_ form: String) -> String { "Your flame became a \(form)!" }
+        static let `continue` = "Continue"
+    }
+
+    /// The flame character, its screen, and Today's header (design.md §2b, §4.1, §4.14).
+    enum Flame {
+        static let title = "Your flame"
+        static let dayStreak = "Day streak"
+        static func dayStreakCount(_ n: Int) -> String { n == 1 ? "1 day streak" : "\(n) day streak" }
+        static func daysTo(_ n: Int, _ form: String) -> String { n == 1 ? "1 day to \(form)" : "\(n) days to \(form)" }
+        static let finalForm = "You've reached the final form."
+        static let forms = "Forms"
+        static let locked = "Locked"
+        static let current = "Current"
+        static let longest = "Longest"
+        static let bestForm = "Best form"
+        static let opensFlame = "Opens your flame"
+        /// Floats above the sleepy flame.
+        static let sleepZ = "z"
+        static func accessibility(_ form: String, _ mood: String, _ streak: String?) -> String {
+            ["Your flame.", "\(form) form.", "\(mood).", streak.map { "\($0)." }].compactMap { $0 }.joined(separator: " ")
+        }
+
+        static func formName(_ form: FlameForm) -> String {
+            switch form {
+            case .ember: "Ember"
+            case .spark: "Spark"
+            case .flame: "Flame"
+            case .blaze: "Blaze"
+            case .bonfire: "Bonfire"
+            case .inferno: "Inferno"
+            case .wildfire: "Wildfire"
+            case .eternal: "Eternal"
+            }
+        }
+
+        /// One line about each form's look, for the "new form" celebration step.
+        static func formDescription(_ form: FlameForm) -> String {
+            switch form {
+            case .ember: "A small, warm ember."
+            case .spark: "A tiny spark with two flickering tongues."
+            case .flame: "Taller, with a bright golden core."
+            case .blaze: "Bigger, with four tongues and a soft glow."
+            case .bonfire: "Five tongues, a warm glow, and embers floating up."
+            case .inferno: "Red-hot edges and a white-hot core."
+            case .wildfire: "Purple-tipped tongues and sparkles all around."
+            case .eternal: "Blue and white, with sparkles in orbit."
+            }
+        }
+
+        static func moodName(_ mood: FlameMood) -> String {
+            switch mood {
+            case .happy: "Happy"
+            case .proud: "Proud"
+            case .sleepy: "Sleepy"
+            case .worried: "Worried"
+            case .sad: "Sad"
+            case .cheering: "Cheering"
+            }
+        }
+    }
+
+    /// What the flame says in Today's speech bubble (design.md §4.1). Pools hold the lines to pick from.
+    enum Bubble {
+        static let streakEnded = "That's okay. One check-in brings me back."
+        static func closingSoon(_ task: String, _ minutes: Int) -> String {
+            "\(task) closes in \(minutes) min! Quick, snap a photo!"
+        }
+        static func open(_ task: String) -> [String] {
+            ["\(task) is open — let's do this!", "Time for \(task.lowercased()). I'm ready when you are."]
+        }
+        static func upcoming(_ task: String, _ time: String) -> String { "Next up: \(task) at \(time)." }
+        static let allDone = ["All done today. I'm glowing!", "That's everything. Proud of you."]
+        static let restDay = "Rest day. Recharging for tomorrow."
+        static let dayOver = "That's it for today. See you next time!"
+        static let empty = "Hi! I'm your flame. Create a streak and help me grow."
+    }
+
+    /// The "day streak ended" screen (design.md §4.15).
+    enum DayStreakEnded {
+        static func title(_ n: Int) -> String { "Your \(n)-day streak ended" }
+        static func stats(_ longest: String, _ form: String) -> String { "Longest: \(longest) · Best form: \(form)" }
+        static let bubble = "One check-in brings me back."
+        static let letsGo = "Let's go"
     }
 
     enum History {

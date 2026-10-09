@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// The Today tab (design.md §4.1–4.2): greeting, this week, one status line, the open streak's hero
-/// card, the rest of today with a collapsible "Done today" row, and "Coming up". History is pushed from
-/// here. Must sit inside a `NavigationStack`. Reads the shared `TaskStore`.
+/// The Today tab (design.md §4.1–4.2): the flame and day streak with its speech bubble, this week, one
+/// status line, the open streak's hero card, the rest of today with a collapsible "Done today" row, and
+/// "Coming up". History and the Flame screen are pushed from here. Must sit inside a `NavigationStack`.
+/// Reads the shared `TaskStore` and `DayStreakStore`.
 struct HomeView: View {
     @Environment(TaskStore.self) private var store
+    @Environment(DayStreakStore.self) private var dayStreak
     @Environment(AppSettings.self) private var settings
     @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,6 +20,9 @@ struct HomeView: View {
     @State private var pendingCheckIn: TaskSnapshot?
     @State private var showingCreate = false
     @State private var showingSettings = false
+    @State private var showingFlame = false
+    /// Picks the speech bubble's line from its pool; random once per launch unless the gallery fixes it.
+    @State private var bubbleVariant: Int
 
     /// History, opened from the "History" link (no focus) or a tapped past day.
     private struct HistoryRoute: Hashable, Identifiable {
@@ -25,8 +30,9 @@ struct HomeView: View {
         var id: Self { self }
     }
 
-    init(showsDone: Bool = false) {
+    init(showsDone: Bool = false, bubbleVariant: Int? = nil) {
         _showsDone = State(initialValue: showsDone)
+        _bubbleVariant = State(initialValue: bubbleVariant ?? Int.random(in: 0..<100))
     }
 
     var body: some View {
@@ -51,9 +57,15 @@ struct HomeView: View {
         .navigationDestination(item: $history) { route in
             AllHistoryView(focus: route.focus)
         }
-        // History is a page of its own: the tab bar slides away while it's open.
+        .navigationDestination(isPresented: $showingFlame) {
+            FlameView()
+        }
+        // History and the Flame screen are pages of their own: the tab bar slides away while they're open.
         .onChange(of: history) { _, route in
-            router.hidesTabBar = route != nil
+            router.hidesTabBar = route != nil || showingFlame
+        }
+        .onChange(of: showingFlame) { _, showing in
+            router.hidesTabBar = showing || history != nil
         }
         .sheet(isPresented: $showingCreate) {
             TaskFormView(mode: .create)
@@ -71,7 +83,7 @@ struct HomeView: View {
             if store.active.isEmpty {
                 // Header on top, the invitation centered in the space left over.
                 VStack(alignment: .leading, spacing: 0) {
-                    header(now: now)
+                    topRow
                     Spacer(minLength: Spacing.xl)
                     EmptyStateView { showingCreate = true }
                     Spacer(minLength: Spacing.xl)
@@ -102,37 +114,84 @@ struct HomeView: View {
 
     private func header(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Button { showingSettings = true } label: {
-                    Image(systemName: "gearshape")
-                        .font(Font.app.button)
-                        .foregroundStyle(Color.app.textSecondary)
-                        .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(Strings.Home.settings)
-                Spacer()
-                Button { showingCreate = true } label: {
-                    Image(systemName: "plus")
-                        .font(Font.app.screenTitle)
-                        .foregroundStyle(Color.app.flame)
-                        .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(Strings.Home.createTask)
-            }
-
-            Text(Formatters.current.greeting(now, name: settings.greetingName))
-                .font(Font.app.subhead)
-                .foregroundStyle(Color.app.textSecondary)
-            Text(Strings.Home.title)
-                .font(Font.app.screenTitle)
-                .foregroundStyle(Color.app.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Text(Formatters.current.homeDate(now))
-                .font(Font.app.subhead)
-                .foregroundStyle(Color.app.textSecondary)
+            topRow
+            flameRow(now: now)
+            SpeechBubble(text: Formatters.current.bubble(dayStreak.status(tasks: store.tasks, now: now).bubble,
+                                                         variant: bubbleVariant),
+                         pointerX: Sizes.flameHeader / 2)
+                .padding(.top, Spacing.sm)
+                .animation(reduceMotion ? nil : Motion.standard, value: dayStreak.state)
+                .accessibilityIdentifier("today.bubble")
         }
+    }
+
+    /// Gear on the left, + on the right. The middle is left for the rewards phase (coins and XP).
+    private var topRow: some View {
+        HStack {
+            Button { showingSettings = true } label: {
+                Image(systemName: "gearshape")
+                    .font(Font.app.button)
+                    .foregroundStyle(Color.app.textSecondary)
+                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(Strings.Home.settings)
+            Spacer()
+            Button { showingCreate = true } label: {
+                Image(systemName: "plus")
+                    .font(Font.app.screenTitle)
+                    .foregroundStyle(Color.app.flame)
+                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(Strings.Home.createTask)
+        }
+    }
+
+    /// The flame on the left; the day streak, "DAY STREAK", and the greeting on the right.
+    /// Tapping the flame or the number opens the Flame screen.
+    private func flameRow(now: Date) -> some View {
+        let state = dayStreak.state
+        let mood = dayStreak.status(tasks: store.tasks, now: now).mood
+        return HStack(alignment: .center, spacing: Spacing.md) {
+            Button { showingFlame = true } label: {
+                FlameCharacterView(form: state.form, mood: mood, size: Sizes.flameHeader, days: state.current)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // The number's button below reads the same thing; VoiceOver only needs one.
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Button { showingFlame = true } label: {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("\(state.current)")
+                            .font(Font.app.dayStreakNumber)
+                            .foregroundStyle(state.current == 0 ? Color.app.textTertiary : Color.app.flame)
+                            .contentTransition(.numericText(value: Double(state.current)))
+                        Text(Strings.Flame.dayStreak)
+                            .font(Font.app.dayStreakLabel)
+                            .capsLabel()
+                            .foregroundStyle(Color.app.textSecondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Formatters.current.flameAccessibility(form: state.form, mood: mood,
+                                                                          days: state.current))
+                .accessibilityHint(Strings.Flame.opensFlame)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("today.flame")
+
+                Text(Formatters.current.greetingLine(now, name: settings.greetingName))
+                    .font(Font.app.meta)
+                    .foregroundStyle(Color.app.textTertiary)
+                    .padding(.top, Spacing.xxs)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.top, Spacing.xs)
     }
 
     /// "This week" on the left, a "History" link on the right.

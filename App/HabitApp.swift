@@ -5,13 +5,30 @@ import UserNotifications
 struct HabitApp: App {
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var settings = AppSettings()
-    @State private var store = TaskStore()
+    @State private var store: TaskStore
+    @State private var dayStreak: DayStreakStore
+
+    init() {
+        let store = TaskStore()
+        #if DEBUG
+        // UI tests launch with `-resetDayStreak YES` to start from the sample day streak every time.
+        if UserDefaults.standard.bool(forKey: "resetDayStreak") {
+            UserDefaults.standard.removeObject(forKey: DayStreakStore.key)
+        }
+        #endif
+        let dayStreak = DayStreakStore()
+        // Up to date before the first frame, so the flame and the "streak ended" screen are right at launch.
+        dayStreak.update(tasks: store.tasks, now: store.now())
+        _store = State(initialValue: store)
+        _dayStreak = State(initialValue: dayStreak)
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(settings)
                 .environment(store)
+                .environment(dayStreak)
                 .environment(appDelegate.router)
                 // The app is always dark (design.md §1.1).
                 .preferredColorScheme(.dark)

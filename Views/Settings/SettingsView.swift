@@ -13,6 +13,7 @@ struct SettingsView: View {
 
     @Environment(AppSettings.self) private var settings
     @Environment(TaskStore.self) private var store
+    @Environment(DayStreakStore.self) private var dayStreak
     @Environment(AppRouter.self) private var router
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
@@ -290,6 +291,7 @@ struct SettingsView: View {
         guard deleteAllConfirmed else { return }
         deleteAllConfirmed = false
         store.deleteAll()
+        dayStreak.reset()
         router.selectedTab = .today
         if showsDone { dismiss() }
     }

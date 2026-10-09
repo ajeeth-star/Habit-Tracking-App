@@ -340,6 +340,51 @@ struct Formatters {
         remaining == 0 ? Strings.Celebration.weekComplete : Strings.Celebration.moreToFinish(remaining)
     }
 
+    // MARK: Flame and day streak
+
+    /// "Good evening, Ajeeth · Thu, Oct 1" (Today's header).
+    func greetingLine(_ date: Date, name: String? = nil) -> String {
+        greeting(date, name: name) + Strings.separator + format(date, template: "EEEMMMd")
+    }
+
+    /// "23 day streak".
+    func dayStreak(_ days: Int) -> String { Strings.Flame.dayStreakCount(days) }
+
+    /// "7 days to Bonfire", or "You've reached the final form." at Eternal.
+    func toNextForm(days: Int) -> String {
+        guard let next = FlameForm.daysToNext(from: days) else { return Strings.Flame.finalForm }
+        return Strings.Flame.daysTo(next.days, Strings.Flame.formName(next.form))
+    }
+
+    /// The days a form needs: "30 days", "1 day", "0 days".
+    func formRequirement(_ form: FlameForm) -> String {
+        Strings.Streak.days(form.minimumDays)
+    }
+
+    /// "Your flame. Blaze form. Happy. 23 day streak." (no streak part when `days` is nil).
+    func flameAccessibility(form: FlameForm, mood: FlameMood, days: Int?) -> String {
+        Strings.Flame.accessibility(Strings.Flame.formName(form), Strings.Flame.moodName(mood), days.map(dayStreak))
+    }
+
+    /// Today's speech bubble line. `variant` picks from the pool when there's more than one line.
+    func bubble(_ bubble: FlameBubble, variant: Int = 0) -> String {
+        func pick(_ pool: [String]) -> String { pool[abs(variant) % pool.count] }
+        return switch bubble {
+        case .streakEnded: Strings.Bubble.streakEnded
+        case .closingSoon(let task, let minutes): Strings.Bubble.closingSoon(task, minutes)
+        case .open(let task): pick(Strings.Bubble.open(task))
+        case .upcoming(let task, let start): Strings.Bubble.upcoming(task, time(TimeOfDay(start, calendar: calendar)))
+        case .allDone: pick(Strings.Bubble.allDone)
+        case .restDay: Strings.Bubble.restDay
+        case .dayOver: Strings.Bubble.dayOver
+        }
+    }
+
+    /// "Longest: 30 days · Best form: Bonfire".
+    func dayStreakStats(longest: Int, bestForm: FlameForm) -> String {
+        Strings.DayStreakEnded.stats(Strings.Streak.days(longest), Strings.Flame.formName(bestForm))
+    }
+
     // MARK: Helpers
 
     private func date(for time: TimeOfDay) -> Date {

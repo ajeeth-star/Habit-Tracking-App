@@ -22,4 +22,20 @@ enum Motion {
     /// Confetti: how many pieces and how long they fall.
     static let confettiCount = 50
     static let confettiDuration: Double = 1.5
+
+    // The flame character (design.md §2b)
+    /// One breath, 98% → 102% → 98%.
+    static let flameBreathPeriod: Double = 2
+    static let flameBreathAmount: Double = 0.02
+    /// Blinks come every 3–6 seconds and take this long.
+    static let flameBlinkInterval: ClosedRange<Double> = 3...6
+    static let flameBlinkDuration: Double = 0.14
+    /// The sleepy "z": how long one float takes.
+    static let flameSleepCycle: Double = 3
+    /// Celebration steps: step 1 moves on after this when more steps follow.
+    static let celebrationAdvance: Duration = .seconds(2)
+    /// The white flash when the flame reaches a new form.
+    static let evolutionFlash: Double = 0.2
+    /// The flame hopping when the day streak lands.
+    static let hopHeight: CGFloat = 28
 }

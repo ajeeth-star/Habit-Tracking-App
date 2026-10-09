@@ -148,6 +148,37 @@ enum SampleData {
     /// What the app starts with: every Home state plus one archived habit.
     static let allTasksWithArchived = allTasks + [meditation]
 
+    // MARK: Day streak
+
+    /// Going into today: 23 days (a Blaze), longest 30, best form Bonfire. Guitar was missed at 1 PM
+    /// today, so with the main sample tasks it has just ended.
+    static let dayStreak = DayStreakState(
+        current: 23, longest: 30, bestForm: .bonfire,
+        lastCountedDay: Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: today)))
+
+    /// The main tasks with Guitar checked in at lunch instead of missed: a healthy day for the flame.
+    static let healthyTasks = allTasksWithArchived.map {
+        $0.id == guitar.id ? guitar.checkedIn(at: time(12, 20)) : $0
+    }
+
+    /// Healthy, with Gym checked in too: only Journal is left, at 9 PM.
+    static let healthyUpcomingTasks = healthyTasks.map { $0.id == gym.id ? gym.checkedIn(at: time(18, 12)) : $0 }
+
+    /// Healthy, and Gym is the last thing left today: checking it in completes the day.
+    static let lastOneLeftTasks = healthyTasks.filter { $0.id != journal.id }
+
+    /// After the miss: Gym checked in since and Journal skipped, so nothing is left today.
+    static let dayOverTasks = allTasksWithArchived.map { task -> TaskSnapshot in
+        switch task.id {
+        case gym.id: return gym.checkedIn(at: time(18, 12))
+        case journal.id:
+            var skipped = journal
+            skipped.today = .scheduled(.before, .skipped)
+            return skipped
+        default: return task
+        }
+    }
+
     /// Rough size of one compressed check-in photo, for the Settings storage line until real photos exist.
     static let estimatedPhotoBytes: Int64 = 270_000
 

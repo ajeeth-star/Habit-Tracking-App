@@ -9,7 +9,12 @@ final class CheckInFlowUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-resetDayStreak", "YES"]
         app.launch()
+        // The sample day streak ended at lunchtime, so the app opens on "Your 23-day streak ended" once.
+        let letsGo = app.buttons["Let's go"]
+        XCTAssertTrue(letsGo.waitForExistence(timeout: 5))
+        letsGo.tap()
     }
 
     func testCheckInClosesTheHeroCard() {
@@ -28,7 +33,7 @@ final class CheckInFlowUITests: XCTestCase {
         snapshot("3-preview")
 
         submit.tap()
-        let dayStreak = app.staticTexts["day streak"]
+        let dayStreak = app.staticTexts["Gym done"]
         XCTAssertTrue(dayStreak.waitForExistence(timeout: 2), "The celebration shows")
         Thread.sleep(forTimeInterval: 0.8) // let the pop and count-up finish
         snapshot("4-celebration")
@@ -84,7 +89,7 @@ final class CheckInFlowUITests: XCTestCase {
         app.buttons["Check in"].tap()
         app.buttons["Use sample photo"].tap()
         app.buttons["Submit"].tap()
-        let dayStreak = app.staticTexts["day streak"]
+        let dayStreak = app.staticTexts["Gym done"]
         XCTAssertTrue(dayStreak.waitForExistence(timeout: 2))
 
         let tappedAt = Date()

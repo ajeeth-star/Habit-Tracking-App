@@ -22,6 +22,7 @@ DesignSystem/      AppColors (Color.app.*), AppFonts (Font.app.*), Spacing + Siz
 Models/            Display types (TaskSnapshot, Streak, Weekday…) and SampleData (SwiftData models later)
 Views/Components/  Reusable pieces from design.md §2 (PrimaryButton, TaskCard, StatusPill…)
 Views/<Area>/      Screens: Home (Today), Habits (Streaks tab), History (pushed from Today), Settings, TaskDetail, TaskForm, Skip, CheckIn
+Views/Flame/       The flame character (FlameCharacterView), Flame screen, celebration steps 2–3, "streak ended" screen
 Views/Gallery/     DesignGalleryView — DEBUG builds only (#if DEBUG)
 Services/          Non-UI logic (camera, notifications, streak rules…)
 Resources/         Assets.xcassets: app icon, AccentColor, Colors/ (light + dark color sets)
@@ -45,7 +46,8 @@ docs/credits.md    Font and sound sources and licenses
 - Tabs: Today and Streaks — custom `AppTabBar` (hidden while History is open via `AppRouter.hidesTabBar`). History is pushed from Today (link or a tapped past day); Settings is a sheet from the gear on Today. A Friends tab is planned for later, not built.
 - Gradients are allowed only on the hero card and the celebration glow.
 - The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`). Sample "now" is one fixed pretend time, Thursday Oct 1 2026, 6:40 PM (`SampleData.today`); the gallery's clock is frozen there so every time, countdown, and status agrees. Use `--time 18:40` for simulator screenshots.
-- App-wide state: `TaskStore` (habits, shared by all tabs), `AppSettings` (saved settings), `AppRouter` (selected tab). All three are put in the environment in `App/HabitApp.swift`.
+- App-wide state: `TaskStore` (habits, shared by all tabs), `DayStreakStore` (the overall day streak the flame follows, saved in UserDefaults; rules in `Models/DayStreak.swift`), `AppSettings` (saved settings), `AppRouter` (selected tab). All four are put in the environment in `App/HabitApp.swift`.
+- The flame: check every form × mood in Gallery → Flame → Flame Lab. UI tests launch with `-resetDayStreak YES` (DEBUG) so the sample day streak starts fresh; the app then opens on "Your 23-day streak ended" once.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 
 ## Commands

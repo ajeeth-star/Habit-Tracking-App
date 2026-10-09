@@ -42,9 +42,6 @@ enum Sizes {
     static let todayDot: CGFloat = 6
     static let dayChip: CGFloat = 36
 
-    static let emptyStateCircle: CGFloat = 88
-    static let emptyStateTextMaxWidth: CGFloat = 260
-
     /// A streak's icon badge.
     static let iconBadge: CGFloat = 40
 
@@ -68,6 +65,29 @@ enum Sizes {
 
     /// The radial glow behind the celebration flame.
     static let celebrationGlow: CGFloat = 280
+
+    /// The flame character at each place it appears (design.md §2b, §4).
+    static let flameHeader: CGFloat = 96
+    static let flameScreen: CGFloat = 200
+    static let flameCelebration: CGFloat = 150
+    static let flameEnded: CGFloat = 160
+    static let flameEmpty: CGFloat = 120
+    static let flamePath: CGFloat = 56
+    static let flameLabGrid: CGFloat = 40
+    /// The flame's outline.
+    static let flameOutline: CGFloat = 3
+    /// The ring around the current form on the Flame screen.
+    static let formRing: CGFloat = 3
+    /// A form's cell in the Flame screen's form path.
+    static let formCell: CGFloat = 72
+    /// The speech bubble's pointer: how wide and how tall.
+    static let bubblePointerWidth: CGFloat = 20
+    static let bubblePointerHeight: CGFloat = 10
+    /// The celebration's milestone checkpoint bar: end nodes, today's node, its glow ring, the track.
+    static let milestoneNode: CGFloat = 36
+    static let milestoneCurrent: CGFloat = 52
+    static let milestoneGlow: CGFloat = 8
+    static let milestoneTrack: CGFloat = 6
 
     /// Photo thumbnail on a History tab row.
     static let historyThumbnail: CGFloat = 56

@@ -24,6 +24,8 @@ struct TaskSnapshot: Identifiable, Hashable {
     /// The streak's color and SF Symbol icon (design.md §1.1b).
     var color = StreakColor.orange
     var icon = StreakIcon.fallback
+    /// When the streak was created. Only matters on that first day (context.md §10); nil for older streaks.
+    var createdAt: Date?
 }
 
 /// Where a task stands today.

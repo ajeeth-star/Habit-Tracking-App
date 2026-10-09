@@ -15,7 +15,7 @@ struct RestyleTests {
 
     @Test func soundsAreBundled() {
         #expect(SoundPlayer.allFilesPresent)
-        #expect(SoundPlayer.Sound.allCases.count == 4)
+        #expect(SoundPlayer.Sound.allCases.count == 5)
     }
 
     @Test func appIsAlwaysDark() {

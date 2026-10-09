@@ -41,6 +41,16 @@ struct AppColors {
     /// Dim layer behind dialogs.
     let scrim = Color("scrim")
 
+    // The flame character (design.md §2b)
+    let flameEmberOutline = Color("flameEmberOutline")
+    let flameSparkCore = Color("flameSparkCore")
+    let flameWhiteHot = Color("flameWhiteHot")
+    let flameEternalOutline = Color("flameEternalOutline")
+    /// The flame's eye whites.
+    let flameEye = Color.white
+    /// The white flash when the flame reaches a new form.
+    let flash = Color.white
+
     // Tints, derived (design.md §1.1)
     let flameSoft = Color("flame").opacity(0.2)
     let successSoft = Color("success").opacity(0.2)
@@ -69,6 +79,7 @@ struct AppColors {
         "flame", "flameLip", "success", "successLip", "danger", "dangerLip",
         "info", "infoLip", "gold", "goldLip", "purple", "purpleLip",
         "disabled", "disabledLip", "track", "whiteButton", "whiteButtonLip", "scrim",
+        "flameEmberOutline", "flameSparkCore", "flameWhiteHot", "flameEternalOutline",
     ] + StreakColor.allCases.flatMap { [$0.assetName, $0.assetName + "Lip"] }
 }
 

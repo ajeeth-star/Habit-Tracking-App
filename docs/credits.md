@@ -10,7 +10,7 @@ Everything bundled in the app that we didn't make ourselves, with where it came 
 
 ## Sounds
 
-All four come from packs by **Kenney** (`kenney.nl`), released under **Creative Commons Zero (CC0 1.0)**, public domain: free for commercial use, no attribution required (credited here anyway). Each was converted from OGG to Apple's CAF format (16-bit, 44.1 kHz, mono) with `oggdec` and `afconvert`; the sound itself is unchanged.
+All five come from packs by **Kenney** (`kenney.nl`), released under **Creative Commons Zero (CC0 1.0)**, public domain: free for commercial use, no attribution required (credited here anyway). Each was converted from OGG to Apple's CAF format (16-bit, 44.1 kHz, mono) with `oggdec` and `afconvert`; the sound itself is unchanged.
 
 | File | Used for | Original file | Pack | License |
 |---|---|---|---|---|
@@ -18,5 +18,6 @@ All four come from packs by **Kenney** (`kenney.nl`), released under **Creative 
 | `Resources/Sounds/celebration.caf` | Streak celebration flourish | `powerUp3.ogg` | Digital Audio — `kenney.nl/assets/digital-audio` | CC0 1.0 |
 | `Resources/Sounds/skip.caf` | Using a skip ("whoosh") | `minimize_005.ogg` | Interface Sounds 1.0 — `kenney.nl/assets/interface-sounds` | CC0 1.0 |
 | `Resources/Sounds/streakEnded.caf` | A streak ending ("bloop") | `minimize_008.ogg` | Interface Sounds 1.0 — `kenney.nl/assets/interface-sounds` | CC0 1.0 |
+| `Resources/Sounds/evolution.caf` | The flame reaching a new form (a bigger, rising flourish) | `powerUp1.ogg` | Digital Audio — `kenney.nl/assets/digital-audio` | CC0 1.0 |
 
 CC0 text: `creativecommons.org/publicdomain/zero/1.0/`.

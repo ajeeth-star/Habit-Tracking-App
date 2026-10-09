@@ -96,16 +96,25 @@ struct GalleryEntryRoot: View {
 
 /// Gives a gallery entry its own copy of the sample data (and its own tab selection), kept for as
 /// long as the entry is open, so trying things out never changes the app's real state.
-private struct SampleScope<Content: View>: View {
+struct SampleScope<Content: View>: View {
     @State private var store: TaskStore
     @State private var router: AppRouter
+    @State private var dayStreak: DayStreakStore
     /// Only when the entry sets a name: its own settings, kept off the device.
     @State private var namedSettings: AppSettings?
     @ViewBuilder let content: Content
 
+    /// `dayStreak` is the day streak going into today; it's brought up to date with `tasks` straight away.
+    /// The "streak ended" screen only shows when `showsEndedScreen` is set.
     init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today,
-         tab: AppRouter.Tab = .today, name: String? = nil, @ViewBuilder content: () -> Content) {
-        _store = State(initialValue: TaskStore(tasks: tasks, now: now, frozen: true))
+         tab: AppRouter.Tab = .today, name: String? = nil, dayStreak: DayStreakState = SampleData.dayStreak,
+         showsEndedScreen: Bool = false, @ViewBuilder content: () -> Content) {
+        let store = TaskStore(tasks: tasks, now: now, frozen: true)
+        _store = State(initialValue: store)
+        let streak = DayStreakStore(defaults: nil, initial: dayStreak)
+        streak.update(tasks: tasks, now: now)
+        if !showsEndedScreen { streak.markEndedScreenShown() }
+        _dayStreak = State(initialValue: streak)
         let router = AppRouter()
         router.selectedTab = tab
         _router = State(initialValue: router)
@@ -121,9 +130,9 @@ private struct SampleScope<Content: View>: View {
 
     var body: some View {
         if let namedSettings {
-            content.environment(store).environment(router).environment(namedSettings)
+            content.environment(store).environment(router).environment(dayStreak).environment(namedSettings)
         } else {
-            content.environment(store).environment(router)
+            content.environment(store).environment(router).environment(dayStreak)
         }
     }
 }
@@ -159,7 +168,7 @@ struct GalleryEntry: Identifiable {
         return seen
     }
 
-    static let all: [GalleryEntry] = today + habits + allHistory + settings + dialogs
+    static let all: [GalleryEntry] = flame + today + habits + allHistory + settings + dialogs
         + detail + form + skip + checkIn + history + components
 
     // MARK: Tabs (shown with the tab bar; swipe down to close)
@@ -167,9 +176,68 @@ struct GalleryEntry: Identifiable {
     private static func app(_ id: String, _ section: String, _ title: String,
                             tasks: [TaskSnapshot] = SampleData.allTasksWithArchived,
                             now: Date = SampleData.today, tab: AppRouter.Tab,
-                            start: MainTabView.StartState = .init(), name: String? = nil) -> GalleryEntry {
+                            start: MainTabView.StartState = .init(), name: String? = nil,
+                            dayStreak: DayStreakState = SampleData.dayStreak,
+                            showsEndedScreen: Bool = false) -> GalleryEntry {
         GalleryEntry(id: id, section: section, title: title, presentation: .sheet) { _ in
-            AnyView(SampleScope(tasks: tasks, now: now, tab: tab, name: name) { MainTabView(start: start) })
+            AnyView(SampleScope(tasks: tasks, now: now, tab: tab, name: name, dayStreak: dayStreak,
+                                showsEndedScreen: showsEndedScreen) { MainTabView(start: start) })
+        }
+    }
+
+    // MARK: Flame (design.md §2b, §4.14–4.16)
+
+    private static let flame: [GalleryEntry] = [
+        GalleryEntry(id: "flame.lab", section: "Flame", title: "Flame Lab") { _ in
+            AnyView(SampleScope { FlameLabView() })
+        },
+        GalleryEntry(id: "flame.grid", section: "Flame", title: "Every form × mood (large)") { _ in
+            AnyView(ScrollView { FlameGrid(size: 46).padding(Spacing.md) }.background(Color.app.background))
+        },
+        app("flame.open", "Flame", "Header · a window is open", tasks: SampleData.healthyTasks, tab: .today,
+            start: .init(bubbleVariant: 0)),
+        app("flame.open2", "Flame", "Header · a window is open (other line)", tasks: SampleData.healthyTasks,
+            tab: .today, start: .init(bubbleVariant: 1), name: "Ajeeth"),
+        app("flame.closing", "Flame", "Header · closes in 12 min (worried)", tasks: SampleData.healthyTasks,
+            now: SampleData.closingSoon, tab: .today),
+        app("flame.upcoming", "Flame", "Header · only later today", tasks: SampleData.healthyUpcomingTasks, tab: .today),
+        app("flame.allDone", "Flame", "Header · all done (proud)", tasks: SampleData.allDoneTasks, tab: .today,
+            start: .init(bubbleVariant: 0)),
+        app("flame.allDone2", "Flame", "Header · all done (other line)", tasks: SampleData.allDoneTasks, tab: .today,
+            start: .init(bubbleVariant: 1)),
+        app("flame.restDay", "Flame", "Header · rest day (sleepy)", tasks: SampleData.restDayTasks, tab: .today),
+        app("flame.ended", "Flame", "Header · ended today (sad)", tab: .today),
+        app("flame.dayOver", "Flame", "Header · nothing left, after a miss", tasks: SampleData.dayOverTasks, tab: .today),
+        app("flame.endedOnOpen", "Flame", "App opening after a break", tab: .today, showsEndedScreen: true),
+        GalleryEntry(id: "flame.screen", section: "Flame", title: "Flame screen · Blaze, 23 days") { _ in
+            AnyView(SampleScope(tasks: SampleData.healthyTasks) { FlameView() })
+        },
+        GalleryEntry(id: "flame.screen.ember", section: "Flame", title: "Flame screen · after a break") { _ in
+            AnyView(SampleScope { FlameView() })
+        },
+        GalleryEntry(id: "flame.screen.eternal", section: "Flame", title: "Flame screen · Eternal") { _ in
+            AnyView(SampleScope(tasks: SampleData.healthyTasks,
+                                dayStreak: DayStreakState(current: 400, longest: 400, bestForm: .eternal)) { FlameView() })
+        },
+        GalleryEntry(id: "flame.endedScreen", section: "Flame", title: "Streak ended screen", presentation: .cover) { close in
+            AnyView(DayStreakEndedView(length: 23, longest: 30, bestForm: .bonfire, onClose: close))
+        },
+        app("flame.empty", "Flame", "Empty state", tasks: [], tab: .today),
+        step("flame.step1", "Celebration step 1 · check-in", form: .blaze, steps: [.checkIn]),
+        step("flame.step2", "Celebration step 2 · day streak 22 → 23",
+             change: DayStreakChange(from: 22, to: 23, isRevival: false), steps: [.dayStreak]),
+        step("flame.revival", "Celebration step 2 · flame is back 0 → 1",
+             change: DayStreakChange(from: 0, to: 1, isRevival: true), steps: [.dayStreak]),
+        step("flame.step3", "Celebration step 3 · Flame → Blaze", steps: [.newForm(from: .flame, to: .blaze)]),
+        step("flame.full", "Celebration · all 3 steps (13 → 14)", change: DayStreakChange(from: 13, to: 14, isRevival: false)),
+    ]
+
+    /// A celebration that stays on step 1 until tapped.
+    private static func step(_ id: String, _ title: String, form: FlameForm? = nil, change: DayStreakChange? = nil,
+                             steps: [StreakCelebrationView.Step]? = nil) -> GalleryEntry {
+        GalleryEntry(id: id, section: "Flame", title: title, presentation: .cover) { close in
+            AnyView(StreakCelebrationView(result: SampleData.celebrationMidWeek, dayChange: change, form: form,
+                                          steps: steps, closesAutomatically: false, onDone: close))
         }
     }
 
@@ -366,17 +434,31 @@ struct GalleryEntry: Identifiable {
         celebrationEntry("complete", "Celebration · week complete", SampleData.celebrationWeekComplete),
         celebrationEntry("refund", "Celebration · skip given back", SampleData.celebrationSkipRefunded),
         GalleryEntry(id: "celebration.auto", section: "Check-in", title: "Celebration · closes on its own", presentation: .cover) { close in
-            AnyView(StreakCelebrationView(result: SampleData.celebrationMidWeek, onDone: close))
+            AnyView(StreakCelebrationView(result: SampleData.celebrationMidWeek, form: .blaze, onDone: close))
         },
         GalleryEntry(id: "flow", section: "Check-in", title: "Whole flow (tap through)", presentation: .cover) { _ in
-            AnyView(CheckInFlowView(task: SampleData.gym, now: SampleData.today))
+            AnyView(SampleScope { CheckInFlowView(task: SampleData.gym, now: SampleData.today) })
+        },
+        GalleryEntry(id: "flow.completesDay", section: "Check-in", title: "Whole flow · completes the day (23 → 24)",
+                     presentation: .cover) { close in
+            AnyView(SampleScope(tasks: SampleData.lastOneLeftTasks) {
+                CheckInFlowView(task: SampleData.gym, now: SampleData.today).onDisappear(perform: close)
+            })
+        },
+        GalleryEntry(id: "flow.newForm", section: "Check-in", title: "Whole flow · completes the day, new form (13 → 14)",
+                     presentation: .cover) { close in
+            AnyView(SampleScope(tasks: SampleData.lastOneLeftTasks,
+                                dayStreak: DayStreakState(current: 13, longest: 30, bestForm: .bonfire,
+                                                          lastCountedDay: SampleData.dayStreak.lastCountedDay)) {
+                CheckInFlowView(task: SampleData.gym, now: SampleData.today).onDisappear(perform: close)
+            })
         },
     ]
 
     /// Stays on screen (tap to close), so it can be looked at.
     private static func celebrationEntry(_ id: String, _ title: String, _ result: CheckInResult) -> GalleryEntry {
         GalleryEntry(id: "celebration.\(id)", section: "Check-in", title: title, presentation: .cover) { close in
-            AnyView(StreakCelebrationView(result: result, closesAutomatically: false, onDone: close))
+            AnyView(StreakCelebrationView(result: result, form: .blaze, closesAutomatically: false, onDone: close))
         }
     }
 

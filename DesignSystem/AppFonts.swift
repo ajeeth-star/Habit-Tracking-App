@@ -6,7 +6,6 @@ struct AppFonts {
     // Titles
     let screenTitle = Nunito.extraBold(28, .title)
     let successTitle = Nunito.extraBold(22, .title2)
-    let emptyTitle = Nunito.extraBold(20, .title3)
     let cardTitle = Nunito.bold(17, .headline)
 
     // Big numbers: Black, monospaced digits
@@ -18,6 +17,12 @@ struct AppFonts {
     let weekStripNumber = Nunito.black(15, .subheadline).monospacedDigit()
     /// Fixed size: decorative and already very large.
     let celebrationNumber = Font.custom(Nunito.blackName, fixedSize: 64).monospacedDigit()
+    /// The day streak in Today's header, in `flame`.
+    let dayStreakNumber = Nunito.black(44, .largeTitle).monospacedDigit()
+    /// "DAY STREAK" under it and "GYM STREAK" on the celebration: shown ALL CAPS with `capsLabel()`.
+    let dayStreakLabel = Nunito.bold(13, .footnote)
+    /// The sleepy flame's floating "z". Fixed: it's part of the drawing.
+    let flameSleepZ = Font.custom(Nunito.blackName, fixedSize: 18)
 
     // Labels: shown ALL CAPS with `Typography.capsTracking`
     let button = Nunito.extraBold(15, .subheadline)

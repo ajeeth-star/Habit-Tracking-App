@@ -127,7 +127,7 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 
 ## 6. Tracking progress: streaks
 
-Streaks are the only progress tracking in v1. There are no charts, calendars, or recaps yet.
+Streaks are the only progress tracking in v1: one per habit (this section) plus the overall day streak the flame follows (section 10). There are no charts, calendars, or recaps yet.
 
 **What counts:**
 
@@ -214,14 +214,40 @@ Decide these with the owner when the relevant phase comes up. Don't guess.
 - **Checking in more than scheduled** (e.g. an extra gym day): does it count for anything? Leaning no.
 - **Photo verification:** when and how (on-device vs. an AI service), and what rejection looks like.
 
+## 10. The flame and the day streak (gamification phase 2)
+
+Built (on sample data, like everything else so far). Looks: `docs/design.md` §2b and §4.14–4.16.
+
+**The day streak** is one overall streak across all your streaks, counted in days.
+
+- It goes **+1** on a day when **every streak scheduled that day is resolved** (checked in or skipped) **and at least one of them was a check-in**. The +1 happens the moment the day's last scheduled item is resolved, not at midnight.
+- A day where **everything was skipped** keeps it alive without adding.
+- **Rest days** (nothing scheduled) keep it alive without adding.
+- It **ends the moment any scheduled window closes** with no check-in and no skip, even if other streaks that day are still open. That day can't add to it any more; the next fully resolved day with a check-in brings it back at 1.
+- A streak **created today** counts only from its first window that opens after it was created. If today's window already opened, it starts counting tomorrow (or its next scheduled day).
+- **Archived or deleted** streaks stop counting from that moment. Past days are never recalculated, so archiving can't undo a break or a +1 that already happened.
+- **Saved on the iPhone:** the current day streak, the longest day streak, the best flame form ever reached, and whether the "streak ended" screen has been shown for the latest break. **Delete all data** resets all four.
+
+**The flame** is a character drawn in code (no image files) that follows the day streak. It's not an AI and never talks beyond a few fixed, kind lines.
+
+- **Forms** by day streak: Ember 0 · Spark 1–6 · Flame 7–13 · Blaze 14–29 · Bonfire 30–49 · Inferno 50–99 · Wildfire 100–364 · Eternal 365+.
+- When the day streak ends, the flame **drops back to Ember**. The **best form ever reached** is remembered and shown on the Flame screen and the "streak ended" screen.
+- **Moods**, first match wins:
+  1. **Sad** — the day streak ended today and nothing has been checked in since. Lasts until the next check-in.
+  2. **Worried** — an open window closes within 15 minutes and isn't done.
+  3. **Proud** — everything scheduled today is resolved.
+  4. **Sleepy** — rest day.
+  5. **Happy** — otherwise.
+  6. **Cheering** — only during celebrations.
+- **Speech bubble** on Today: one short, always-kind line for the situation (exact lines in design.md §6).
+- **After a check-in**, the celebration has up to three steps: the streak's own count (always), the day streak going up (only if that check-in completed the day), and the flame's new form (only if it just reached one). Reaching Spark (0 → 1) is shown inside the day-streak step as "Your flame is back!" (or simply growing), not as a separate new-form step.
+- **"Streak ended" screen:** shown **once per break**, the first time the app is opened after the day streak ends.
+
+**Sample data note:** in the sample week, Guitar was missed at 1 PM today, so the sample day streak (23 days going into today, longest 30, best form Bonfire) has just ended: the app opens on the "streak ended" screen once, then shows a sad Ember until the next check-in. Healthy states (open, closing soon, all done, rest day) are in the Design Gallery.
+
 ## Coming next (recorded, not built)
 
 These are planned. Nothing for them exists in the app yet.
-
-**Phase 2 — flame character**
-- One overall **"every day" streak**: it counts days in a row where **every** scheduled streak was checked in or skipped. Rest days (nothing scheduled) don't break it.
-- A **flame character**, drawn in code (no image files), follows that overall streak. It grows into new forms at **7, 14, 30, 50, 100, and 365 days**.
-- It has **moods**: cheering (just checked in), idle, sleepy (rest days), worried (a window is about to close), sad (the overall streak broke).
 
 **Phase 3 — rewards**
 - **XP** for every check-in fills a **level bar**.
@@ -241,7 +267,9 @@ One phase at a time. Each phase ends with something runnable.
 5. Navigation and color: three-tab bar with a raised Today button, Settings behind a gear, a color and icon per streak, week strip and greeting on Today, colored hero card and celebration (sample data)
 6. Today cleanup: two tabs (Today, Streaks), History opened from Today, a status line instead of the summary card, an optional name for the greeting, rest days (sample data)
 7. Playful restyle: always-dark navy look, Nunito font, chunky 3D buttons and cards, slide-in and confetti animations, haptics, sound effects (sample data)
-8. Tasks: create, edit, list, and save (including the next-week edit rules)
-9. Check-in: in-app camera, preview, window-only rule, photo storage, history
-10. Streaks and skips: counting rules, skip confirmation, refunds, broken state
-11. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+8. Flame character and day streak (gamification phase 2): day streak rules and saving, the drawn flame with 8 forms and 6 moods, the Today header with a speech bubble, the Flame screen, the 3-step celebration, the "streak ended" screen, the new empty state, and a Flame Lab in the Design Gallery (sample data)
+9. Tasks: create, edit, list, and save (including the next-week edit rules)
+10. Check-in: in-app camera, preview, window-only rule, photo storage, history
+11. Streaks and skips: counting rules, skip confirmation, refunds, broken state
+12. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+13. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe — see "Coming next"

@@ -11,8 +11,12 @@ final class AppNavigationUITests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         // Start every run without a saved name, whatever an earlier run left behind.
-        app.launchArguments = ["-settings.name", ""]
+        app.launchArguments = ["-settings.name", "", "-resetDayStreak", "YES"]
         app.launch()
+        // The sample day streak ended at lunchtime: the app opens on "Your 23-day streak ended" once.
+        let letsGo = app.buttons["Let's go"]
+        XCTAssertTrue(letsGo.waitForExistence(timeout: 5))
+        letsGo.tap()
     }
 
     func testEveryTab() {
@@ -46,7 +50,7 @@ final class AppNavigationUITests: XCTestCase {
     }
 
     func testOpensOnTodayWithTwoTabs() {
-        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5))
+        XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 5))
         let today = tabButton("Today"), streaks = tabButton("Streaks")
         XCTAssertTrue(today.isSelected, "The app opens on Today")
         XCTAssertTrue(streaks.exists)
@@ -116,14 +120,14 @@ final class AppNavigationUITests: XCTestCase {
     }
 
     func testGreetingUsesTheName() {
-        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 5))
+        XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 5))
         openSettings()
         let field = app.textFields["Your name"]
         XCTAssertTrue(field.waitForExistence(timeout: 3))
         field.tap()
         field.typeText("  Ajeeth  \n")
         app.navigationBars.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["Good evening, Ajeeth"].waitForExistence(timeout: 3))
+        XCTAssertTrue(greeting("Good evening, Ajeeth · ").waitForExistence(timeout: 3))
         snapshot("greeting-named")
 
         // Clear it again.
@@ -133,7 +137,7 @@ final class AppNavigationUITests: XCTestCase {
         if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
         field.typeText(XCUIKeyboardKey.delete.rawValue)
         app.navigationBars.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["Good evening"].waitForExistence(timeout: 3))
+        XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 3))
     }
 
     func testDoneTodayExpandsAndCollapses() {
@@ -214,7 +218,7 @@ final class AppNavigationUITests: XCTestCase {
         snapshot("delete-all-2")
         app.buttons["Delete everything"].tap()
 
-        XCTAssertTrue(app.staticTexts["Start your first streak"].waitForExistence(timeout: 5),
+        XCTAssertTrue(app.staticTexts["Hi! I'm your flame. Create a streak and help me grow."].waitForExistence(timeout: 5),
                       "Back on the empty Today tab")
         XCTAssertTrue(tabButton("Today").isSelected)
         XCTAssertFalse(app.buttons["Done"].exists, "The Settings sheet closed")
@@ -266,6 +270,40 @@ final class AppNavigationUITests: XCTestCase {
 
     private func habitRow(_ name: String) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch
+    }
+
+    /// Today's greeting line, which goes on with the date: "Good evening · Thu, Oct 1".
+    private func greeting(_ start: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", start)).firstMatch
+    }
+
+    func testFlameScreenOpensFromTheHeader() {
+        let flame = app.buttons["today.flame"]
+        XCTAssertTrue(flame.waitForExistence(timeout: 5))
+        XCTAssertEqual(flame.label, "Your flame. Ember form. Sad. 0 day streak.")
+        XCTAssertTrue(app.staticTexts["That's okay. One check-in brings me back."].exists)
+        flame.tap()
+        XCTAssertTrue(app.navigationBars["Your flame"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["1 day to Spark"].exists)
+        XCTAssertFalse(tabButton("Today").exists, "The tab bar hides on the Flame screen")
+        snapshot("flame-screen")
+        app.navigationBars.buttons["Today"].tap()
+        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 3))
+    }
+
+    func testCheckInCheersTheFlameUp() {
+        app.buttons["Check in"].tap()
+        app.buttons["Use sample photo"].tap()
+        app.buttons["Submit"].tap()
+        let done = app.staticTexts["Gym done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 2))
+        done.tap()
+        // The day had a miss, so only step 1 shows; afterwards the flame isn't sad any more.
+        let flame = app.buttons["today.flame"]
+        XCTAssertTrue(flame.waitForExistence(timeout: 3))
+        let happy = NSPredicate(format: "label == %@", "Your flame. Ember form. Happy. 0 day streak.")
+        wait(for: [expectation(for: happy, evaluatedWith: flame)], timeout: 3)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Next up: Journal at'")).firstMatch.exists)
     }
 
     private func snapshot(_ name: String) {

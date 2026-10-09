@@ -1,6 +1,6 @@
 import AVFoundation
 
-/// The app's four short sound effects (design.md §1.6). Uses the ambient audio session, so the iPhone's
+/// The app's five short sound effects (design.md §1.6). Uses the ambient audio session, so the iPhone's
 /// silent switch mutes them and they mix with music instead of stopping it. All are loaded at launch
 /// so they play without a delay. Files and licenses: `docs/credits.md`.
 final class SoundPlayer {
@@ -13,13 +13,15 @@ final class SoundPlayer {
         case skip
         /// A streak ends: a low, gentle bloop.
         case streakEnded
+        /// The flame reaches a new form: a bigger rising flourish.
+        case evolution
 
         /// Played a little quieter than the file, where the sound should stay soft.
         var volume: Float {
             switch self {
             case .skip: 0.5
             case .streakEnded: 0.7
-            case .checkIn, .celebration: 0.9
+            case .checkIn, .celebration, .evolution: 0.9
             }
         }
     }
