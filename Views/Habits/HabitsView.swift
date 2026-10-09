@@ -106,7 +106,7 @@ struct HabitDestination: View {
         if let task = store.task(id), task.isArchived {
             ArchivedHabitView(task: task)
         } else if let binding = store.binding(for: id) {
-            TaskDetailView(task: binding, now: store.now()) { removal in
+            TaskDetailView(task: binding) { removal in
                 switch removal {
                 case .archive: store.archive(id)
                 case .delete: store.delete(id)

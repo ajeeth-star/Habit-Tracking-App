@@ -4,7 +4,7 @@ import SwiftUI
 /// highlighted choice and a warning haptic on "Use skip".
 struct SkipConfirmationView: View {
     let prompt: SkipPrompt
-    /// Called after "Use skip". Nothing is saved in this phase.
+    /// Called after "Use skip": saves the skip.
     var onUseSkip: () -> Void = {}
 
     private let format = Formatters.current

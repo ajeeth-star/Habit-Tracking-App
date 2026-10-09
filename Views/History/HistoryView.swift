@@ -44,7 +44,7 @@ struct HistoryView: View {
             }
         }
         .fullScreenCover(item: $openedPhoto) { photo in
-            PhotoViewer(date: photo.date) { openedPhoto = nil }
+            PhotoViewer(date: photo.date, fileName: task.photoFiles[photo.date]) { openedPhoto = nil }
         }
     }
 
@@ -63,7 +63,7 @@ struct HistoryView: View {
                         ForEach(photos, id: \.self) { date in
                             Button { openedPhoto = PhotoItem(date: date) } label: {
                                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                                    PhotoThumbnail()
+                                    PhotoThumbnail(fileName: task.photoFiles[date])
                                     Text(format.photoDate(date))
                                         .font(Font.app.caption)
                                         .monospacedDigit()

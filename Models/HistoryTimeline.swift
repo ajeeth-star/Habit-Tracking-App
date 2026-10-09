@@ -18,8 +18,8 @@ struct HistoryEvent: Identifiable, Hashable {
 }
 
 /// Builds the History tab's timeline (design.md §4.12) from the tasks.
-/// Check-ins come from each task's photos. Skips and misses come from this week's circles, since
-/// that's all the sample data knows about; the streaks phase will record them properly.
+/// Check-ins come from each task's photos. Skips and misses come from the saved records
+/// (`recordedEvents`); for the gallery's sample data, which has none, from this week's circles.
 enum HistoryTimeline {
     struct Day: Hashable {
         var date: Date
@@ -34,6 +34,10 @@ enum HistoryTimeline {
         for task in tasks {
             events += task.checkIns.map {
                 HistoryEvent(taskID: task.id, taskName: task.name, date: $0, kind: .checkIn)
+            }
+            if let recorded = task.recordedEvents {
+                events += recorded
+                continue
             }
             for entry in task.week where entry.status == .skipped || entry.status == .missed {
                 // Days this week: today minus how far back the day is.

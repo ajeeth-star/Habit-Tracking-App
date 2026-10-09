@@ -570,7 +570,8 @@ This is a centered dialog over a `scrim`. It is not Apple's default alert, becau
   - Center: "Gym · closes 8:00 PM" in `subhead`.
 - **Bottom,** centered: a shutter button, a 72pt white circle inside a 4pt white ring with a 4pt gap.
 - **Bottom right:** a `camera.rotate` button (44pt, white) to switch between front and back cameras. Front is useful for skincare.
-- If the window closes while the camera is open, show "The window closed at 8:00 PM." and dismiss.
+- If the window has closed by the time the photo is submitted, the check-in isn't saved and the camera screen shows "The window closed at 8:00 PM." with only the close button.
+- **Camera access off:** "Camera access is off. Turn it on in Settings to check in with a photo." with an "Open Settings" button (`onDark`). The shutter and switch buttons are dimmed until the camera runs.
 - **The iPhone simulator has no camera.** In DEBUG builds running on the simulator, show a "Use sample photo" button in place of the live view.
 
 ### 4.7 Photo preview — `Views/CheckIn/PhotoPreviewView.swift`
@@ -728,6 +729,7 @@ Every group is a **chunky card** (`SettingsSection`: `surface` fill, 2pt `border
 
 **Developer** (DEBUG builds only, not compiled into Release)
 - "Design Gallery" → opens the gallery. There is no paintbrush button on the Today tab any more.
+- Above it (DEBUG only), the developer tools (context.md §11): the current time on top ("Pretend time: Thursday, October 8 · 6:40 PM" in `flame`, or "Real time: …" in `textPrimary`); a row of four small buttons "+15 min", "+1 hour", "+1 day", "+1 week" (`pill` text in `info` on `surfaceRaised`); then rows "Reset to real time", "Fill with sample data", and "Erase everything" (with an `AppDialog` confirmation).
 
 ### 4.14 Flame screen — `Views/Flame/FlameView.swift`
 

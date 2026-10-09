@@ -36,19 +36,23 @@ struct MainTabView: View {
         .animation(reduceMotion ? nil : Motion.standard, value: router.hidesTabBar)
         // The keyboard covers the tab bar rather than pushing it up.
         .ignoresSafeArea(.keyboard)
-        // Keeps the day streak up to date: right away when the tasks change, and as windows close.
-        .task(id: store.tasks) {
+        // Catches up on time passing (context.md §11): as each window opens or closes, and at least every minute.
+        .task {
             while !Task.isCancelled {
-                dayStreak.update(tasks: store.tasks, now: store.now())
-                try? await Task.sleep(for: .seconds(20))
+                try? await Task.sleep(for: .seconds(store.secondsUntilNextChange()))
+                store.refresh()
             }
         }
+        // The pretend clock moved (DEBUG): work everything out again.
+        .onChange(of: store.clock.offset) { store.refresh() }
         // "Your streak ended" shows once per break, when the app opens or comes back (design.md §4.15).
         .onAppear { showingEnded = dayStreak.state.needsEndedScreen }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active, dayStreak.state.needsEndedScreen { showingEnded = true }
+            guard phase == .active else { return }
+            store.refresh()
+            if dayStreak.state.needsEndedScreen { showingEnded = true }
         }
-        .fullScreenCover(isPresented: $showingEnded, onDismiss: dayStreak.markEndedScreenShown) {
+        .fullScreenCover(isPresented: $showingEnded, onDismiss: store.markEndedScreenShown) {
             DayStreakEndedView(state: dayStreak.state) { showingEnded = false }
         }
     }

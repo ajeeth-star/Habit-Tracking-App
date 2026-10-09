@@ -9,7 +9,7 @@ final class CheckInFlowUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-resetDayStreak", "YES"]
+        app.launchArguments = ["-sampleMode", "YES"]
         app.launch()
         // The sample day streak ended at lunchtime, so the app opens on "Your 23-day streak ended" once.
         let letsGo = app.buttons["Let's go"]

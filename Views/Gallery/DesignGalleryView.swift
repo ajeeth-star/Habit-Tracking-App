@@ -114,6 +114,7 @@ struct SampleScope<Content: View>: View {
         let streak = DayStreakStore(defaults: nil, initial: dayStreak)
         streak.update(tasks: tasks, now: now)
         if !showsEndedScreen { streak.markEndedScreenShown() }
+        store.dayStreak = streak
         _dayStreak = State(initialValue: streak)
         let router = AppRouter()
         router.selectedTab = tab
@@ -130,9 +131,9 @@ struct SampleScope<Content: View>: View {
 
     var body: some View {
         if let namedSettings {
-            content.environment(store).environment(router).environment(dayStreak).environment(namedSettings)
+            content.environment(store).environment(store.clock).environment(router).environment(dayStreak).environment(namedSettings)
         } else {
-            content.environment(store).environment(router).environment(dayStreak)
+            content.environment(store).environment(store.clock).environment(router).environment(dayStreak)
         }
     }
 }
@@ -144,7 +145,7 @@ private struct GalleryTaskDetail: View {
 
     var body: some View {
         if let task = store.binding(for: id) {
-            TaskDetailView(task: task, now: store.now())
+            TaskDetailView(task: task)
         }
     }
 }
@@ -420,11 +421,11 @@ struct GalleryEntry: Identifiable {
 
     private static let checkIn: [GalleryEntry] = [
         GalleryEntry(id: "camera", section: "Check-in", title: "Camera", presentation: .cover) { close in
-            AnyView(CameraView(taskName: "Gym", closesAt: TimeOfDay(20), onClose: close, onCapture: close))
+            AnyView(CameraView(taskName: "Gym", closesAt: TimeOfDay(20), onClose: close, onCapture: { _ in close() }))
         },
         GalleryEntry(id: "camera.closed", section: "Check-in", title: "Camera · window closed", presentation: .cover) { close in
             AnyView(CameraView(taskName: "Gym", closesAt: TimeOfDay(20), windowClosed: true,
-                               onClose: close, onCapture: close))
+                               onClose: close, onCapture: { _ in close() }))
         },
         GalleryEntry(id: "preview", section: "Check-in", title: "Photo preview", presentation: .cover) { close in
             AnyView(PhotoPreviewView(taskName: "Gym", closesAt: TimeOfDay(20), onRetake: close, onSubmit: close))
@@ -437,12 +438,12 @@ struct GalleryEntry: Identifiable {
             AnyView(StreakCelebrationView(result: SampleData.celebrationMidWeek, form: .blaze, onDone: close))
         },
         GalleryEntry(id: "flow", section: "Check-in", title: "Whole flow (tap through)", presentation: .cover) { _ in
-            AnyView(SampleScope { CheckInFlowView(task: SampleData.gym, now: SampleData.today) })
+            AnyView(SampleScope { CheckInFlowView(task: SampleData.gym) })
         },
         GalleryEntry(id: "flow.completesDay", section: "Check-in", title: "Whole flow · completes the day (23 → 24)",
                      presentation: .cover) { close in
             AnyView(SampleScope(tasks: SampleData.lastOneLeftTasks) {
-                CheckInFlowView(task: SampleData.gym, now: SampleData.today).onDisappear(perform: close)
+                CheckInFlowView(task: SampleData.gym).onDisappear(perform: close)
             })
         },
         GalleryEntry(id: "flow.newForm", section: "Check-in", title: "Whole flow · completes the day, new form (13 → 14)",
@@ -450,7 +451,7 @@ struct GalleryEntry: Identifiable {
             AnyView(SampleScope(tasks: SampleData.lastOneLeftTasks,
                                 dayStreak: DayStreakState(current: 13, longest: 30, bestForm: .bonfire,
                                                           lastCountedDay: SampleData.dayStreak.lastCountedDay)) {
-                CheckInFlowView(task: SampleData.gym, now: SampleData.today).onDisappear(perform: close)
+                CheckInFlowView(task: SampleData.gym).onDisappear(perform: close)
             })
         },
     ]

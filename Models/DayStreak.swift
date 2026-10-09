@@ -143,8 +143,8 @@ struct DayStreakState: Codable, Equatable {
 
     var form: FlameForm { FlameForm(days: current) }
 
-    /// The "streak ended" screen still has to be shown for the latest break.
-    var needsEndedScreen: Bool { lastBreak.map { !$0.screenShown } ?? false }
+    /// The "streak ended" screen still has to be shown for the latest break — unless the flame is already back.
+    var needsEndedScreen: Bool { current == 0 && lastBreak.map { !$0.screenShown } ?? false }
 }
 
 /// What changed when a day was counted (drives the celebration's steps 2 and 3).

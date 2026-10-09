@@ -104,8 +104,7 @@ struct SettingsView: View {
 
                 SettingsSection(title: Strings.Settings.yourData, footer: Strings.Settings.dataFooter) {
                     SettingsRow(icon: "photo.fill", color: Color.app.info, title: Strings.Settings.photoStorage) {
-                        valueText(format.photoStorage(count: store.photoCount,
-                                                      bytes: Int64(store.photoCount) * SampleData.estimatedPhotoBytes))
+                        valueText(format.photoStorage(count: store.photoUsage.count, bytes: store.photoUsage.bytes))
                     }
                     .accessibilityElement(children: .combine)
                     SettingsDivider()
@@ -127,15 +126,7 @@ struct SettingsView: View {
                 }
 
                 #if DEBUG
-                SettingsSection(title: Strings.Settings.developer) {
-                    Button { showingGallery = true } label: {
-                        SettingsRow(icon: "paintbrush.fill", color: Color.app.textTertiary, title: Strings.Settings.designGallery) {
-                            chevron
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Strings.Settings.designGallery)
-                }
+                DeveloperSection { showingGallery = true }
                 #endif
             }
             .padding(.horizontal, Spacing.lg)

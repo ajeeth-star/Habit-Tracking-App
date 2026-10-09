@@ -16,8 +16,6 @@ struct HomeView: View {
     @State private var openedTaskID: String?
     @State private var history: HistoryRoute?
     @State private var checkInTask: TaskSnapshot?
-    /// Set on Submit, applied once the celebration closes, so the hero card closes in front of you.
-    @State private var pendingCheckIn: TaskSnapshot?
     @State private var showingCreate = false
     @State private var showingSettings = false
     @State private var showingFlame = false
@@ -46,7 +44,7 @@ struct HomeView: View {
         .statusBarBackdrop()
         .navigationDestination(item: $openedTaskID) { id in
             if let task = store.binding(for: id) {
-                TaskDetailView(task: task, now: store.now()) { removal in
+                TaskDetailView(task: task) { removal in
                     switch removal {
                     case .archive: store.archive(id)
                     case .delete: store.delete(id)
@@ -73,8 +71,8 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             NavigationStack { SettingsView(showsDone: true) }
         }
-        .fullScreenCover(item: $checkInTask, onDismiss: applyPendingCheckIn) { task in
-            CheckInFlowView(task: task, now: store.now()) { pendingCheckIn = $0 }
+        .fullScreenCover(item: $checkInTask) { task in
+            CheckInFlowView(task: task)
         }
     }
 
@@ -325,17 +323,6 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 content()
             }
-        }
-    }
-
-    // MARK: State
-
-    /// After the celebration closes: the hero card closes into the "Done today" row and the ring fills.
-    private func applyPendingCheckIn() {
-        guard let updated = pendingCheckIn else { return }
-        pendingCheckIn = nil
-        withAnimation(reduceMotion ? nil : Motion.settle) {
-            store.replace(updated)
         }
     }
 }

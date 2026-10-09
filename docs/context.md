@@ -2,7 +2,7 @@
 
 This is the product reference for the project. When something here conflicts with older notes (including `docs/background.md`, the original concept handoff), **this file wins**. When a product question comes up that this file doesn't answer, stop and ask the owner instead of guessing.
 
-Status: nothing built yet. Version one (v1) scope is defined below.
+Status: v1 is being built in phases (list at the end). Data is saved on the iPhone; reminders and rewards aren't built yet. Version one (v1) scope is defined below.
 
 ---
 
@@ -81,7 +81,7 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 - **Rest day** (streaks exist, none scheduled today): the status line reads "Rest day · Next: Gym tomorrow at 6:00 PM" (or "… Gym Friday at 6:00 PM"); no Today section or hero card; the week strip and Coming up show as normal.
 - Each task shows its status (open now / done with the check-in time / opens at a time) and its streak.
 - A **+** button creates a task.
-- **Empty state (no streaks at all):** a large + in the middle with "Start your first streak" and a short line about picking days, a window, and skips. No week strip, History link, or status line. No intro or onboarding screens.
+- **Empty state (no streaks at all):** the happy Ember says "Hi! I'm your flame. Create a streak and help me grow." above a "Create a streak" button (design.md §4.2). This is what a fresh install shows. No week strip, History link, or status line. No intro or onboarding screens.
 
 **Streaks tab**
 
@@ -140,6 +140,8 @@ Streaks are the only progress tracking in v1: one per habit (this section) plus 
 
 - The default format is **weeks and days**, e.g. "3 weeks 2 days" or "3w 2d" where space is tight.
   - **Weeks** = full Monday–Sunday weeks completed, meaning every scheduled day was either checked in or skipped.
+    - **Decided:** a streak's **first, partial week** (it started mid-week) counts as a week once that week is over, if every scheduled day from the streak's start was checked in or skipped. E.g. created Wednesday, checked in Wednesday and Friday → "0w 2d" on Friday, "1w" from Monday.
+    - **Decided:** a week where **every scheduled day was skipped** (no check-in at all) keeps the streak alive but does **not** add a week.
   - **Days** = check-ins so far in the current week.
 - A setting shows **days only** instead, meaning total check-ins in the current streak, e.g. "14 days". It lives in **Settings → Display → "Show streaks as"** (decided), and applies everywhere except the check-in celebration, which always shows days.
 
@@ -209,7 +211,7 @@ Decide these with the owner when the relevant phase comes up. Don't guess.
 
 - **"Streak ended" message:** does it stay until the next check-in on that task, show once, or stay for the rest of that day?
 - **Deleting a check-in:** never allowed, allowed only while the window is open, or allowed anytime with the streak recalculated?
-- **Timezones, travel, and daylight saving time:** what happens to windows and streaks.
+- **Timezones, travel, and daylight saving time:** what happens to windows and streaks. For now everything uses the iPhone's current local time: windows are stored as minutes after midnight and days as local calendar days, so a trip to another time zone shifts which moments count. Still to decide.
 - **A task with 0 scheduled days**, or a once-a-week task (weak streak signal). What's the minimum?
 - **Checking in more than scheduled** (e.g. an extra gym day): does it count for anything? Leaning no.
 - **Photo verification:** when and how (on-device vs. an AI service), and what rejection looks like.
@@ -226,7 +228,7 @@ Built (on sample data, like everything else so far). Looks: `docs/design.md` §2
 - It **ends the moment any scheduled window closes** with no check-in and no skip, even if other streaks that day are still open. That day can't add to it any more; the next fully resolved day with a check-in brings it back at 1.
 - A streak **created today** counts only from its first window that opens after it was created. If today's window already opened, it starts counting tomorrow (or its next scheduled day).
 - **Archived or deleted** streaks stop counting from that moment. Past days are never recalculated, so archiving can't undo a break or a +1 that already happened.
-- **Saved on the iPhone:** the current day streak, the longest day streak, the best flame form ever reached, and whether the "streak ended" screen has been shown for the latest break. **Delete all data** resets all four.
+- **Saved on the iPhone** (section 11): each finished day's result, the longest day streak, the best flame form ever reached, which break the "streak ended" screen was last shown for, and the last day fully processed. The current day streak is calculated from the saved day results. **Delete all data** resets all of it.
 
 **The flame** is a character drawn in code (no image files) that follows the day streak. It's not an AI and never talks beyond a few fixed, kind lines.
 
@@ -241,9 +243,32 @@ Built (on sample data, like everything else so far). Looks: `docs/design.md` §2
   6. **Cheering** — only during celebrations.
 - **Speech bubble** on Today: one short, always-kind line for the situation (exact lines in design.md §6).
 - **After a check-in**, the celebration has up to three steps: the streak's own count (always), the day streak going up (only if that check-in completed the day), and the flame's new form (only if it just reached one). Reaching Spark (0 → 1) is shown inside the day-streak step as "Your flame is back!" (or simply growing), not as a separate new-form step.
-- **"Streak ended" screen:** shown **once per break**, the first time the app is opened after the day streak ends.
+- **"Streak ended" screen:** shown **once per break**, the first time the app is opened after the day streak ends — but not if the day streak has already come back by then.
 
-**Sample data note:** in the sample week, Guitar was missed at 1 PM today, so the sample day streak (23 days going into today, longest 30, best form Bonfire) has just ended: the app opens on the "streak ended" screen once, then shows a sad Ember until the next check-in. Healthy states (open, closing soon, all done, rest day) are in the Design Gallery.
+## 11. Saved data, photos, and time passing
+
+Built in the "make it real" phase. A fresh install starts empty. The Design Gallery keeps its own in-memory sample data and never touches saved data.
+
+**What's saved (SwiftData, on the iPhone only).** The saved records are the source of truth; every streak count, longest streak, week circle, skips-left number, day streak, and flame form is **calculated** from them.
+
+- **Streak:** id, name, color, icon, created date, archived date (if archived), and its past archive/restore dates (needed to judge the days it was active).
+- **Schedule versions** per streak: weekdays, window start and end (minutes after midnight, local time), skips per week, and the date the version takes effect. **Every day is judged by the version in effect that day.**
+  - Changing **days or skips** creates a version that starts **next Monday** (an existing next-Monday version is updated instead).
+  - Changing the **window** takes effect **immediately**: from today if today's old window hasn't opened yet, otherwise from tomorrow (decided by the build, so editing can't rescue a window that already opened or closed). A pending next-Monday version gets the new window too.
+  - The **name, color, and icon** are simply edited.
+- **Check-in:** id, streak, day, exact time, photo file name.
+- **Skip:** id, streak, day, exact time, refunded (a later check-in that day gave it back).
+- **Day results:** one per fully processed day (rest day, all skipped, counted, or broken with the time of the first miss). The day streak is folded from these plus today, so deleting a streak never rewrites past days.
+- **App record:** longest day streak, best flame form, the break the "streak ended" screen was last shown for, and the last fully processed day.
+- **Settings** stay in simple on-device settings (UserDefaults) and survive restarts.
+
+**Restore** starts a fresh streak from the streak's next scheduled day after the restore day; days while it was archived aren't judged. Its best streak (from earlier active periods) is kept.
+
+**Photos:** each check-in photo is saved as a JPEG (longest side 1600 px, quality 0.7, unique file name) in the app's private storage, never the camera roll. Deleting a streak, or Delete all data, deletes its photo files; archiving keeps them. Settings → Photo storage shows the real count and size.
+
+**Catching up on time passing.** When the app opens, comes back to the foreground, or a window closes while it's open, every day since the last processed day is processed in order (misses, ended streaks, the day streak, the flame form, records). This works even after weeks away. All times are the iPhone's local time (time zones and daylight saving: still open, section 9).
+
+**DEBUG tools** (Settings → Developer, never in the App Store build): a pretend clock that every rule and screen reads "now" from (+15 min, +1 hour, +1 day, +1 week, reset to real time; the pretend time is shown at the top), "Fill with sample data" (a few realistic weeks of streaks, check-ins, skips, and photos added to the real saved data), and "Erase everything". The simulator keeps a DEBUG-only "Use sample photo" button since it has no camera.
 
 ## Coming next (recorded, not built)
 
@@ -268,8 +293,6 @@ One phase at a time. Each phase ends with something runnable.
 6. Today cleanup: two tabs (Today, Streaks), History opened from Today, a status line instead of the summary card, an optional name for the greeting, rest days (sample data)
 7. Playful restyle: always-dark navy look, Nunito font, chunky 3D buttons and cards, slide-in and confetti animations, haptics, sound effects (sample data)
 8. Flame character and day streak (gamification phase 2): day streak rules and saving, the drawn flame with 8 forms and 6 moods, the Today header with a speech bubble, the Flame screen, the 3-step celebration, the "streak ended" screen, the new empty state, and a Flame Lab in the Design Gallery (sample data)
-9. Tasks: create, edit, list, and save (including the next-week edit rules)
-10. Check-in: in-app camera, preview, window-only rule, photo storage, history
-11. Streaks and skips: counting rules, skip confirmation, refunds, broken state
-12. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
-13. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe — see "Coming next"
+9. Make it real (replaces the old separate Tasks, Check-in, and Streaks-and-skips phases): saved data with SwiftData, real photos and the real camera, every screen on saved data, catching up on days that passed, a DEBUG pretend clock and sample-data tools — see section 11
+10. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+11. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe — see "Coming next"

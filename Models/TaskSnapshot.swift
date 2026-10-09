@@ -26,6 +26,19 @@ struct TaskSnapshot: Identifiable, Hashable {
     var icon = StreakIcon.fallback
     /// When the streak was created. Only matters on that first day (context.md §10); nil for older streaks.
     var createdAt: Date?
+    /// Each check-in time's photo file (saved data only; sample data has no photos).
+    var photoFiles: [Date: String] = [:]
+    /// Every past skip and miss, worked out from saved data. Nil for sample data, where History falls back
+    /// to this week's circles.
+    var recordedEvents: [HistoryEvent]?
+    /// Days or skips changing next Monday (shown on the edit form).
+    var nextWeek: NextWeekChange?
+}
+
+/// A days or skips change that starts next Monday (context.md §3).
+struct NextWeekChange: Hashable {
+    var days: [Weekday]
+    var skipsPerWeek: Int
 }
 
 /// Where a task stands today.

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 import UserNotifications
 
@@ -8,19 +9,52 @@ struct HabitApp: App {
     @State private var store: TaskStore
     @State private var dayStreak: DayStreakStore
 
+    @MainActor
     init() {
-        let store = TaskStore()
-        #if DEBUG
-        // UI tests launch with `-resetDayStreak YES` to start from the sample day streak every time.
-        if UserDefaults.standard.bool(forKey: "resetDayStreak") {
-            UserDefaults.standard.removeObject(forKey: DayStreakStore.key)
-        }
-        #endif
-        let dayStreak = DayStreakStore()
+        let (store, dayStreak) = Self.makeStores()
+        store.dayStreak = dayStreak
         // Up to date before the first frame, so the flame and the "streak ended" screen are right at launch.
-        dayStreak.update(tasks: store.tasks, now: store.now())
+        store.refresh()
         _store = State(initialValue: store)
         _dayStreak = State(initialValue: dayStreak)
+    }
+
+    /// The saved data. DEBUG builds also understand these launch options (used by UI tests):
+    /// - `-sampleMode YES`: the old in-memory sample data at Thursday 6:40 PM instead of saved data;
+    /// - `-resetData YES`: erase all saved data and go back to the real time first;
+    /// - `-pretendNow "2026-10-05 17:30"`: start the pretend clock at that local time;
+    /// - `-fillSampleData YES`: add a few weeks of sample streaks (like Settings → Developer → Fill with sample data).
+    @MainActor
+    private static func makeStores() -> (TaskStore, DayStreakStore) {
+        #if DEBUG
+        let launch = UserDefaults.standard
+        if launch.bool(forKey: "sampleMode") {
+            return (TaskStore(), DayStreakStore(defaults: nil, initial: SampleData.dayStreak))
+        }
+        #endif
+        let container: ModelContainer
+        do {
+            container = try ModelContainer.habitData()
+        } catch {
+            fatalError("Couldn't open the saved data: \(error)")
+        }
+        let repository = HabitRepository(container: container)
+        let clock = AppClock()
+        #if DEBUG
+        if launch.bool(forKey: "resetData") {
+            repository.deleteAll()
+            clock.resetToRealTime()
+        }
+        if let text = launch.string(forKey: "pretendNow") {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm"
+            if let date = formatter.date(from: text) { clock.pretend(date) }
+        }
+        if launch.bool(forKey: "fillSampleData") {
+            repository.fillSampleData(now: clock.now())
+        }
+        #endif
+        return (TaskStore(repository: repository, clock: clock), DayStreakStore(defaults: nil, initial: DayStreakState()))
     }
 
     var body: some Scene {
@@ -28,6 +62,7 @@ struct HabitApp: App {
             RootView()
                 .environment(settings)
                 .environment(store)
+                .environment(store.clock)
                 .environment(dayStreak)
                 .environment(appDelegate.router)
                 // The app is always dark (design.md §1.1).

@@ -80,7 +80,7 @@ struct AllHistoryView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar(.visible, for: .navigationBar)
         .fullScreenCover(item: $openedPhoto) { event in
-            PhotoViewer(date: event.date) { openedPhoto = nil }
+            PhotoViewer(date: event.date, fileName: store.task(event.taskID)?.photoFiles[event.date]) { openedPhoto = nil }
         }
     }
 
@@ -109,7 +109,8 @@ struct AllHistoryView: View {
     /// Habits with anything in their history, in Habits tab order (active by streak, then archived).
     private var chipTasks: [TaskSnapshot] {
         (store.activeByStreak + store.archived).filter { task in
-            !task.checkIns.isEmpty || task.week.contains { $0.status == .skipped || $0.status == .missed }
+            !task.checkIns.isEmpty || !(task.recordedEvents ?? []).isEmpty
+                || task.week.contains { $0.status == .skipped || $0.status == .missed }
         }
     }
 
@@ -152,7 +153,7 @@ struct AllHistoryView: View {
                             .foregroundStyle(Color.app.textSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    PhotoThumbnail()
+                    PhotoThumbnail(fileName: store.task(event.taskID)?.photoFiles[event.date])
                         .frame(width: Sizes.historyThumbnail, height: Sizes.historyThumbnail)
                 }
                 .contentShape(Rectangle())

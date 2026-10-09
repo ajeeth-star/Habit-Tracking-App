@@ -1,8 +1,11 @@
 import Foundation
 import Observation
 
-/// The day streak the flame follows (context.md §10), saved on the device (UserDefaults) whenever it
-/// changes. Shared by every screen through the environment, next to `TaskStore`.
+/// The day streak the flame follows (context.md §10). Shared by every screen through the environment, next to
+/// `TaskStore`.
+/// - With saved data, `TaskStore.refresh()` hands it the state calculated from the saved records (`set`).
+/// - With sample data (the Design Gallery, `-sampleMode` UI tests) it works the day streak out itself from
+///   the sample tasks (`update`), optionally kept in UserDefaults.
 @Observable
 final class DayStreakStore {
     private(set) var state: DayStreakState {
@@ -24,7 +27,12 @@ final class DayStreakStore {
         }
     }
 
-    /// Brings the day streak up to date with today's tasks. Call whenever the tasks or the clock change.
+    /// The state worked out from saved data.
+    func set(_ newState: DayStreakState) {
+        if newState != state { state = newState }
+    }
+
+    /// Sample data: brings the day streak up to date with today's tasks. Call whenever the tasks or the clock change.
     @discardableResult
     func update(tasks: [TaskSnapshot], now: Date) -> [DayStreakRules.Event] {
         let (updated, events) = DayStreakRules.apply(DayRecord(tasks: tasks, now: now), at: now, to: state)

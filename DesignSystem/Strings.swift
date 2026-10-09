@@ -128,6 +128,21 @@ enum Strings {
         static let designGallery = "Design Gallery"
     }
 
+    /// Settings → Developer (DEBUG builds only).
+    enum Developer {
+        static func pretendTime(_ time: String) -> String { "Pretend time: \(time)" }
+        static func realTime(_ time: String) -> String { "Real time: \(time)" }
+        static let plus15Minutes = "+15 min"
+        static let plusHour = "+1 hour"
+        static let plusDay = "+1 day"
+        static let plusWeek = "+1 week"
+        static let resetTime = "Reset to real time"
+        static let fillSampleData = "Fill with sample data"
+        static let eraseEverything = "Erase everything"
+        static let eraseTitle = "Erase everything?"
+        static let eraseBody = "All streaks, check-ins, photos, and records are deleted. Settings are kept."
+    }
+
     enum Dialog {
         static let cancel = "Cancel"
         static func archiveTitle(_ task: String) -> String { "Archive \(task)?" }
@@ -294,6 +309,8 @@ enum Strings {
         static func header(_ task: String, _ time: String) -> String { "\(task) · closes \(time)" }
         static func windowClosed(_ time: String) -> String { "The window closed at \(time)." }
         static let useSamplePhoto = "Use sample photo"
+        static let accessOff = "Camera access is off. Turn it on in Settings to check in with a photo."
+        static let openSettings = "Open Settings"
         static let close = "Close camera"
         static let takePhoto = "Take photo"
         static let switchCamera = "Switch camera"

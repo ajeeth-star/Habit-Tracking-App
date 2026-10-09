@@ -11,7 +11,7 @@ final class AppNavigationUITests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         // Start every run without a saved name, whatever an earlier run left behind.
-        app.launchArguments = ["-settings.name", "", "-resetDayStreak", "YES"]
+        app.launchArguments = ["-settings.name", "", "-sampleMode", "YES"]
         app.launch()
         // The sample day streak ended at lunchtime: the app opens on "Your 23-day streak ended" once.
         let letsGo = app.buttons["Let's go"]

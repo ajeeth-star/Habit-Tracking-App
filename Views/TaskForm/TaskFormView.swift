@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Create or edit a task, shown as a sheet (design.md §4.3). Nothing is saved in this phase.
+/// Create or edit a task, shown as a sheet (design.md §4.3), saved through the shared `TaskStore`.
 struct TaskFormView: View {
     enum Mode {
         case create
@@ -8,14 +8,7 @@ struct TaskFormView: View {
     }
 
     /// The form's editable values.
-    struct Draft: Equatable {
-        var name = ""
-        var days: Set<Weekday> = []
-        var window = TimeWindow(start: TimeOfDay(7), end: TimeOfDay(9))
-        var skips = 0
-        var color = StreakColor.coral
-        var icon = StreakIcon.fallback
-    }
+    typealias Draft = StreakDraft
 
     /// What the edit form's bottom buttons can do to the habit.
     enum Removal: Hashable {
@@ -66,9 +59,22 @@ struct TaskFormView: View {
         case .create:
             Draft()
         case .edit(let task):
-            Draft(name: task.name, days: Set(task.days), window: task.window, skips: task.skipsPerWeek,
-                  color: task.color, icon: task.icon)
+            // Days and skips start from next week's, if a change is already waiting for Monday.
+            Draft(name: task.name, days: Set(task.nextWeek?.days ?? task.days), window: task.window,
+                  skips: task.nextWeek?.skipsPerWeek ?? task.skipsPerWeek, color: task.color, icon: task.icon)
         }
+    }
+
+    /// Saves the new streak, or the edit (days and skips from next Monday; context.md §3).
+    private func save() {
+        var cleaned = draft
+        cleaned.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let original {
+            store.update(original.id, with: cleaned)
+        } else {
+            store.create(cleaned)
+        }
+        dismiss()
     }
 
     var body: some View {
@@ -81,7 +87,8 @@ struct TaskFormView: View {
                     daysField
                     timeField
                     skipsField
-                    ChunkyButton(isEditing ? Strings.Form.save : Strings.Form.create) { dismiss() }
+                    ChunkyButton(isEditing ? Strings.Form.save : Strings.Form.create, action: save)
+                        .accessibilityIdentifier("form.save")
                         .disabled(!isValid)
                     if isEditing {
                         removeButtons

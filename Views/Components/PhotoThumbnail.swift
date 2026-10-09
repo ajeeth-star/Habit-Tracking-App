@@ -1,15 +1,19 @@
 import SwiftUI
 
-/// A square check-in photo with small rounded corners. Shows a placeholder when there's no image
-/// (always, for now: real photos arrive with the camera phase).
+/// A square check-in photo with small rounded corners. Loads the saved photo by file name (sample data has
+/// none, so it shows a placeholder).
 struct PhotoThumbnail: View {
     var image: Image?
+    /// A saved photo in `PhotoStore`.
+    var fileName: String?
+
+    @State private var loaded: UIImage?
 
     var body: some View {
         Color.app.surfaceMuted
             .aspectRatio(1, contentMode: .fit)
             .overlay {
-                if let image {
+                if let image = image ?? loaded.map(Image.init(uiImage:)) {
                     image
                         .resizable()
                         .scaledToFill()
@@ -21,5 +25,11 @@ struct PhotoThumbnail: View {
             }
             .clipShape(.rounded(Radius.sm))
             .accessibilityLabel(Strings.Accessibility.photo)
+            .task(id: fileName) {
+                guard let fileName else { return }
+                loaded = await Task.detached(priority: .userInitiated) {
+                    PhotoStore.shared.thumbnail(fileName)
+                }.value
+            }
     }
 }

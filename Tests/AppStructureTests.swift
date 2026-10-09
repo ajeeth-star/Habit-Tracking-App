@@ -4,6 +4,7 @@ import Testing
 
 /// Settings, the shared task store, and the History timeline. Sample "now" is Thursday,
 /// October 1, 2026, 6:40 PM.
+@MainActor
 struct AppStructureTests {
     // MARK: Settings
 
@@ -114,11 +115,11 @@ struct AppStructureTests {
 
     @Test func deletingRemovesTheHabitAndItsPhotos() {
         let store = TaskStore()
-        let photos = store.photoCount
+        let photos = store.photoUsage.count
         let gymPhotos = store.task("gym")!.checkIns.count
         store.delete("gym")
         #expect(store.task("gym") == nil)
-        #expect(store.photoCount == photos - gymPhotos)
+        #expect(store.photoUsage.count == photos - gymPhotos)
         #expect(store.binding(for: "gym") == nil)
     }
 
@@ -126,13 +127,13 @@ struct AppStructureTests {
         let store = TaskStore()
         store.deleteAll()
         #expect(store.tasks.isEmpty)
-        #expect(store.photoCount == 0)
+        #expect(store.photoUsage.count == 0)
     }
 
     @Test func photoCountIncludesArchivedHabits() {
         let store = TaskStore()
         let expected = SampleData.allTasksWithArchived.reduce(0) { $0 + $1.checkIns.count }
-        #expect(store.photoCount == expected)
+        #expect(store.photoUsage.count == expected)
         #expect(SampleData.meditation.checkIns.count > 0)
     }
 

@@ -2,13 +2,12 @@ import SwiftUI
 
 /// One task: streak, skips, this week, actions, and recent photos (design.md §4.4).
 struct TaskDetailView: View {
-    /// A binding so a check-in started here updates the task (and Home) straight away.
+    /// Follows the shared store, so a check-in or skip made here shows straight away.
     @Binding var task: TaskSnapshot
-    /// When a check-in started here happens (sample "now" in this phase).
-    var now: Date = SampleData.today
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
+    @Environment(TaskStore.self) private var store
     @State private var showingEdit = false
     @State private var showingHistory = false
     @State private var showingCheckIn = false
@@ -62,10 +61,10 @@ struct TaskDetailView: View {
             TaskFormView(mode: .edit(task)) { pendingRemoval = $0 }
         }
         .fullScreenCover(isPresented: $showingCheckIn) {
-            CheckInFlowView(task: task, now: now) { task = $0 }
+            CheckInFlowView(task: task)
         }
         .dialogCover(isPresented: $showingSkip) {
-            SkipConfirmationView(prompt: task.skipPrompt)
+            SkipConfirmationView(prompt: task.skipPrompt) { store.skip(task.id) }
         }
     }
 
@@ -165,8 +164,8 @@ struct TaskDetailView: View {
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 4),
                           spacing: Spacing.xs) {
-                    ForEach(task.checkIns.prefix(4), id: \.self) { _ in
-                        PhotoThumbnail()
+                    ForEach(task.checkIns.prefix(4), id: \.self) { date in
+                        PhotoThumbnail(fileName: task.photoFiles[date])
                     }
                 }
                 .padding(.top, Spacing.xs)

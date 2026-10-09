@@ -5,13 +5,22 @@ import SwiftUI
 struct PhotoViewer: View {
     let date: Date
     var image: Image?
+    /// A saved photo in `PhotoStore`, shown whole.
+    var fileName: String?
     let onClose: () -> Void
 
     var body: some View {
         ZStack {
             Color.app.cameraBackground.ignoresSafeArea()
-            PhotoThumbnail(image: image)
-                .padding(.horizontal, Spacing.lg)
+            if let full = fileName.flatMap(PhotoStore.shared.image) {
+                Image(uiImage: full)
+                    .resizable()
+                    .scaledToFit()
+                    .accessibilityLabel(Strings.Accessibility.photo)
+            } else {
+                PhotoThumbnail(image: image)
+                    .padding(.horizontal, Spacing.lg)
+            }
             VStack {
                 ZStack {
                     Text(Formatters.current.photoDate(date))

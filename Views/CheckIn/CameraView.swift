@@ -1,14 +1,17 @@
 import SwiftUI
 
 /// The in-app camera (design.md §4.6). Always black with white controls. There is deliberately no
-/// photo-library button. This phase draws the screen only; the live camera arrives in the check-in phase.
+/// photo-library button. The simulator has no camera, so DEBUG simulator builds show "Use sample photo".
 struct CameraView: View {
     let taskName: String
     let closesAt: TimeOfDay
-    /// Shows "The window closed at …" (in the real app the camera then closes itself).
+    /// Shows "The window closed at …" instead of the camera.
     var windowClosed = false
     let onClose: () -> Void
-    let onCapture: () -> Void
+    let onCapture: (UIImage) -> Void
+
+    @Environment(\.openURL) private var openURL
+    @State private var camera = CameraController()
 
     private let format = Formatters.current
 
@@ -30,6 +33,11 @@ struct CameraView: View {
         // hidden, like the system Camera app.
         .environment(\.colorScheme, .dark)
         .statusBarHidden()
+        .task {
+            guard !windowClosed else { return }
+            await camera.start()
+        }
+        .onDisappear { camera.stop() }
     }
 
     @ViewBuilder private var viewfinder: some View {
@@ -39,9 +47,29 @@ struct CameraView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.lg)
         } else {
+            switch camera.status {
+            case .running:
+                CameraPreview(session: camera.session)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+            case .denied:
+                VStack(spacing: Spacing.md) {
+                    Text(Strings.Camera.accessOff)
+                        .font(Font.app.subhead)
+                        .multilineTextAlignment(.center)
+                    ChunkyButton(style: .onDark, Strings.Camera.openSettings) {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                }
+                .padding(.horizontal, Spacing.xl)
+            case .starting, .unavailable:
+                EmptyView()
+            }
             #if DEBUG && targetEnvironment(simulator)
             // The simulator has no camera.
-            Button(action: onCapture) {
+            Button {
+                onCapture(HabitRepository.samplePhoto())
+            } label: {
                 Text(Strings.Camera.useSamplePhoto)
                     .font(Font.app.button)
                     .padding(.horizontal, Spacing.md)
@@ -73,8 +101,11 @@ struct CameraView: View {
     }
 
     private var bottomBar: some View {
-        ZStack {
-            Button(action: onCapture) {
+        let canShoot = !windowClosed && camera.status == .running
+        return ZStack {
+            Button {
+                camera.capture(onCapture)
+            } label: {
                 Circle()
                     .frame(width: Sizes.shutterInner, height: Sizes.shutterInner)
                     .padding(Sizes.shutterGap + Sizes.shutterRing)
@@ -82,18 +113,19 @@ struct CameraView: View {
                         Circle().strokeBorder(lineWidth: Sizes.shutterRing)
                     }
             }
-            .disabled(windowClosed)
-            .opacity(windowClosed ? 0.4 : 1)
+            .disabled(!canShoot)
+            .opacity(canShoot ? 1 : 0.4)
             .accessibilityLabel(Strings.Camera.takePhoto)
 
             HStack {
                 Spacer()
-                Button {} label: {
+                Button { camera.switchCamera() } label: {
                     Image(systemName: "camera.rotate")
                         .font(Font.app.screenTitle)
                         .frame(width: Sizes.tapTarget, height: Sizes.tapTarget)
                         .contentShape(Rectangle())
                 }
+                .disabled(!canShoot)
                 .accessibilityLabel(Strings.Camera.switchCamera)
             }
             .padding(.horizontal, Spacing.lg)
