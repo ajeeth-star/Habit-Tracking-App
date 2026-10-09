@@ -16,7 +16,9 @@ struct MainTabView: View {
     @Environment(TaskStore.self) private var store
     @Environment(DayStreakStore.self) private var dayStreak
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(AppSettings.self) private var settings
     @State private var showingEnded = false
+    @State private var showingReminderAsk = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -55,6 +57,34 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $showingEnded, onDismiss: store.markEndedScreenShown) {
             DayStreakEndedView(state: dayStreak.state) { showingEnded = false }
         }
+        // Right after the first streak is created: offer reminders, once (context.md §7).
+        .onChange(of: store.createdFirstStreak) { _, created in
+            guard created else { return }
+            store.createdFirstStreak = false
+            Task { await askForRemindersIfNeeded() }
+        }
+        .sheet(isPresented: $showingReminderAsk) {
+            ReminderPermissionView(form: dayStreak.state.form) {
+                showingReminderAsk = false
+                store.refresh() // schedules the reminders if they were just allowed
+            }
+                .interactiveDismissDisabled()
+        }
+    }
+
+    /// Not if it was already asked, or reminders are already allowed. Waits for the create form to finish closing.
+    /// DEBUG builds: `-askForReminders YES` shows it even if reminders are already allowed (UI tests).
+    private func askForRemindersIfNeeded() async {
+        var alwaysAsk = false
+        #if DEBUG
+        alwaysAsk = UserDefaults.standard.bool(forKey: "askForReminders")
+        #endif
+        guard !settings.askedForReminders else { return }
+        let status = await ReminderScheduler.status()
+        guard alwaysAsk || status != .authorized else { return }
+        try? await Task.sleep(for: .milliseconds(600))
+        settings.askedForReminders = true
+        showingReminderAsk = true
     }
 
     /// One tab's navigation stack.

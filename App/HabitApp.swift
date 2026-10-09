@@ -5,27 +5,29 @@ import UserNotifications
 @main
 struct HabitApp: App {
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
-    @State private var settings = AppSettings()
+    @State private var settings: AppSettings
     @State private var store: TaskStore
     @State private var dayStreak: DayStreakStore
 
     @MainActor
     init() {
-        let (store, dayStreak) = Self.makeStores()
+        let settings = AppSettings()
+        let (store, dayStreak) = Self.makeStores(settings: settings)
         store.dayStreak = dayStreak
         // Up to date before the first frame, so the flame and the "streak ended" screen are right at launch.
         store.refresh()
+        _settings = State(initialValue: settings)
         _store = State(initialValue: store)
         _dayStreak = State(initialValue: dayStreak)
     }
 
     /// The saved data. DEBUG builds also understand these launch options (used by UI tests):
-    /// - `-sampleMode YES`: the old in-memory sample data at Thursday 6:40 PM instead of saved data;
-    /// - `-resetData YES`: erase all saved data and go back to the real time first;
+    /// - `-sampleMode YES`: the old in-memory sample data at Thursday 6:40 PM instead of saved data (no reminders);
+    /// - `-resetData YES`: erase all saved data, go back to the real time, and forget the reminder question;
     /// - `-pretendNow "2026-10-05 17:30"`: start the pretend clock at that local time;
     /// - `-fillSampleData YES`: add a few weeks of sample streaks (like Settings → Developer → Fill with sample data).
     @MainActor
-    private static func makeStores() -> (TaskStore, DayStreakStore) {
+    private static func makeStores(settings: AppSettings) -> (TaskStore, DayStreakStore) {
         #if DEBUG
         let launch = UserDefaults.standard
         if launch.bool(forKey: "sampleMode") {
@@ -44,6 +46,7 @@ struct HabitApp: App {
         if launch.bool(forKey: "resetData") {
             repository.deleteAll()
             clock.resetToRealTime()
+            settings.askedForReminders = false
         }
         if let text = launch.string(forKey: "pretendNow") {
             let formatter = DateFormatter()
@@ -54,7 +57,9 @@ struct HabitApp: App {
             repository.fillSampleData(now: clock.now())
         }
         #endif
-        return (TaskStore(repository: repository, clock: clock), DayStreakStore(defaults: nil, initial: DayStreakState()))
+        let store = TaskStore(repository: repository, clock: clock)
+        store.reminders = ReminderScheduler(settings: settings)
+        return (store, DayStreakStore(defaults: nil, initial: DayStreakState()))
     }
 
     var body: some Scene {
@@ -71,8 +76,8 @@ struct HabitApp: App {
     }
 }
 
-/// Owns the tab router and listens for taps on reminder notifications, which open the Today tab.
-/// No reminders are scheduled yet; that's the reminders phase.
+/// Owns the tab router and handles reminder notifications: shown even while the app is open, and a tap opens
+/// the Today tab.
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     let router = AppRouter()
 
@@ -87,17 +92,27 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         await MainActor.run { router.openedFromNotification() }
     }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        [.banner, .list, .sound]
+    }
 }
 
 /// The tab bar. In DEBUG builds, `-galleryEntry <id>` on launch shows that Design Gallery entry
-/// as the whole screen instead (used to screenshot every state).
+/// as the whole screen instead (used to screenshot every state), and the pretend-time banner is set up.
 struct RootView: View {
+    #if DEBUG
+    @Environment(TaskStore.self) private var store
+    #endif
+
     var body: some View {
         #if DEBUG
         if let id = UserDefaults.standard.string(forKey: "galleryEntry") {
             GalleryEntryRoot(id: id)
         } else {
             MainTabView()
+                .onAppear { if !store.isSample { PretendTimeBannerWindow.install(clock: store.clock) } }
         }
         #else
         MainTabView()

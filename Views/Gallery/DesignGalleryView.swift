@@ -224,6 +224,10 @@ struct GalleryEntry: Identifiable {
             AnyView(DayStreakEndedView(length: 23, longest: 30, bestForm: .bonfire, onClose: close))
         },
         app("flame.empty", "Flame", "Empty state", tasks: [], tab: .today),
+        GalleryEntry(id: "reminders.permission", section: "Flame", title: "Reminder offer (after the first streak)",
+                     presentation: .cover) { close in
+            AnyView(ReminderPermissionView(onDone: close))
+        },
         step("flame.step1", "Celebration step 1 · check-in", form: .blaze, steps: [.checkIn]),
         step("flame.step2", "Celebration step 2 · day streak 22 → 23",
              change: DayStreakChange(from: 22, to: 23, isRevival: false), steps: [.dayStreak]),

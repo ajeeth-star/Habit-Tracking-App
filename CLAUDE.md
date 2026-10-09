@@ -49,7 +49,19 @@ docs/credits.md    Font and sound sources and licenses
 - App-wide state: `TaskStore` (streak snapshots for every screen; changes go through it to `HabitRepository`, then `refresh()` recalculates from saved records), `DayStreakStore` (the day streak the flame follows), `AppClock` (the one source of "now"; DEBUG pretend time), `AppSettings` (UserDefaults), `AppRouter` (selected tab). All are put in the environment in `App/HabitApp.swift`.
 - Saved records are the source of truth; streaks, week circles, skips left, the day streak, and the flame form are always calculated (`StreakRules`). Never store a calculated number unless it can be rebuilt.
 - A fresh install starts empty. Settings → Developer (DEBUG) has the pretend clock (+15 min … +1 week, reset), "Fill with sample data", and "Erase everything".
-- DEBUG launch options: `-sampleMode YES` (old in-memory sample data at Thursday 6:40 PM; most UI tests use it), `-resetData YES`, `-pretendNow "2026-10-05 06:30"`, `-fillSampleData YES`. `UITests/RealDataUITests.swift` covers saved data end to end.
+- DEBUG launch options: `-sampleMode YES` (old in-memory sample data at Thursday 6:40 PM; most UI tests use it), `-resetData YES` (also forgets the reminder question), `-pretendNow "2026-10-05 06:30"`, `-fillSampleData YES`, `-askForReminders YES` (show the reminder offer even if reminders are already allowed). `UITests/RealDataUITests.swift` covers saved data end to end; `UITests/RemindersUITests.swift` checks a real notification arrives.
+- Reminders: `ReminderPlanner` (pure, unit-tested) decides what to schedule; `ReminderScheduler` hands it to iOS on every `TaskStore.refresh()`. Reminders always use the real clock, never `AppClock`'s pretend time. While the pretend clock is on, a yellow DEBUG banner shows at the top (tap to reset).
+- Saved days are moments of local midnight; always compare them through `Calendar.savedDay(_:)` (or the values from `StreakRecord.data(calendar:)`), never with `==` on the raw date, so time zone changes don't shift them.
+
+## Saved data versions (SwiftData)
+
+The saved layout is versioned in `Models/SchemaVersions.swift`: `SchemaV1` (frozen copy of the first layout), `SchemaV2` (the current classes in `Models/Records.swift`), and `HabitMigrationPlan`. A phone may hold data from any old version, so never edit or delete an old version. To change what's saved:
+
+1. Copy the **current** model classes, exactly as they are, into a new frozen `enum SchemaVN: VersionedSchema` (nested classes, as `SchemaV1` does), and point it at the next version number. This freezes today's layout.
+2. Change the live classes in `Records.swift`, and make the newest schema (`SchemaV(N+1)`, listing the live classes) the one `ModelContainer.schema` uses.
+3. Add both to `HabitMigrationPlan.schemas` in order, and a stage from N to N+1: `.lightweight` if you only **add** models, add optional properties, or add properties with default values; `.custom` (with a `didMigrate` that fills in data) for renames, type changes, or anything that needs values worked out.
+4. Add a test like `dataSavedWithVersionOneLoadsInTheCurrentVersion` in `Tests/RemindersAndFixesTests.swift`: save with the old version's classes at a file URL, open with `ModelContainer.habitData(url:)`, and check everything is there.
+5. Never remove a property without a custom stage, and never reuse an old version number.
 - The flame: check every form × mood in Gallery → Flame → Flame Lab.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 

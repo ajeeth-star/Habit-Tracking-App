@@ -27,6 +27,10 @@ final class TaskStore {
     @ObservationIgnored private let repository: HabitRepository?
     /// Kept up to date by `refresh()`.
     @ObservationIgnored var dayStreak: DayStreakStore?
+    /// Saved data only: kept in step with the streaks on every `refresh()`.
+    @ObservationIgnored var reminders: ReminderScheduler?
+    /// Set when the very first streak is created, so Today can offer to turn on reminders (context.md §7).
+    var createdFirstStreak = false
 
     var isSample: Bool { repository == nil }
 
@@ -59,11 +63,14 @@ final class TaskStore {
             return
         }
         repository.catchUp(now: now)
-        let updated = repository.streaks().map { repository.rules.snapshot($0, now: now) }
+        let streaks = repository.streaks()
+        let updated = streaks.map { repository.rules.snapshot($0, now: now) }
         if updated != tasks { tasks = updated }
         let usage = repository.photos.usage()
         if usage != savedPhotoUsage { savedPhotoUsage = usage }
-        dayStreak?.set(repository.dayStreakState(now: now))
+        dayStreak?.set(repository.dayStreakState(now: now, streaks: streaks))
+        // Reminders follow the real time, never the pretend clock.
+        reminders?.reschedule(streaks, rules: repository.rules)
     }
 
     /// Seconds until something changes on its own: the next window opening or closing today (at most a minute).
@@ -114,8 +121,10 @@ final class TaskStore {
     @MainActor
     func create(_ draft: StreakDraft) {
         if let repository {
+            let isFirst = tasks.isEmpty
             repository.create(draft, now: now())
             refresh()
+            if isFirst { createdFirstStreak = true }
         } else {
             tasks.append(Self.sampleSnapshot(draft, today: today))
         }
@@ -159,7 +168,7 @@ final class TaskStore {
     @MainActor
     func delete(_ id: String) {
         if let repository {
-            repository.delete(id)
+            repository.delete(id, now: now())
             refresh()
         } else {
             tasks.removeAll { $0.id == id }
@@ -190,6 +199,7 @@ final class TaskStore {
                 return false
             }
             refresh()
+            reminders?.clearDelivered(for: id)
             return true
         }
         guard let task = task(id) else { return false }
@@ -204,6 +214,7 @@ final class TaskStore {
         if let repository {
             repository.skip(id, now: now())
             refresh()
+            reminders?.clearDelivered(for: id)
         } else if var task = task(id), case .scheduled(let phase, .none) = task.today, task.skipsLeft > 0 {
             task.today = .scheduled(phase, .skipped)
             task.skipsLeft -= 1

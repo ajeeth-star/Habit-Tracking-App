@@ -10,10 +10,11 @@ final class HabitRepository {
     let container: ModelContainer
     let context: ModelContext
     let photos: PhotoStore
-    let rules: StreakRules
+    /// Changeable so tests can move the phone to another time zone.
+    var rules: StreakRules
     private var calendar: Calendar { rules.calendar }
 
-    init(container: ModelContainer, photos: PhotoStore = .shared, calendar: Calendar = .current) {
+    init(container: ModelContainer, photos: PhotoStore = .shared, calendar: Calendar = .autoupdatingCurrent) {
         self.container = container
         context = container.mainContext
         context.autosaveEnabled = false
@@ -27,7 +28,7 @@ final class HabitRepository {
         (try? context.fetch(FetchDescriptor<StreakRecord>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
     }
 
-    func streaks() -> [StreakData] { streakRecords().map(\.data) }
+    func streaks() -> [StreakData] { streakRecords().map { $0.data(calendar: calendar) } }
 
     func record(_ id: String) -> StreakRecord? {
         guard let uuid = UUID(uuidString: id) else { return nil }
@@ -69,15 +70,28 @@ final class HabitRepository {
     /// Saves an edit (context.md §3, §11):
     /// - name, color, icon: straight away;
     /// - window: from today if today's window hasn't opened yet, otherwise from tomorrow;
-    /// - days and skips: from next Monday.
+    /// - days and skips: from next Monday;
+    /// - all of it straight away while the streak is brand new (none of its windows has opened yet).
     func update(_ id: String, with draft: StreakDraft, now: Date) {
         guard let record = record(id) else { return }
         record.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         record.colorKey = draft.color.rawValue
         record.iconName = draft.icon
 
+        if !rules.hasOpenedAWindow(record.data(calendar: calendar), now: now) {
+            // No history to protect: the new schedule simply replaces the old one.
+            for version in record.versions {
+                version.weekdays = draft.days.map(\.rawValue).sorted()
+                version.startMinute = draft.window.start.minutesSinceMidnight
+                version.endMinute = draft.window.end.minutesSinceMidnight
+                version.skipsPerWeek = draft.skips
+            }
+            save()
+            return
+        }
+
         let today = calendar.startOfDay(for: now)
-        if let current = rules.version(record.data, on: today), current.window != draft.window {
+        if let current = rules.version(record.data(calendar: calendar), on: today), current.window != draft.window {
             let opens = rules.window(current.window, on: today).opens
             let from = now < opens ? today : day(after: today)
             setVersion(of: record, from: from, alsoLater: true) {
@@ -87,7 +101,7 @@ final class HabitRepository {
         }
 
         let nextMonday = calendar.date(byAdding: .day, value: 7, to: rules.startOfWeek(now)) ?? today
-        if let pending = rules.version(record.data, on: nextMonday),
+        if let pending = rules.version(record.data(calendar: calendar), on: nextMonday),
            pending.weekdays != draft.days || pending.skipsPerWeek != draft.skips {
             setVersion(of: record, from: nextMonday, alsoLater: false) {
                 $0.weekdays = draft.days.map(\.rawValue).sorted()
@@ -101,9 +115,9 @@ final class HabitRepository {
     /// and with `alsoLater`, every version after it too.
     private func setVersion(of record: StreakRecord, from: Date, alsoLater: Bool,
                             change: (ScheduleVersionRecord) -> Void) {
-        if let existing = record.versions.first(where: { $0.effectiveFrom == from }) {
+        if let existing = record.versions.first(where: { calendar.savedDay($0.effectiveFrom) == from }) {
             change(existing)
-        } else if let base = rules.version(record.data, on: from) {
+        } else if let base = rules.version(record.data(calendar: calendar), on: from) {
             let version = ScheduleVersionRecord(
                 weekdays: base.weekdays.map(\.rawValue).sorted(), startMinute: base.window.start.minutesSinceMidnight,
                 endMinute: base.window.end.minutesSinceMidnight, skipsPerWeek: base.skipsPerWeek, effectiveFrom: from)
@@ -112,11 +126,13 @@ final class HabitRepository {
             change(version)
         }
         if alsoLater {
-            for later in record.versions where later.effectiveFrom > from { change(later) }
+            for later in record.versions where calendar.savedDay(later.effectiveFrom) > from { change(later) }
         }
     }
 
+    /// Archives the streak. Today's misses so far are saved first, so archiving can't undo them.
     func archive(_ id: String, now: Date) {
+        catchUp(now: now)
         guard let record = record(id), record.archivedAt == nil else { return }
         record.archivedAt = now
         save()
@@ -131,8 +147,10 @@ final class HabitRepository {
         save()
     }
 
-    /// Deletes the streak, its schedule, check-ins, skips, and photo files. Past day results stay as they were.
-    func delete(_ id: String) {
+    /// Deletes the streak, its schedule, check-ins, skips, and photo files. Today's misses so far are saved first,
+    /// and past day results stay as they were, so only windows that haven't closed yet are affected.
+    func delete(_ id: String, now: Date) {
+        catchUp(now: now)
         guard let record = record(id) else { return }
         photos.delete(record.checkIns.map(\.photoFileName))
         context.delete(record)
@@ -166,7 +184,7 @@ final class HabitRepository {
     }
 
     private func checkCanCheckIn(_ record: StreakRecord, now: Date) throws {
-        let data = record.data
+        let data = record.data(calendar: calendar)
         let today = calendar.startOfDay(for: now)
         guard !data.isArchived, rules.isJudged(data, on: today), let version = rules.version(data, on: today) else {
             throw CheckInError.notScheduled
@@ -181,14 +199,14 @@ final class HabitRepository {
         let checkIn = CheckInRecord(day: day, time: time, photoFileName: photoFileName)
         context.insert(checkIn)
         checkIn.streak = record
-        for skip in record.skips where skip.day == day && !skip.refunded { skip.refunded = true }
+        for skip in record.skips where calendar.savedDay(skip.day) == day && !skip.refunded { skip.refunded = true }
     }
 
     /// Uses a skip for today: a scheduled day, before its window closes, nothing done yet, a skip left.
     @discardableResult
     func skip(_ id: String, now: Date) -> Bool {
         guard let record = record(id) else { return false }
-        let data = record.data
+        let data = record.data(calendar: calendar)
         let today = calendar.startOfDay(for: now)
         guard rules.outcome(data, on: today, now: now) == .pending, rules.skipsLeft(data, now: now) > 0 else {
             return false
@@ -204,33 +222,82 @@ final class HabitRepository {
 
     /// Saves the result of every day since the last processed one, up to yesterday, in order. Then updates
     /// the longest day streak and best flame form.
-    func catchUp(now: Date) {
+    /// Brings saved data up to `now` (context.md §10–11):
+    /// 1. notices a time zone change and records any window it jumped over;
+    /// 2. saves the result of every day since the last processed one, up to yesterday, in order (a day that already
+    ///    has a partial result from when it was "today" keeps its miss or +1);
+    /// 3. saves what has already happened today (a miss, or the +1), so deleting or archiving can't undo it;
+    /// 4. updates the longest day streak and best flame form.
+    /// `offset` is the time zone's offset from GMT now (seconds); tests pass their own.
+    func catchUp(now: Date, offset: Int? = nil) {
         let today = calendar.startOfDay(for: now)
         let yesterday = day(after: today, by: -1)
         let app = appRecord
         // The pretend clock went backwards (DEBUG): forget results from "today" on.
-        if let last = app.lastProcessedDay, last >= today {
-            for result in dayResults() where result.day >= today { context.delete(result) }
+        if let last = app.lastProcessedDay.map(calendar.savedDay), last >= today {
+            for result in dayResults() where calendar.savedDay(result.day) >= today { context.delete(result) }
             app.lastProcessedDay = yesterday
         }
+
+        let offset = offset ?? calendar.timeZone.secondsFromGMT(for: now)
+        if let lastSeen = app.lastSeenAt, let lastOffset = app.lastSeenOffset, lastOffset != offset, lastSeen < now {
+            recordWindowsSkipped(before: lastSeen, beforeOffset: lastOffset, now: now, nowOffset: offset)
+        }
+        app.lastSeenAt = now
+        app.lastSeenOffset = offset
+
         let streaks = streaks()
+        let saved = Dictionary(dayResults().map { (calendar.savedDay($0.day), $0) }, uniquingKeysWith: { first, _ in first })
         if let first = streaks.map({ calendar.startOfDay(for: $0.createdAt) }).min() {
-            var day = app.lastProcessedDay.map { self.day(after: $0) } ?? first
-            day = max(day, first)
-            let existing = Set(dayResults().map(\.day))
+            var day = max(app.lastProcessedDay.map { self.day(after: calendar.savedDay($0)) } ?? first, first)
             while day <= yesterday {
-                if !existing.contains(day) {
-                    let result = rules.dayResult(streaks, day: day)
-                    context.insert(DayResultRecord(day: day, kind: result.kind, missedAt: result.missedAt))
-                }
+                let result = rules.dayResult(streaks, day: day)
+                saveResult(result.kind, missedAt: result.missedAt, on: day, existing: saved[day])
                 day = self.day(after: day)
             }
         }
         app.lastProcessedDay = yesterday
+
+        // Today so far: a miss that has happened, or a +1 that has been earned, is kept from now on.
+        let todayRecord = rules.dayRecord(streaks, day: today, now: now)
+        if let firstMiss = todayRecord.items.filter({ $0.isMissed(at: now) }).map(\.closes).min() {
+            saveResult(.broken, missedAt: firstMiss, on: today, existing: saved[today])
+        } else if todayRecord.isComplete {
+            saveResult(.counted, missedAt: nil, on: today, existing: saved[today])
+        }
+
         let state = dayStreakState(now: now, streaks: streaks)
         app.longestDayStreak = max(app.longestDayStreak, state.longest)
         app.bestFlameForm = max(app.bestFlameForm, state.bestForm.rawValue)
         save()
+    }
+
+    /// Saves a day's result, combined with what was already saved for it: a miss always wins, then a +1.
+    private func saveResult(_ kind: DayResultKind, missedAt: Date?, on day: Date, existing: DayResultRecord?) {
+        guard let existing else {
+            context.insert(DayResultRecord(day: day, kind: kind, missedAt: missedAt))
+            return
+        }
+        let old = DayResultKind(rawValue: existing.kind) ?? .rest
+        if old == .broken || kind == .broken {
+            existing.kind = DayResultKind.broken.rawValue
+            existing.missedAt = [existing.missedAt, missedAt].compactMap { $0 }.min()
+        } else if old != .counted {
+            existing.kind = kind.rawValue
+        }
+    }
+
+    /// Records the windows a time zone change jumped over, so they don't count as misses.
+    private func recordWindowsSkipped(before: Date, beforeOffset: Int, now: Date, nowOffset: Int) {
+        let skipped = rules.windowsSkippedByClockJump(streaks(), before: before, beforeOffset: beforeOffset, now: now,
+                                                      nowOffset: nowOffset)
+        for (streakID, day) in skipped {
+            guard let record = record(streakID.uuidString), !record.skippedWindows.contains(where: { calendar.savedDay($0.day) == day })
+            else { continue }
+            let window = SkippedWindowRecord(day: day)
+            context.insert(window)
+            window.streak = record
+        }
     }
 
     /// The day streak right now: saved day results, then today as it stands, merged with the app record.
@@ -238,8 +305,15 @@ final class HabitRepository {
         let streaks = streaks ?? self.streaks()
         let today = calendar.startOfDay(for: now)
         var state = StreakRules.dayStreak(results: pastResults(before: today),
-                                          today: rules.dayRecord(streaks, day: today, now: now), now: now)
+                                          today: rules.dayRecord(streaks, day: today, now: now),
+                                          todaySoFar: todaySoFar(today), now: now)
         return merged(state: &state)
+    }
+
+    /// What's already saved about today, if anything.
+    private func todaySoFar(_ today: Date) -> (kind: DayResultKind, missedAt: Date?)? {
+        dayResults().first { calendar.savedDay($0.day) == today }
+            .map { (DayResultKind(rawValue: $0.kind) ?? .rest, $0.missedAt) }
     }
 
     /// What checking `id` in at `now` would do to the day streak (celebration steps 2 and 3), without saving.
@@ -247,7 +321,8 @@ final class HabitRepository {
         let today = calendar.startOfDay(for: now)
         let streaks = streaks()
         let record = rules.dayRecord(streaks, day: today, now: now)
-        var before = StreakRules.dayStreak(results: pastResults(before: today), today: record, now: now)
+        var before = StreakRules.dayStreak(results: pastResults(before: today), today: record,
+                                           todaySoFar: todaySoFar(today), now: now)
         before = merged(state: &before)
         var after = record
         after.items = record.items.map { item in
@@ -266,8 +341,8 @@ final class HabitRepository {
 
     private func pastResults(before today: Date) -> [(day: Date, kind: DayResultKind, missedAt: Date?)] {
         dayResults()
-            .filter { $0.day < today }
-            .map { ($0.day, DayResultKind(rawValue: $0.kind) ?? .rest, $0.missedAt) }
+            .map { (calendar.savedDay($0.day), DayResultKind(rawValue: $0.kind) ?? .rest, $0.missedAt) }
+            .filter { $0.0 < today }
     }
 
     /// Adds what only the app record knows: records that survive deleted streaks, and whether the
@@ -277,7 +352,7 @@ final class HabitRepository {
         state.longest = max(state.longest, app.longestDayStreak)
         state.bestForm = max(state.bestForm, FlameForm(rawValue: app.bestFlameForm) ?? .ember)
         if let lastBreak = state.lastBreak {
-            state.lastBreak?.screenShown = app.endedScreenShownForBreak == lastBreak.day
+            state.lastBreak?.screenShown = app.endedScreenShownForBreak.map(calendar.savedDay) == lastBreak.day
         }
         return state
     }
@@ -319,10 +394,10 @@ final class HabitRepository {
             let created = day(after: today, by: -daysAgo)
             let id = create(draft, now: created)
             guard let record = record(id) else { continue }
-            let missDay = missesOne ? scheduledPastDays(record.data, from: created, now: now).dropLast(3).last : nil
+            let missDay = missesOne ? scheduledPastDays(record.data(calendar: calendar), from: created, now: now).dropLast(3).last : nil
             var day = created
             while day <= today {
-                let data = record.data
+                let data = record.data(calendar: calendar)
                 if rules.isJudged(data, on: day), let version = rules.version(data, on: day) {
                     let (opens, closes) = rules.window(version.window, on: day)
                     let isMiss = day == missDay

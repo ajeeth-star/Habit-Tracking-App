@@ -27,6 +27,9 @@ final class RealDataUITests: XCTestCase {
             app.buttons[day].tap()
         }
         app.buttons["form.save"].tap()
+        // The first streak brings the reminder offer (unless reminders are already allowed on this simulator).
+        let notNow = app.buttons["Not now"]
+        if notNow.waitForExistence(timeout: 3) { notNow.tap() }
         let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Pushups'")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 3), "The new streak is on Today")
         snapshot("1-created")
@@ -64,6 +67,44 @@ final class RealDataUITests: XCTestCase {
         app.launch()
         assertCheckedIn()
         snapshot("5-after-restart")
+    }
+
+    /// The reminder offer appears right after the first streak is created, and only then (context.md §7).
+    func testReminderPermissionAfterFirstStreak() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        // `-askForReminders YES` shows it even if this simulator already allows reminders.
+        app.launchArguments = ["-resetData", "YES", "-askForReminders", "YES", "-settings.name", ""]
+        app.launch()
+        XCTAssertFalse(app.buttons["Turn on reminders"].waitForExistence(timeout: 2), "Not on first launch")
+
+        createStreak("Stretch")
+        let turnOn = app.buttons["Turn on reminders"]
+        XCTAssertTrue(turnOn.waitForExistence(timeout: 5), "Offered right after the first streak")
+        XCTAssertTrue(app.staticTexts[
+            "I'll remind you when your windows open, so your streak never sneaks away."].exists)
+        snapshot("reminders-offer")
+        app.buttons["Not now"].tap()
+        XCTAssertTrue(turnOn.waitForNonExistence(timeout: 3))
+
+        // A second streak doesn't ask again.
+        app.buttons["Create streak"].firstMatch.tap()
+        createStreak("Read", openForm: false)
+        XCTAssertFalse(turnOn.waitForExistence(timeout: 3), "Only once")
+    }
+
+    private func createStreak(_ name: String, openForm: Bool = true) {
+        if openForm {
+            let create = app.buttons["Create a streak"]
+            XCTAssertTrue(create.waitForExistence(timeout: 5))
+            create.tap()
+        }
+        let field = app.textFields["e.g. Gym"]
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        field.tap()
+        field.typeText(name + "\n")
+        app.buttons["Monday"].tap()
+        app.buttons["form.save"].tap()
     }
 
     /// "Fill with sample data" gives a few weeks of history; every main screen shows it.

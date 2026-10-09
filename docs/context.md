@@ -147,20 +147,25 @@ Streaks are the only progress tracking in v1: one per habit (this section) plus 
 
 **Why no cap on skips is safe:** if a user sets skips equal to all their scheduled days, their streak can't break, but it also can't grow, because only check-ins add to it. The number stalls until they show up.
 
-**Broken streak:** the task card says so plainly and without scolding, e.g. "Streak ended Friday at 3w 3d · Longest: 5w 1d · Starts fresh today". How long this message stays is still open (see section 9).
+**Broken streak:** the task card says so plainly and without scolding, e.g. "Streak ended Friday at 3w 3d · Longest: 5w 1d · Starts fresh today". **Decided:** these lines stay on the streak's card until its next check-in.
 
-## 7. Notifications
+## 7. Notifications (reminders)
+
+Built in the reminders phase. Local notifications only, scheduled on the phone; no server or push service.
 
 - **Always on for every task.** No per-task toggle in v1.
-- **Only on scheduled days, and only if the task isn't already checked in or skipped:**
-  - When the window opens.
-  - Repeats during the window every 15 minutes by default (the owner can pick 10, 15, or 30 in Settings).
-  - A **last-call warning 15 minutes before the window closes** by default (10, 15, or 30 in Settings) that mentions skips, e.g. "Gym closes at 8. Check in or use a skip (1 left)."
-- Reminders **stop** as soon as the task is checked in or skipped.
-- **Tapping a notification opens the Today tab.** The open task is highlighted there, one tap from the camera.
-- **Archived habits never remind.**
-- Everything is local (scheduled on the phone). No server or push service.
-- Engineering note: iOS limits how many notifications an app can have scheduled at once (64), so scheduling has to be done in rolling batches rather than all at once.
+- **Only on scheduled days, and only while the task isn't checked in or skipped:**
+  - **Opens:** when the window opens.
+  - **Repeats** during the window, every 10, 15 (default), or 30 minutes (Settings → Reminders → Repeat during window).
+  - A **last-call warning** 10, 15 (default), or 30 minutes before the window closes (Settings → Reminders → Last-call warning) that mentions skips. **No normal repeat within 5 minutes before the last call**, and none after it. If the window is too short for a last call after the opening reminder, there's no last call.
+- The moment a task is **checked in or skipped**, all of its pending reminders are removed (and any of its reminders still sitting in Notification Center).
+- **Tapping a reminder opens the app on the Today tab.** The open task is the hero card there, one tap from the camera.
+- **Archived habits never remind.** Deleted ones obviously don't either.
+- Wording is kind, never guilt-tripping (exact lines in design.md §6).
+- **Reminders always use the real time**, never the DEBUG pretend clock.
+- **Last-call warnings are "time sensitive"** where the iPhone allows it, so they can come through a Focus mode. This needs an Apple capability that may not work with a free Apple ID; until it's confirmed on the owner's iPhone they arrive as normal notifications.
+- **Asking permission:** never on first launch. Right after the **first streak is created**, a friendly screen (the happy flame: "I'll remind you when your windows open, so your streak never sneaks away.") with **Turn on reminders** (shows the iPhone's permission prompt) and **Not now**. It's shown only once. No bribes or rewards for allowing. If declined, the Settings warning row ("Notifications are off…") handles it.
+- **Scheduling:** iOS allows only 64 pending notifications per app, so the app keeps a rolling schedule: the soonest reminders first, stopping at 64. The whole schedule is recalculated when the app opens or comes back, a streak is created, edited, archived, restored, or deleted, a check-in or skip happens, a reminder setting changes, or a day is processed.
 
 ## 8. Things it should NOT do (v1)
 
@@ -209,16 +214,14 @@ Technically out of scope:
 
 Decide these with the owner when the relevant phase comes up. Don't guess.
 
-- **"Streak ended" message:** does it stay until the next check-in on that task, show once, or stay for the rest of that day?
 - **Deleting a check-in:** never allowed, allowed only while the window is open, or allowed anytime with the streak recalculated?
-- **Timezones, travel, and daylight saving time:** what happens to windows and streaks. For now everything uses the iPhone's current local time: windows are stored as minutes after midnight and days as local calendar days, so a trip to another time zone shifts which moments count. Still to decide.
 - **A task with 0 scheduled days**, or a once-a-week task (weak streak signal). What's the minimum?
 - **Checking in more than scheduled** (e.g. an extra gym day): does it count for anything? Leaning no.
 - **Photo verification:** when and how (on-device vs. an AI service), and what rejection looks like.
 
 ## 10. The flame and the day streak (gamification phase 2)
 
-Built (on sample data, like everything else so far). Looks: `docs/design.md` §2b and §4.14–4.16.
+Built. Looks: `docs/design.md` §2b and §4.14–4.16.
 
 **The day streak** is one overall streak across all your streaks, counted in days.
 
@@ -227,7 +230,7 @@ Built (on sample data, like everything else so far). Looks: `docs/design.md` §2
 - **Rest days** (nothing scheduled) keep it alive without adding.
 - It **ends the moment any scheduled window closes** with no check-in and no skip, even if other streaks that day are still open. That day can't add to it any more; the next fully resolved day with a check-in brings it back at 1.
 - A streak **created today** counts only from its first window that opens after it was created. If today's window already opened, it starts counting tomorrow (or its next scheduled day).
-- **Archived or deleted** streaks stop counting from that moment. Past days are never recalculated, so archiving can't undo a break or a +1 that already happened.
+- **Archived or deleted** streaks stop counting from that moment. Deleting or archiving only affects windows that **haven't closed yet**: once a window has closed with no check-in or skip, that miss counts for the day streak even if the streak is deleted or archived afterwards, and a +1 already earned today stays too. Past days are never recalculated.
 - **Saved on the iPhone** (section 11): each finished day's result, the longest day streak, the best flame form ever reached, which break the "streak ended" screen was last shown for, and the last day fully processed. The current day streak is calculated from the saved day results. **Delete all data** resets all of it.
 
 **The flame** is a character drawn in code (no image files) that follows the day streak. It's not an AI and never talks beyond a few fixed, kind lines.
@@ -255,6 +258,7 @@ Built in the "make it real" phase. A fresh install starts empty. The Design Gall
 - **Schedule versions** per streak: weekdays, window start and end (minutes after midnight, local time), skips per week, and the date the version takes effect. **Every day is judged by the version in effect that day.**
   - Changing **days or skips** creates a version that starts **next Monday** (an existing next-Monday version is updated instead).
   - Changing the **window** takes effect **immediately**: from today if today's old window hasn't opened yet, otherwise from tomorrow (decided by the build, so editing can't rescue a window that already opened or closed). A pending next-Monday version gets the new window too.
+  - **Brand-new streaks:** until a streak's first window has opened, changes to its days, skips, or window apply **immediately** (there's no history to protect). After that, the rules above apply.
   - The **name, color, and icon** are simply edited.
 - **Check-in:** id, streak, day, exact time, photo file name.
 - **Skip:** id, streak, day, exact time, refunded (a later check-in that day gave it back).
@@ -266,9 +270,13 @@ Built in the "make it real" phase. A fresh install starts empty. The Design Gall
 
 **Photos:** each check-in photo is saved as a JPEG (longest side 1600 px, quality 0.7, unique file name) in the app's private storage, never the camera roll. Deleting a streak, or Delete all data, deletes its photo files; archiving keeps them. Settings → Photo storage shows the real count and size.
 
-**Catching up on time passing.** When the app opens, comes back to the foreground, or a window closes while it's open, every day since the last processed day is processed in order (misses, ended streaks, the day streak, the flame form, records). This works even after weeks away. All times are the iPhone's local time (time zones and daylight saving: still open, section 9).
+**Catching up on time passing.** When the app opens, comes back to the foreground, or a window closes while it's open, every day since the last processed day is processed in order (misses, ended streaks, the day streak, the flame form, records). This works even after weeks away.
 
-**DEBUG tools** (Settings → Developer, never in the App Store build): a pretend clock that every rule and screen reads "now" from (+15 min, +1 hour, +1 day, +1 week, reset to real time; the pretend time is shown at the top), "Fill with sample data" (a few realistic weeks of streaks, check-ins, skips, and photos added to the real saved data), and "Erase everything". The simulator keeps a DEBUG-only "Use sample photo" button since it has no camera.
+**Time zones and daylight saving (decided).** All windows follow the iPhone's **current** local time. Days already processed are never re-judged. If a time zone or daylight-saving change **skips over a window entirely** (the clock jumps from before it opens to after it closes), that window doesn't count as a miss for that streak; it's treated like an unscheduled day. Engineering notes: a daylight-saving jump is exact (the window simply doesn't exist that day). A time-zone change is noticed the next time the app is open, and the skipped span is taken to be the hours the clock jumped just before that moment, which is exact when the app is opened soon after landing. Going backwards in time (flying west) never skips anything.
+
+**Saved-data versions.** The saved-data layout is versioned (SwiftData schema versions plus a migration plan), so later phases can add saved data without wiping anything. Version 1 is the layout from the "make it real" phase; version 2 (this phase) adds the record of windows skipped by a clock change and when the app last saw the time zone.
+
+**DEBUG tools** (Settings → Developer, never in the App Store build): a pretend clock that every rule and screen reads "now" from (+15 min, +1 hour, +1 day, +1 week, reset to real time; the pretend time is shown at the top), "Fill with sample data" (a few realistic weeks of streaks, check-ins, skips, and photos added to the real saved data), "Erase everything", "Send test reminder in 5 seconds", and "Show pending reminders". While the pretend clock is on, a bright yellow banner across the top of every screen says so ("Pretend time: Thu 8:01 PM · TAP TO RESET"); tapping it goes back to real time. The simulator keeps a DEBUG-only "Use sample photo" button since it has no camera.
 
 ## Coming next (recorded, not built)
 
@@ -294,5 +302,5 @@ One phase at a time. Each phase ends with something runnable.
 7. Playful restyle: always-dark navy look, Nunito font, chunky 3D buttons and cards, slide-in and confetti animations, haptics, sound effects (sample data)
 8. Flame character and day streak (gamification phase 2): day streak rules and saving, the drawn flame with 8 forms and 6 moods, the Today header with a speech bubble, the Flame screen, the 3-step celebration, the "streak ended" screen, the new empty state, and a Flame Lab in the Design Gallery (sample data)
 9. Make it real (replaces the old separate Tasks, Check-in, and Streaks-and-skips phases): saved data with SwiftData, real photos and the real camera, every screen on saved data, catching up on days that passed, a DEBUG pretend clock and sample-data tools — see section 11
-10. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+10. Reminders and fixes: local reminders (window open, repeats, last call, stop on check-in or skip, tap opens Today), the permission screen after the first streak, edits to brand-new streaks, misses that survive deleting, the hero card animation after a check-in, time zone and daylight saving rules, saved-data versioning, and a DEBUG pretend-time banner — see sections 7 and 11
 11. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe — see "Coming next"

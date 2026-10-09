@@ -16,6 +16,21 @@ struct HomeView: View {
     @State private var openedTaskID: String?
     @State private var history: HistoryRoute?
     @State private var checkInTask: TaskSnapshot?
+    /// While a check-in started here is on screen, Today keeps showing that streak as it was, so the hero card
+    /// closes into the "Done today" row in front of you once the celebration ends (design.md §4.8).
+    @State private var heldTask: TaskSnapshot?
+
+    private var tasks: [TaskSnapshot] {
+        guard let heldTask else { return store.tasks }
+        return store.tasks.map { $0.id == heldTask.id ? heldTask : $0 }
+    }
+
+    private var active: [TaskSnapshot] { tasks.filter { !$0.isArchived } }
+
+    /// The celebration closed: let the checked-in streak catch up, with the card animation.
+    private func releaseHeldTask() {
+        withAnimation(reduceMotion ? nil : Motion.settle) { heldTask = nil }
+    }
     @State private var showingCreate = false
     @State private var showingSettings = false
     @State private var showingFlame = false
@@ -71,14 +86,14 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             NavigationStack { SettingsView(showsDone: true) }
         }
-        .fullScreenCover(item: $checkInTask) { task in
+        .fullScreenCover(item: $checkInTask, onDismiss: releaseHeldTask) { task in
             CheckInFlowView(task: task)
         }
     }
 
     private func content(now: Date) -> some View {
         ScrollView {
-            if store.active.isEmpty {
+            if active.isEmpty {
                 // Header on top, the invitation centered in the space left over.
                 VStack(alignment: .leading, spacing: 0) {
                     topRow
@@ -93,10 +108,10 @@ struct HomeView: View {
                     header(now: now)
                     thisWeekRow
                         .padding(.top, Spacing.md)
-                    WeekStrip(days: WeekProgress.days(for: store.tasks, now: now)) { day in
+                    WeekStrip(days: WeekProgress.days(for: tasks, now: now)) { day in
                         history = HistoryRoute(focus: HistoryFocus(day: day.date, nothingScheduled: day.total == 0))
                     }
-                    StatusLine(summary: TodaySummary(tasks: store.active, now: now))
+                    StatusLine(summary: TodaySummary(tasks: active, now: now))
                         .padding(.top, Spacing.sm)
                     heroCards(now: now)
                     todaySection(now: now)
@@ -114,7 +129,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             topRow
             flameRow(now: now)
-            SpeechBubble(text: Formatters.current.bubble(dayStreak.status(tasks: store.tasks, now: now).bubble,
+            SpeechBubble(text: Formatters.current.bubble(dayStreak.status(tasks: tasks, now: now).bubble,
                                                          variant: bubbleVariant),
                          pointerX: Sizes.flameHeader / 2)
                 .padding(.top, Spacing.sm)
@@ -150,7 +165,7 @@ struct HomeView: View {
     /// Tapping the flame or the number opens the Flame screen.
     private func flameRow(now: Date) -> some View {
         let state = dayStreak.state
-        let mood = dayStreak.status(tasks: store.tasks, now: now).mood
+        let mood = dayStreak.status(tasks: tasks, now: now).mood
         return HStack(alignment: .center, spacing: Spacing.md) {
             Button { showingFlame = true } label: {
                 FlameCharacterView(form: state.form, mood: mood, size: Sizes.flameHeader, days: state.current)
@@ -220,7 +235,7 @@ struct HomeView: View {
     // MARK: Today
 
     private var scheduledToday: [TaskSnapshot] {
-        store.active.filter(\.isScheduledToday).sorted { $0.window.start < $1.window.start }
+        active.filter(\.isScheduledToday).sorted { $0.window.start < $1.window.start }
     }
 
     /// Open right now and not done: the hero card(s), right under the status line.
@@ -280,7 +295,10 @@ struct HomeView: View {
             task: task,
             now: now,
             onOpen: { openedTaskID = task.id },
-            onCheckIn: { checkInTask = task }
+            onCheckIn: {
+                heldTask = task
+                checkInTask = task
+            }
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
@@ -290,7 +308,7 @@ struct HomeView: View {
     /// Tasks not scheduled today, soonest next window first.
     private func comingUp(now: Date) -> [(task: TaskSnapshot, daysAhead: Int)] {
         let today = Weekday(now)
-        return store.active
+        return active
             .filter { !$0.isScheduledToday }
             .compactMap { task in task.nextWindow(after: today).map { (task, $0.daysAhead) } }
             .sorted { ($0.daysAhead, $0.task.window.start.minutesSinceMidnight)

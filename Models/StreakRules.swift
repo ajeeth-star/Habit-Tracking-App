@@ -46,6 +46,8 @@ struct StreakData: Hashable, Identifiable {
     var versions: [ScheduleData]
     var checkIns: [CheckInData] = []
     var skips: [SkipData] = []
+    /// Days whose window a time zone change jumped over: not judged.
+    var skippedDays: Set<Date> = []
 
     var isArchived: Bool { archives.last.map { $0.restoredAt == nil } ?? false }
 }
@@ -85,7 +87,8 @@ struct StreakSummary: Hashable {
 }
 
 struct StreakRules {
-    var calendar: Calendar = .current
+    /// Follows the phone's time zone as it changes.
+    var calendar: Calendar = .autoupdatingCurrent
 
     // MARK: Schedule
 
@@ -98,23 +101,28 @@ struct StreakRules {
             ?? streak.versions.min { $0.effectiveFrom < $1.effectiveFrom }
     }
 
-    /// When the window opens and closes on `day` (local time).
+    /// When the window opens and closes on `day`, in the phone's current local time. A clock time that doesn't
+    /// exist that day (skipped by daylight saving) moves to the next one that does.
     func window(_ window: TimeWindow, on day: Date) -> (opens: Date, closes: Date) {
         let start = calendar.startOfDay(for: day)
         func at(_ time: TimeOfDay) -> Date {
-            calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: start) ?? start
+            calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: start,
+                          matchingPolicy: .nextTime) ?? start
         }
         return (at(window.start), at(window.end))
     }
 
     /// Whether `day` counts for this streak: a scheduled day (by the version in effect then), whose
-    /// window opens after the streak was created, and that wasn't lost to archiving.
+    /// window opens after the streak was created, and that wasn't lost to archiving or a clock change.
     /// - Archiving stops counting from that moment (a window still open then doesn't count).
     /// - After a restore, counting starts the next day.
+    /// - A window a daylight-saving or time zone change jumped over entirely doesn't count (context.md §11).
     func isJudged(_ streak: StreakData, on day: Date) -> Bool {
         guard let version = version(streak, on: day), version.weekdays.contains(Weekday(day, calendar: calendar))
         else { return false }
         let (opens, closes) = window(version.window, on: day)
+        if closes <= opens { return false }
+        if streak.skippedDays.contains(calendar.startOfDay(for: day)) { return false }
         if opens < streak.createdAt { return false }
         let dayStart = calendar.startOfDay(for: day)
         for period in streak.archives where period.archivedAt <= closes {
@@ -135,6 +143,49 @@ struct StreakRules {
             return .skipped(at: skip.time)
         }
         return window(version.window, on: day).closes <= now ? .missed : .pending
+    }
+
+    /// Whether any of the streak's windows has opened yet. Until then it's brand new and edits apply at once.
+    func hasOpenedAWindow(_ streak: StreakData, now: Date) -> Bool {
+        var day = calendar.startOfDay(for: streak.createdAt)
+        while day <= now {
+            if isJudged(streak, on: day), let version = version(streak, on: day),
+               window(version.window, on: day).opens <= now {
+                return true
+            }
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
+        }
+        return false
+    }
+
+    // MARK: Clock changes
+
+    /// Windows a forward jump of the clock (a time zone change; `calendar` is already in the new zone) skipped
+    /// over entirely, so they aren't misses (context.md §11). The jump is taken to have happened just before `now`:
+    /// the skipped span is the `nowOffset − beforeOffset` hours of local time before now, but never before the
+    /// local time at `before`. Only today's and yesterday's windows that closed with nothing done can qualify.
+    func windowsSkippedByClockJump(_ streaks: [StreakData], before: Date, beforeOffset: Int, now: Date,
+                                   nowOffset: Int) -> [(streakID: UUID, day: Date)] {
+        let jump = TimeInterval(nowOffset - beforeOffset)
+        guard jump > 0 else { return [] }
+        // "Wall-clock" moments: local time written as if it were GMT, so times in both zones compare directly.
+        let wallNow = now.addingTimeInterval(TimeInterval(nowOffset))
+        let wallBefore = before.addingTimeInterval(TimeInterval(beforeOffset))
+        let spanStart = max(wallBefore, wallNow.addingTimeInterval(-jump))
+        let today = calendar.startOfDay(for: now)
+        var skipped: [(UUID, Date)] = []
+        for streak in streaks where !streak.isArchived {
+            for back in [1, 0] {
+                guard let day = calendar.date(byAdding: .day, value: -back, to: today),
+                      outcome(streak, on: day, now: now) == .missed,
+                      let version = version(streak, on: day) else { continue }
+                let (opens, closes) = window(version.window, on: day)
+                let wallOpens = opens.addingTimeInterval(TimeInterval(nowOffset))
+                let wallCloses = closes.addingTimeInterval(TimeInterval(nowOffset))
+                if wallOpens >= spanStart, wallCloses <= wallNow { skipped.append((streak.id, day)) }
+            }
+        }
+        return skipped
     }
 
     // MARK: Streaks
@@ -246,27 +297,42 @@ struct StreakRules {
     }
 
     /// The day streak folded from finished days' results (oldest first), then today as it stands.
-    static func dayStreak(results: [(day: Date, kind: DayResultKind, missedAt: Date?)], today: DayRecord, now: Date)
-        -> DayStreakState {
+    /// `todaySoFar` is what's already been saved about today: a miss or a +1 that has happened stays, even if the
+    /// streak behind it is deleted or archived afterwards (context.md §10).
+    static func dayStreak(results: [(day: Date, kind: DayResultKind, missedAt: Date?)], today: DayRecord,
+                          todaySoFar: (kind: DayResultKind, missedAt: Date?)? = nil, now: Date) -> DayStreakState {
         var state = DayStreakState()
         for result in results.sorted(by: { $0.day < $1.day }) {
-            switch result.kind {
-            case .counted:
-                state.current += 1
-                state.longest = max(state.longest, state.current)
-                state.bestForm = max(state.bestForm, state.form)
-                state.lastCountedDay = result.day
-            case .broken:
-                if state.current > 0 {
-                    state.lastBreak = .init(day: result.day, at: result.missedAt ?? result.day, length: state.current)
-                }
-                state.current = 0
-                state.missedDay = result.day
-            case .rest, .allSkipped:
-                break
-            }
+            apply(result.kind, day: result.day, missedAt: result.missedAt, to: &state)
         }
-        return DayStreakRules.apply(today, at: now, to: state).0
+        // A miss already saved for today comes first: that day can't add any more.
+        if todaySoFar?.kind == .broken {
+            apply(.broken, day: today.day, missedAt: todaySoFar?.missedAt, to: &state)
+        }
+        state = DayStreakRules.apply(today, at: now, to: state).0
+        // A +1 already earned today stays, even if the streak that earned it is gone.
+        if todaySoFar?.kind == .counted, state.missedDay != today.day, state.lastCountedDay != today.day {
+            apply(.counted, day: today.day, missedAt: nil, to: &state)
+        }
+        return state
+    }
+
+    private static func apply(_ kind: DayResultKind, day: Date, missedAt: Date?, to state: inout DayStreakState) {
+        switch kind {
+        case .counted:
+            state.current += 1
+            state.longest = max(state.longest, state.current)
+            state.bestForm = max(state.bestForm, state.form)
+            state.lastCountedDay = day
+        case .broken:
+            if state.current > 0 {
+                state.lastBreak = .init(day: day, at: missedAt ?? day, length: state.current)
+            }
+            state.current = 0
+            state.missedDay = day
+        case .rest, .allSkipped:
+            break
+        }
     }
 
     // MARK: Snapshots for the screens

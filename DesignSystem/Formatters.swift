@@ -190,11 +190,38 @@ struct Formatters {
 
     /// "Closes in 1h 20m", "Closes in 2h", or "Closes in 12m".
     func closesIn(minutes: Int) -> String {
+        Strings.Hero.closesIn(duration(minutes: minutes))
+    }
+
+    /// "1h 20m", "2h", "45m".
+    func duration(minutes: Int) -> String {
         let hours = minutes / 60, rest = minutes % 60
-        let duration = hours == 0 ? Strings.Hero.minutes(rest)
+        return hours == 0 ? Strings.Hero.minutes(rest)
             : rest == 0 ? Strings.Hero.hours(hours)
             : Strings.Hero.hoursMinutes(hours, rest)
-        return Strings.Hero.closesIn(duration)
+    }
+
+    /// "Thu 8:01 PM" (the DEBUG pretend-time banner).
+    func bannerTime(_ date: Date) -> String {
+        format(date, template: "EEE") + " " + time(of: date)
+    }
+
+    // MARK: Reminders (design.md §4.18)
+
+    func reminderOpens(_ task: String, end: TimeOfDay) -> (title: String, body: String) {
+        (Strings.Reminder.opensTitle(task), Strings.Reminder.opensBody(time(end)))
+    }
+
+    func reminderRepeat(_ task: String, minutesLeft: Int, end: TimeOfDay) -> (title: String, body: String) {
+        (Strings.Reminder.repeatTitle(task, duration(minutes: minutesLeft)), Strings.Reminder.repeatBody(time(end)))
+    }
+
+    /// Mentions skips if there are any left, otherwise the streak at stake.
+    func reminderLastCall(_ task: String, end: TimeOfDay, skipsLeft: Int, streakDays: Int) -> (title: String, body: String) {
+        let body = skipsLeft > 0 ? Strings.Reminder.lastCallSkips(skipsLeft)
+            : streakDays > 0 ? Strings.Reminder.lastCallStreak(streakDays)
+            : Strings.Reminder.lastCallNoStreak
+        return (Strings.Reminder.lastCallTitle(task, time(end)), body)
     }
 
     /// Today's status line in two parts: `emphasis` ("2 of 3", shown stronger) and the rest

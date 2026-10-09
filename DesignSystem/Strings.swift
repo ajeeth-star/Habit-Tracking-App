@@ -128,8 +128,31 @@ enum Strings {
         static let designGallery = "Design Gallery"
     }
 
+    /// Reminder notifications (design.md §4.18): kind, never guilt-tripping.
+    enum Reminder {
+        static func opensTitle(_ task: String) -> String { "\(task) is open" }
+        static func opensBody(_ end: String) -> String { "Until \(end). Snap a photo to keep your streak going." }
+        static func repeatTitle(_ task: String, _ left: String) -> String { "\(task) · \(left) left" }
+        static func repeatBody(_ end: String) -> String { "Your window closes at \(end)." }
+        static func lastCallTitle(_ task: String, _ end: String) -> String { "\(task) closes at \(end)" }
+        static func lastCallSkips(_ n: Int) -> String { "Check in or use a skip (\(n) left)." }
+        static func lastCallStreak(_ days: Int) -> String { "Last chance to keep your \(days)-day streak." }
+        static let lastCallNoStreak = "Last chance to check in today."
+        static let testTitle = "Test reminder"
+        static let testBody = "Reminders are working."
+
+        // The permission screen (design.md §4.17)
+        static let permissionBubble = "I'll remind you when your windows open, so your streak never sneaks away."
+        static let turnOn = "Turn on reminders"
+        static let notNow = "Not now"
+    }
+
     /// Settings → Developer (DEBUG builds only).
     enum Developer {
+        static let sendTestReminder = "Send test reminder in 5 seconds"
+        static let showPendingReminders = "Show pending reminders"
+        static let noPendingReminders = "No reminders scheduled."
+        static func banner(_ time: String) -> String { "Pretend time: \(time) · TAP TO RESET" }
         static func pretendTime(_ time: String) -> String { "Pretend time: \(time)" }
         static func realTime(_ time: String) -> String { "Real time: \(time)" }
         static let plus15Minutes = "+15 min"

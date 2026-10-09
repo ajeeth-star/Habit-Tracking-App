@@ -138,6 +138,9 @@ struct SettingsView: View {
         .softHaptic(trigger: settings.streakDisplay)
         .softHaptic(trigger: settings.repeatMinutes)
         .softHaptic(trigger: settings.lastCallMinutes)
+        // New reminder timing: plan every reminder again.
+        .onChange(of: settings.repeatMinutes) { store.refresh() }
+        .onChange(of: settings.lastCallMinutes) { store.refresh() }
         .softHaptic(trigger: settings.vibrations)
         .softHaptic(trigger: settings.sounds)
         .softHaptic(trigger: settings.celebrationAnimation)

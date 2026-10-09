@@ -729,7 +729,8 @@ Every group is a **chunky card** (`SettingsSection`: `surface` fill, 2pt `border
 
 **Developer** (DEBUG builds only, not compiled into Release)
 - "Design Gallery" → opens the gallery. There is no paintbrush button on the Today tab any more.
-- Above it (DEBUG only), the developer tools (context.md §11): the current time on top ("Pretend time: Thursday, October 8 · 6:40 PM" in `flame`, or "Real time: …" in `textPrimary`); a row of four small buttons "+15 min", "+1 hour", "+1 day", "+1 week" (`pill` text in `info` on `surfaceRaised`); then rows "Reset to real time", "Fill with sample data", and "Erase everything" (with an `AppDialog` confirmation).
+- Above it (DEBUG only), the developer tools (context.md §11): the current time on top ("Pretend time: Thursday, October 8 · 6:40 PM" in `flame`, or "Real time: …" in `textPrimary`); a row of four small buttons "+15 min", "+1 hour", "+1 day", "+1 week" (`pill` text in `info` on `surfaceRaised`); then rows "Reset to real time", "Fill with sample data", "Erase everything" (with an `AppDialog` confirmation), "Send test reminder in 5 seconds", and "Show pending reminders" (pushes a plain list of every scheduled reminder: its time, title, and body).
+- **Pretend-time banner** (DEBUG only, `Views/Components/PretendTimeBanner.swift`): while the pretend clock is on, a 20pt full-width strip across the top of every screen, in its own window above sheets and full-screen covers, just under the status bar and Dynamic Island (above the gear and +): `gold` fill, `textOnBright` text in `pill` reading "Pretend time: Thu 8:01 PM · TAP TO RESET". Tapping it resets to real time.
 
 ### 4.14 Flame screen — `Views/Flame/FlameView.swift`
 
@@ -762,6 +763,20 @@ Full screen, shown **once per break**, the first time the app is opened (or come
 Gallery → Flame → **Flame Lab**: chips to pick a **form** (8) and a **mood** (6) with the live character at 200pt; buttons to play **each celebration step**, the **full 3-step** sequence, a **revival**, the **evolution** from the picked form to the next, and the **streak-ended screen**; and a still grid of **every form × every mood**. The section also has the Today header in each speech-bubble situation, the Flame screen, the ended screen, and the empty state.
 
 ---
+
+### 4.17 Reminder permission — `Views/Reminders/ReminderPermissionView.swift`
+
+Shown once, as a sheet, right after the first streak is created (context.md §7), only if reminders aren't already allowed. Centered on `background`:
+
+- The **happy flame** (the current form; Ember for a brand-new user), about 120pt.
+- `Spacing.sm` below: a `SpeechBubble` (centered): "I'll remind you when your windows open, so your streak never sneaks away."
+- At the bottom: a chunky primary **"TURN ON REMINDERS"** button (`bell.fill`). It shows the iPhone's permission prompt (or, if reminders were turned off before, opens the app's page in the iPhone Settings app), then closes the sheet.
+- Under it, a small plain **"Not now"** text button (`subhead`, `textSecondary`, 44pt tap target) that just closes it.
+- No rewards or pressure for allowing.
+
+### 4.18 Reminders (notifications)
+
+Standard iPhone notifications with the app icon. Kind, never guilt-tripping (copy in §6). Repeats show the time left like the hero card ("1h 20m", "45m"). Last-call warnings are "time sensitive" where allowed.
 
 ## 5. Accessibility
 
@@ -820,4 +835,7 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Flame (VoiceOver) | Your flame. {Form} form. {Mood}. {n} day streak. |
 | Flame screen | Your flame · {n} day streak · {n} days to {form} · You've reached the final form. · Forms · {n} days · Locked · Longest · Best form |
 | Day streak ended | Your {n}-day streak ended · Longest: {n} days · Best form: {form} · One check-in brings me back. · Let's go |
+| Reminders | Opens: {Task} is open / Until {end time}. Snap a photo to keep your streak going. · Repeat: {Task} · {time left} left / Your window closes at {end time}. · Last call: {Task} closes at {end time} / Check in or use a skip ({n} left). · Last call, no skips: {Task} closes at {end time} / Last chance to keep your {n}-day streak. · Last call, no streak yet: {Task} closes at {end time} / Last chance to check in today. |
+| Reminder permission | I'll remind you when your windows open, so your streak never sneaks away. · Turn on reminders · Not now |
+| Developer (DEBUG) | Pretend time: {time} · Real time: {time} · +15 min · +1 hour · +1 day · +1 week · Reset to real time · Fill with sample data · Erase everything · Send test reminder in 5 seconds · Show pending reminders · Pretend time: {Thu 8:01 PM} · TAP TO RESET |
 | Delete-all dialogs | Delete everything? · All streaks and photos will be permanently deleted from this iPhone. · Cancel · Continue · This can't be undone. · Delete everything |

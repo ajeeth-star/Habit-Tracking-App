@@ -228,7 +228,8 @@ struct SavedDataTests {
         // The app isn't opened again until Friday morning.
         repository.catchUp(now: date(9, 10))
 
-        let results = repository.dayResults()
+        // Finished days only; today (a miss at 9 AM) is saved as a partial result too.
+        let results = repository.dayResults().filter { $0.day < midnight(9) }
         #expect(results.map(\.day) == [midnight(5), midnight(6), midnight(7), midnight(8)])
         #expect(results.map(\.kind) == [DayResultKind.counted, .counted, .broken, .broken].map(\.rawValue))
         #expect(results[2].missedAt == date(7, 9))
@@ -247,7 +248,7 @@ struct SavedDataTests {
 
         // Catching up again changes nothing.
         repository.catchUp(now: date(9, 11))
-        #expect(repository.dayResults().count == 4)
+        #expect(repository.dayResults().count == 5) // 4 finished days + today so far
     }
 
     @Test func catchUpAcrossAWeekBoundary() throws {
@@ -272,7 +273,7 @@ struct SavedDataTests {
         try repository.checkIn(id, photo: photo, now: date(5, 8))
         repository.catchUp(now: date(20, 10))
 
-        let results = repository.dayResults()
+        let results = repository.dayResults().filter { $0.day < midnight(20) }
         #expect(results.count == 15) // October 5–19
         #expect(results.first?.kind == DayResultKind.counted.rawValue)
         let restBroken = results.dropFirst().allSatisfy { $0.kind == DayResultKind.broken.rawValue }
@@ -293,7 +294,7 @@ struct SavedDataTests {
         repository.catchUp(now: date(8, 6))
         #expect(repository.dayResults().map(\.kind) == [DayResultKind.counted, .broken, .broken].map(\.rawValue))
 
-        repository.delete(missed)
+        repository.delete(missed, now: date(8, 6))
         repository.catchUp(now: date(8, 6))
         #expect(repository.dayResults().map(\.kind) == [DayResultKind.counted, .broken, .broken].map(\.rawValue))
         #expect(repository.dayStreakState(now: date(8, 6)).lastBreak?.day == midnight(6))
@@ -314,7 +315,7 @@ struct SavedDataTests {
         repository.archive(run, now: date(5, 19))
         #expect(photos.image(runFile) != nil, "Archiving keeps photos")
 
-        repository.delete(gym)
+        repository.delete(gym, now: date(5, 19, 30))
         #expect(!FileManager.default.fileExists(atPath: photos.url(gymFile).path))
         #expect(FileManager.default.fileExists(atPath: photos.url(runFile).path))
         #expect(photos.usage().count == 1)

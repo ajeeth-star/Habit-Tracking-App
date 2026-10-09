@@ -19,6 +19,8 @@ final class AppSettings {
     var sounds: Bool { didSet { save(sounds, Key.sounds) } }
     /// Off shows the celebration without the pop and count-up.
     var celebrationAnimation: Bool { didSet { save(celebrationAnimation, Key.celebrationAnimation) } }
+    /// The reminder permission screen has been shown (it only shows once, after the first streak).
+    var askedForReminders: Bool { didSet { save(askedForReminders, Key.askedForReminders) } }
     /// Only used for the greeting on Today. Up to 30 characters, no leading spaces while typing;
     /// `greetingName` trims the rest.
     var name: String {
@@ -46,6 +48,7 @@ final class AppSettings {
         static let lastCallMinutes = "settings.lastCallMinutes"
         static let vibrations = "settings.vibrations"
         static let celebrationAnimation = "settings.celebrationAnimation"
+        static let askedForReminders = "settings.askedForReminders"
         static let name = "settings.name"
     }
 
@@ -57,6 +60,7 @@ final class AppSettings {
         vibrations = defaults.object(forKey: Key.vibrations) as? Bool ?? true
         sounds = defaults.object(forKey: Key.sounds) as? Bool ?? true
         celebrationAnimation = defaults.object(forKey: Key.celebrationAnimation) as? Bool ?? true
+        askedForReminders = defaults.bool(forKey: Key.askedForReminders)
         name = Self.clean(defaults.string(forKey: Key.name) ?? "")
     }
 
