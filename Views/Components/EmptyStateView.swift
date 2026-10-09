@@ -9,11 +9,10 @@ struct EmptyStateView: View {
             Button(action: onCreate) {
                 Image(systemName: "plus")
                     .font(Font.app.largeIcon)
-                    .foregroundStyle(Color.app.onAccent)
+                    .foregroundStyle(Color.app.textOnBright)
                     .frame(width: Sizes.emptyStateCircle, height: Sizes.emptyStateCircle)
-                    .background(Color.app.accent, in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ChunkyCircleStyle())
             .accessibilityLabel(Strings.Home.createTask)
 
             Text(Strings.Home.emptyTitle)
@@ -30,5 +29,33 @@ struct EmptyStateView: View {
                 .padding(.top, Spacing.xs)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// The empty state's big round + : a flame circle with a lip that presses down like a chunky button.
+private struct ChunkyCircleStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Styled(configuration: configuration)
+    }
+
+    private struct Styled: View {
+        let configuration: Configuration
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @Environment(AppSettings.self) private var settings
+
+        var body: some View {
+            let pressed = configuration.isPressed && !reduceMotion
+            configuration.label
+                .background(Color.app.flame, in: Circle())
+                .offset(y: pressed ? Sizes.buttonLip : 0)
+                .background {
+                    Circle().fill(Color.app.flameLip).offset(y: Sizes.buttonLip)
+                }
+                .padding(.bottom, Sizes.buttonLip)
+                .animation(reduceMotion ? nil : Motion.press, value: configuration.isPressed)
+                .sensoryFeedback(trigger: configuration.isPressed) { _, isDown in
+                    settings.vibrations && isDown ? .impact(weight: .light) : nil
+                }
+        }
     }
 }

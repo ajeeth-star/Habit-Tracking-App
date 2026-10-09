@@ -23,9 +23,10 @@ struct HabitsView: View {
                 } else {
                     sectionTitle(Strings.Habits.active)
                     VStack(spacing: Spacing.sm) {
-                        ForEach(store.activeByStreak) { task in
+                        ForEach(Array(store.activeByStreak.enumerated()), id: \.element.id) { index, task in
                             Button { openedTaskID = task.id } label: { HabitRow(task: task) }
-                                .buttonStyle(.plain)
+                                .buttonStyle(ChunkyCardButtonStyle())
+                                .appearSlideIn(index: index)
                         }
                     }
                 }
@@ -62,7 +63,7 @@ struct HabitsView: View {
             Button { showingCreate = true } label: {
                 Image(systemName: "plus")
                     .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.accentText)
+                    .foregroundStyle(Color.app.flame)
                     .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget)
                     .contentShape(Rectangle())
             }
@@ -90,7 +91,7 @@ struct ArchivedHabitsList: View {
         VStack(spacing: Spacing.sm) {
             ForEach(store.archived) { task in
                 Button { onOpen(task.id) } label: { HabitRow(task: task) }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ChunkyCardButtonStyle())
             }
         }
     }

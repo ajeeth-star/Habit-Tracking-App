@@ -15,6 +15,7 @@ struct DisclosureRow: View {
                 Text(Strings.counted(label, count))
                     .font(Font.app.meta)
                     .monospacedDigit()
+                    .contentTransition(.numericText())
                     .foregroundStyle(Color.app.textSecondary)
                 Spacer()
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")

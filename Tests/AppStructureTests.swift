@@ -18,7 +18,7 @@ struct AppStructureTests {
     @Test func settingsDefaults() {
         let settings = AppSettings(defaults: freshDefaults())
         #expect(settings.streakDisplay == .weeksAndDays)
-        #expect(settings.appearance == .system)
+        #expect(settings.sounds)
         #expect(settings.repeatMinutes == 15)
         #expect(settings.lastCallMinutes == 15)
         #expect(settings.vibrations)
@@ -29,7 +29,7 @@ struct AppStructureTests {
         let defaults = freshDefaults()
         let settings = AppSettings(defaults: defaults)
         settings.streakDisplay = .daysOnly
-        settings.appearance = .dark
+        settings.sounds = false
         settings.repeatMinutes = 30
         settings.lastCallMinutes = 10
         settings.vibrations = false
@@ -37,7 +37,7 @@ struct AppStructureTests {
 
         let reopened = AppSettings(defaults: defaults)
         #expect(reopened.streakDisplay == .daysOnly)
-        #expect(reopened.appearance == .dark)
+        #expect(!reopened.sounds)
         #expect(reopened.repeatMinutes == 30)
         #expect(reopened.lastCallMinutes == 10)
         #expect(!reopened.vibrations)
@@ -65,10 +65,8 @@ struct AppStructureTests {
     @Test func unknownSavedValuesFallBackToDefaults() {
         let defaults = freshDefaults()
         defaults.set(7, forKey: "settings.repeatMinutes")
-        defaults.set("sepia", forKey: "settings.appearance")
         let settings = AppSettings(defaults: defaults)
         #expect(settings.repeatMinutes == 15)
-        #expect(settings.appearance == .system)
     }
 
     // MARK: Store

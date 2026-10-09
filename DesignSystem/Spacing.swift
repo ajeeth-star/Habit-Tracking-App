@@ -15,13 +15,25 @@ enum Spacing {
 /// Fixed sizes and line widths from the spec (design.md §1.5, §2, §4).
 enum Sizes {
     /// Height of every button.
-    static let buttonHeight: CGFloat = 50
+    static let buttonHeight: CGFloat = 52
     /// Minimum tap target for icon-only buttons.
     static let tapTarget: CGFloat = 44
-    /// Card outline and other hairlines.
-    static let hairline: CGFloat = 0.5
-    /// The open-task card outline and the "today" ring.
-    static let emphasisStroke: CGFloat = 1.5
+    /// Card, field, chip, and tab bar borders.
+    static let borderWidth: CGFloat = 2
+    /// Rings: the "today" ring on the task screen, the selected tab's square.
+    static let emphasisStroke: CGFloat = 2
+
+    /// Chunky 3D depth: a button's lip and how far it moves when pressed, and the same for cards.
+    static let buttonLip: CGFloat = 4
+    static let cardLip: CGFloat = 5
+    static let cardPress: CGFloat = 3
+
+    /// Progress bars: height and the glossy stripe along the top of the fill.
+    static let progressBar: CGFloat = 16
+    static let progressHighlight: CGFloat = 4
+
+    /// The selected tab's rounded square.
+    static let tabSelection: CGFloat = 40
 
     static let pillHorizontalPadding: CGFloat = 8
     static let pillVerticalPadding: CGFloat = 3

@@ -38,13 +38,13 @@ struct ArchivedHabitView: View {
                 .padding(.top, Spacing.md)
 
                 VStack(spacing: Spacing.xs) {
-                    PrimaryButton(Strings.Habits.restore) {
+                    ChunkyButton(Strings.Habits.restore) {
                         // Leave first, so this screen doesn't turn into the task screen on the way out.
                         let id = task.id
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { store.restore(id) }
                     }
-                    DangerTextButton(Strings.Habits.deletePermanently) {
+                    ChunkyButton(style: .danger, Strings.Habits.deletePermanently) {
                         withoutAnimation { confirmingDelete = true }
                     }
                 }
@@ -60,7 +60,7 @@ struct ArchivedHabitView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(Font.app.button)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
                         .contentShape(Rectangle())
                 }

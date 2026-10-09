@@ -24,8 +24,8 @@ struct PhotoPreviewView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 AdaptiveStack {
-                    SecondaryButton(Strings.Camera.retake, onDark: true, action: onRetake)
-                    PrimaryButton(Strings.Camera.submit, action: onSubmit)
+                    ChunkyButton(style: .onDark, Strings.Camera.retake, action: onRetake)
+                    ChunkyButton(Strings.Camera.submit, action: onSubmit)
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.bottom, Spacing.lg)

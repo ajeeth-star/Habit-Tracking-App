@@ -1,33 +1,26 @@
 import SwiftUI
-import UIKit
 
-/// The 8 streak colors (design.md §1.1b). Each streak has one. Use as `StreakColor.coral.main`.
+/// The 8 bright streak colors (design.md §1.1b), each with a darker lip. Each streak has one.
+/// Use as `StreakColor.coral.main`.
 enum StreakColor: String, CaseIterable, Hashable, Identifiable {
-    case coral, orange, green, teal, blue, indigo, pink, purple
+    case coral, orange, yellow, green, teal, blue, purple, pink
 
     var id: Self { self }
 
-    /// The color itself, with light and dark variants (`streakCoral` in the asset catalog).
+    /// The color itself (`streakCoral` in the asset catalog).
     var main: Color { Color(assetName) }
 
-    /// `main` at 14%, for badge and selected-cell backgrounds (`streakCoralSoft`).
-    var soft: Color { Color(assetName + "Soft") }
+    /// The darker 3D edge under a chunky fill (`streakCoralLip`).
+    var lip: Color { Color(assetName + "Lip") }
 
-    /// The light-mode `main` in both modes: fills that carry white text or icons, so white stays readable.
-    var solid: Color { Color(uiColor: lightUIColor) }
-
-    /// `solid` 20% darker: the far end of the hero card's gradient.
-    var deep: Color { Color(uiColor: lightUIColor.darkened(by: 0.2)) }
+    /// `main` at 20%: icon badge backgrounds and selected icon cells.
+    var badge: Color { main.opacity(0.2) }
 
     /// "streakCoral"
     var assetName: String { "streak" + rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
 
     /// What VoiceOver calls it: "Coral".
     var accessibilityName: String { Strings.StreakStyle.colorName(self) }
-
-    private var lightUIColor: UIColor {
-        (UIColor(named: assetName) ?? .systemIndigo).resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
-    }
 
     /// A new streak gets the first color not used by `used`; all taken starts again at coral.
     static func nextUnused(after used: [StreakColor]) -> StreakColor {
@@ -64,10 +57,3 @@ enum StreakIcon {
     }
 }
 
-private extension UIColor {
-    func darkened(by amount: CGFloat) -> UIColor {
-        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
-        getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
-        return UIColor(hue: hue, saturation: saturation, brightness: brightness * (1 - amount), alpha: alpha)
-    }
-}

@@ -22,11 +22,11 @@ struct StreakStyleTests {
 
     @Test func newStreaksGetTheNextUnusedColor() {
         #expect(StreakColor.nextUnused(after: []) == .coral)
-        #expect(StreakColor.nextUnused(after: [.coral, .orange]) == .green)
+        #expect(StreakColor.nextUnused(after: [.coral, .orange]) == .yellow)
         #expect(StreakColor.nextUnused(after: [.orange]) == .coral)
         #expect(StreakColor.nextUnused(after: StreakColor.allCases) == .coral)
-        // The sample's active streaks use everything except indigo (Meditation is archived).
-        #expect(StreakColor.nextUnused(after: SampleData.allTasks.map(\.color)) == .indigo)
+        // The sample's active streaks use everything except yellow (the new color).
+        #expect(StreakColor.nextUnused(after: SampleData.allTasks.map(\.color)) == .yellow)
     }
 
     @Test("Icons guessed from the name", arguments: [

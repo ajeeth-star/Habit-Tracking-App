@@ -61,11 +61,6 @@ struct SettingsView: View {
                         Text(Strings.Settings.weeksAndDays).tag(StreakDisplayMode.weeksAndDays)
                         Text(Strings.Settings.daysOnly).tag(StreakDisplayMode.daysOnly)
                     }
-                    Picker(Strings.Settings.appearance, selection: $settings.appearance) {
-                        Text(Strings.Settings.system).tag(AppSettings.Appearance.system)
-                        Text(Strings.Settings.light).tag(AppSettings.Appearance.light)
-                        Text(Strings.Settings.dark).tag(AppSettings.Appearance.dark)
-                    }
                 }
                 .listRowBackground(Color.app.surface)
             } header: {
@@ -94,7 +89,11 @@ struct SettingsView: View {
             Section {
                 Group {
                     Toggle(Strings.Settings.vibrations, isOn: $settings.vibrations)
+                        .tint(Color.app.success)
+                    Toggle(Strings.Settings.sounds, isOn: $settings.sounds)
+                        .tint(Color.app.success)
                     Toggle(Strings.Settings.celebrationAnimation, isOn: $settings.celebrationAnimation)
+                        .tint(Color.app.success)
                 }
                 .listRowBackground(Color.app.surface)
             } header: {
@@ -145,7 +144,7 @@ struct SettingsView: View {
             Section {
                 Group {
                     Button(Strings.Settings.designGallery) { showingGallery = true }
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                 }
                 .listRowBackground(Color.app.surface)
             } header: {
@@ -156,7 +155,14 @@ struct SettingsView: View {
         .listStyle(.insetGrouped)
         .font(Font.app.body)
         .foregroundStyle(Color.app.textPrimary)
-        .tint(Color.app.accentText)
+        .tint(Color.app.flame)
+        // Soft haptic on every toggle and picker.
+        .softHaptic(trigger: settings.streakDisplay)
+        .softHaptic(trigger: settings.repeatMinutes)
+        .softHaptic(trigger: settings.lastCallMinutes)
+        .softHaptic(trigger: settings.vibrations)
+        .softHaptic(trigger: settings.sounds)
+        .softHaptic(trigger: settings.celebrationAnimation)
         .scrollContentBackground(.hidden)
         .background(Color.app.background)
         .toolbar {
@@ -165,7 +171,7 @@ struct SettingsView: View {
                     Button { dismiss() } label: {
                         Text(Strings.Settings.done)
                             .font(Font.app.button)
-                            .foregroundStyle(Color.app.accentText)
+                            .foregroundStyle(Color.app.flame)
                             .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
                             .contentShape(Rectangle())
                     }
@@ -222,7 +228,7 @@ struct SettingsView: View {
                     }
                 }
                 .font(Font.app.button)
-                .foregroundStyle(Color.app.accentText)
+                .foregroundStyle(Color.app.flame)
                 .buttonStyle(.borderless)
             }
         }
@@ -299,7 +305,7 @@ struct ArchivedHabitsScreen: View {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(Font.app.button)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
                         .contentShape(Rectangle())
                 }

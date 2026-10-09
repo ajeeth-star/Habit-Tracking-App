@@ -99,9 +99,9 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 **Settings** (a sheet from the gear on Today, with a Done button)
 
 - **You:** an optional name, used only for the greeting on Today. Stays on the iPhone.
-- **Display:** show streaks as weeks and days (default) or days only; appearance System (default) / Light / Dark.
+- **Display:** show streaks as weeks and days (default) or days only. The app is always dark; there's no appearance setting.
 - **Reminders:** repeat during the window every 10, 15 (default), or 30 minutes; last-call warning 10, 15 (default), or 30 minutes before the window closes. If iPhone notifications are off for the app, a warning with a button to the app's page in the iPhone Settings app.
-- **Feel:** vibrations on/off (all haptics); celebration animation on/off.
+- **Feel:** vibrations on/off (all haptics); sounds on/off (short effects for check-in, celebration, skip, streak ending; the iPhone's silent switch mutes them); celebration animation on/off.
 - **Streaks:** the archived streaks list.
 - **Your data:** how many photos are stored and how much space they take; **Delete all data** (two confirmations).
 - **About:** app version.
@@ -214,6 +214,22 @@ Decide these with the owner when the relevant phase comes up. Don't guess.
 - **Checking in more than scheduled** (e.g. an extra gym day): does it count for anything? Leaning no.
 - **Photo verification:** when and how (on-device vs. an AI service), and what rejection looks like.
 
+## Coming next (recorded, not built)
+
+These are planned. Nothing for them exists in the app yet.
+
+**Phase 2 — flame character**
+- One overall **"every day" streak**: it counts days in a row where **every** scheduled streak was checked in or skipped. Rest days (nothing scheduled) don't break it.
+- A **flame character**, drawn in code (no image files), follows that overall streak. It grows into new forms at **7, 14, 30, 50, 100, and 365 days**.
+- It has **moods**: cheering (just checked in), idle, sleepy (rest days), worried (a window is about to close), sad (the overall streak broke).
+
+**Phase 3 — rewards**
+- **XP** for every check-in fills a **level bar**.
+- Each **level-up**: 9 face-down boxes; you pick **3**. Every box holds **coins** (different amounts). The boxes you didn't pick are never revealed.
+- **Coins** buy **accessories** for the flame in a **wardrobe shop**.
+- XP, levels, coins, and accessories are **never lost**, even when a streak breaks.
+- Coins can **never** be bought with real money.
+
 ## Build phases (planned)
 
 One phase at a time. Each phase ends with something runnable.
@@ -224,7 +240,8 @@ One phase at a time. Each phase ends with something runnable.
 4. App structure: tab bar (Today, Habits, History, Settings), Habits and History tabs, saved settings, archive / restore / delete for habits, delete all data (sample data)
 5. Navigation and color: three-tab bar with a raised Today button, Settings behind a gear, a color and icon per streak, week strip and greeting on Today, colored hero card and celebration (sample data)
 6. Today cleanup: two tabs (Today, Streaks), History opened from Today, a status line instead of the summary card, an optional name for the greeting, rest days (sample data)
-7. Tasks: create, edit, list, and save (including the next-week edit rules)
-8. Check-in: in-app camera, preview, window-only rule, photo storage, history
-9. Streaks and skips: counting rules, skip confirmation, refunds, broken state
-10. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today
+7. Playful restyle: always-dark navy look, Nunito font, chunky 3D buttons and cards, slide-in and confetti animations, haptics, sound effects (sample data)
+8. Tasks: create, edit, list, and save (including the next-week edit rules)
+9. Check-in: in-app camera, preview, window-only rule, photo storage, history
+10. Streaks and skips: counting rules, skip confirmation, refunds, broken state
+11. Reminders: window open, repeats, last call, stop on check-in or skip, tap opens Today

@@ -13,10 +13,15 @@ struct StatTile<Value: View>: View {
             value
                 .font(Font.app.statValue)
                 .foregroundStyle(Color.app.textPrimary)
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.sm)
-        .background(Color.app.surfaceMuted, in: .rounded(Radius.md))
+        .background(Color.app.surfaceRaised, in: .rounded(Radius.md))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
+                .strokeBorder(Color.app.border, lineWidth: Sizes.borderWidth)
+        }
         .accessibilityElement(children: .combine)
     }
 }

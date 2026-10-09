@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// A task on the home screen (design.md §4.1). The open task is the hero card: its streak's color, a live
-/// "Closes in" countdown, and the Check in button. Every other state is a compact surface card.
+/// A task on the home screen (design.md §4.1). The open task is the hero card: a chunky card in its
+/// streak's color with a live "Closes in" countdown and the Check in button. Every other state is a
+/// tappable chunky card that presses down.
 struct TaskCard: View {
     let task: TaskSnapshot
     /// The current time, for the countdown and "Next: Friday".
@@ -14,29 +15,19 @@ struct TaskCard: View {
 
     var body: some View {
         let state = task.cardState
-        Group {
-            if state == .open {
-                hero
-            } else {
+        if state == .open {
+            hero
+                .padding(Spacing.md)
+                .chunkyCard(fill: task.color.main, lip: task.color.lip, outline: nil)
+        } else {
+            Button(action: onOpen) {
                 compact(state)
+                    .padding(Spacing.md)
             }
-        }
-        .padding(Spacing.md)
-        .background {
-            if state == .open {
-                // One of the three places gradients are allowed (design.md §1.5).
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                    .fill(LinearGradient(colors: [task.color.solid, task.color.deep],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-            } else {
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous).fill(Color.app.surface)
-            }
-        }
-        .overlay {
-            if state != .open {
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                    .strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
-            }
+            .buttonStyle(ChunkyCardButtonStyle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityText(state))
+            .accessibilityAddTraits(.isButton)
         }
     }
 
@@ -52,21 +43,28 @@ struct TaskCard: View {
                             .font(Font.app.cardTitle)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay,
-                                         flameColor: Color.app.onAccent)
+                                         flameColor: Color.app.textOnBright)
                             .font(Font.app.statValue)
+                            .contentTransition(.numericText())
                     }
-                    .foregroundStyle(Color.app.onAccent)
+                    .foregroundStyle(Color.app.textOnBright)
 
                     Text(heroMeta)
                         .font(Font.app.meta)
                         .monospacedDigit()
-                        .foregroundStyle(Color.app.onAccentMuted)
+                        .foregroundStyle(Color.app.onBrightMuted)
+                        .contentTransition(.numericText())
                 }
             }
-            .modifier(OpensTask(label: accessibilityText(.open), action: onOpen))
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onOpen)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityText(.open))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { onOpen() }
 
-            PrimaryButton(Strings.Home.checkIn, systemImage: "camera.fill", inverted: true,
-                          invertedLabel: task.color.solid, action: onCheckIn)
+            ChunkyButton(Strings.Home.checkIn, systemImage: "camera.fill", style: .white(label: task.color.main),
+                         action: onCheckIn)
         }
     }
 
@@ -87,12 +85,13 @@ struct TaskCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay)
                         .font(Font.app.cardStreak)
+                        .contentTransition(.numericText())
                 }
                 .foregroundStyle(nameColor(state))
 
                 let meta = metaText(state)
                 if pill(state) != nil || meta != nil {
-                    AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .center) {
+                    AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
                         if let pill = pill(state) {
                             StatusPill(kind: pill)
                         }
@@ -116,7 +115,6 @@ struct TaskCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .modifier(OpensTask(label: accessibilityText(state), action: onOpen))
     }
 
     private func nameColor(_ state: TaskCardState) -> Color {
@@ -130,7 +128,7 @@ struct TaskCard: View {
     private func pill(_ state: TaskCardState) -> StatusPill.Kind? {
         switch state {
         case .open: .open
-        case .done: .done
+        case .done(let time): .done(format.time(time))
         case .upcoming: .upcoming(format.time(task.window.start))
         case .skipped: .skipped
         case .missed: .missed
@@ -141,7 +139,7 @@ struct TaskCard: View {
     private func metaText(_ state: TaskCardState) -> String? {
         switch state {
         case .open: heroMeta
-        case .done(let time): format.doneMeta(checkedInAt: time, next: task.nextDay(after: Weekday(now)))
+        case .done: task.nextDay(after: Weekday(now)).map { Strings.Home.nextDay(format.nextDay($0)) }
         case .upcoming, .skipped: format.skipsLeft(task.skipsLeft)
         case .missed: nil
         case .notToday(let next): Strings.Home.next(format.nextDay(next), format.window(task.window))
@@ -162,18 +160,3 @@ struct TaskCard: View {
     }
 }
 
-/// Tapping a card's text opens the task; VoiceOver reads it as one button. The Check in button stays separate.
-private struct OpensTask: ViewModifier {
-    let label: String
-    let action: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .contentShape(Rectangle())
-            .onTapGesture(perform: action)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(label)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { action() }
-    }
-}

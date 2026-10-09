@@ -11,6 +11,7 @@ struct CheckInFlowView: View {
     var onCheckedIn: (TaskSnapshot) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppSettings.self) private var settings
     @State private var step = Step.camera
 
     private enum Step { case camera, preview, celebration }
@@ -29,6 +30,7 @@ struct CheckInFlowView: View {
                 closesAt: task.window.end,
                 onRetake: { step = .camera },
                 onSubmit: {
+                    SoundPlayer.shared.play(.checkIn, enabled: settings.sounds)
                     onCheckedIn(task.checkedIn(at: now))
                     step = .celebration
                 })

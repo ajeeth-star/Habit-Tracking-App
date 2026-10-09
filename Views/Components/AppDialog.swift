@@ -17,6 +17,8 @@ struct AppDialog: View {
     var actionStyle = ActionStyle.destructive
     /// Played on the action, if Settings → Vibrations is on.
     var actionHaptic: SensoryFeedback?
+    /// Played on the action, if Settings → Sounds is on.
+    var actionSound: SoundPlayer.Sound?
     /// False keeps the dialog up after the action, so the caller can swap in a follow-up question.
     var closesOnAction = true
     let onAction: () -> Void
@@ -71,10 +73,10 @@ struct AppDialog: View {
             }
 
             VStack(spacing: Spacing.xs) {
-                PrimaryButton(safeTitle, action: close)
+                ChunkyButton(safeTitle, action: close)
                 switch actionStyle {
-                case .neutral: SecondaryButton(actionTitle, action: act)
-                case .destructive: DangerTextButton(actionTitle, action: act)
+                case .neutral: ChunkyButton(style: .secondary, actionTitle, action: act)
+                case .destructive: ChunkyButton(style: .danger, actionTitle, action: act)
                 }
             }
             .padding(.top, Spacing.lg)
@@ -82,7 +84,11 @@ struct AppDialog: View {
         .multilineTextAlignment(.center)
         .padding(Spacing.lg)
         .frame(width: min(width - Sizes.dialogHorizontalInset, Sizes.dialogMaxWidth))
-        .background(Color.app.surface, in: .rounded(Radius.xl))
+        .background(Color.app.surfaceRaised, in: .rounded(Radius.xl))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                .strokeBorder(Color.app.border, lineWidth: Sizes.borderWidth)
+        }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
@@ -90,6 +96,7 @@ struct AppDialog: View {
 
     private func act() {
         actionCount += 1
+        if let actionSound { SoundPlayer.shared.play(actionSound, enabled: settings.sounds) }
         onAction()
         if closesOnAction { close() }
     }

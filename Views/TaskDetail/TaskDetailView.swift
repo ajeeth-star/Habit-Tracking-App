@@ -39,7 +39,7 @@ struct TaskDetailView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(Font.app.button)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
                         .contentShape(Rectangle())
                 }
@@ -49,7 +49,7 @@ struct TaskDetailView: View {
                 Button { showingEdit = true } label: {
                     Text(Strings.Detail.edit)
                         .font(Font.app.body)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
                         .contentShape(Rectangle())
                 }
@@ -129,12 +129,12 @@ struct TaskDetailView: View {
 
     private var actions: some View {
         AdaptiveStack {
-            PrimaryButton(checkInTitle, systemImage: canCheckIn ? "camera.fill" : nil) {
+            ChunkyButton(checkInTitle, systemImage: canCheckIn ? "camera.fill" : nil) {
                 showingCheckIn = true
             }
             .disabled(!canCheckIn)
 
-            SecondaryButton(task.skipsLeft == 0 ? Strings.Detail.noSkipsLeft : Strings.Detail.useSkip) {
+            ChunkyButton(style: .secondary, task.skipsLeft == 0 ? Strings.Detail.noSkipsLeft : Strings.Detail.useSkip) {
                 // The dialog fades in over this screen rather than sliding up.
                 withoutAnimation { showingSkip = true }
             }
@@ -151,7 +151,7 @@ struct TaskDetailView: View {
                     Button { showingHistory = true } label: {
                         Text(Strings.Detail.seeAll)
                             .font(Font.app.meta)
-                            .foregroundStyle(Color.app.accentText)
+                            .foregroundStyle(Color.app.flame)
                             .frame(minHeight: Sizes.tapTarget)
                             .contentShape(Rectangle())
                     }

@@ -32,7 +32,11 @@ targets:
         CFBundleDisplayName: HabitApp
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UILaunchScreen: {}
+        UIUserInterfaceStyle: Dark
+        UIAppFonts:
+          - Nunito-Variable.ttf
+        UILaunchScreen:
+          UIColorName: background
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSCameraUsageDescription: Take a photo to prove you completed a habit.

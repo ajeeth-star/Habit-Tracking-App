@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Full-screen celebration right after Submit (design.md §4.8): the flame pops in, the streak counts up
-/// in days, then it closes on its own after 2.5 seconds. Tapping anywhere closes it sooner.
+/// Full-screen celebration right after Submit (design.md §4.8, §1.6): the flame pops in and wiggles, confetti
+/// bursts from behind it, the streak counts up in days, and a short flourish plays. It closes on its own
+/// after 2.5 seconds; tapping anywhere closes it sooner.
 struct StreakCelebrationView: View {
     let result: CheckInResult
     /// False keeps it on screen (the Design Gallery uses this so it can be looked at).
@@ -13,6 +14,8 @@ struct StreakCelebrationView: View {
     @State private var popped = false
     @State private var shownDays: Int?
     @State private var didClose = false
+    /// Bumped once the flame has landed, to start the wiggle.
+    @State private var wiggles = 0
 
     private let format = Formatters.current
 
@@ -26,18 +29,33 @@ struct StreakCelebrationView: View {
         VStack(spacing: 0) {
             Image(systemName: "flame.fill")
                 .font(Font.app.celebrationIcon)
-                .foregroundStyle(Color.app.streak)
+                .foregroundStyle(Color.app.flame)
                 .scaleEffect(popped || !animates ? 1 : Motion.popStartScale)
+                .keyframeAnimator(initialValue: 0.0, trigger: wiggles) { flame, angle in
+                    flame.rotationEffect(.degrees(angle), anchor: .bottom)
+                } keyframes: { _ in
+                    KeyframeTrack {
+                        SpringKeyframe(-12, duration: 0.1)
+                        SpringKeyframe(10, duration: 0.12)
+                        SpringKeyframe(-6, duration: 0.12)
+                        SpringKeyframe(0, duration: 0.2)
+                    }
+                }
                 .background {
-                    // A soft glow in the streak's color, one of the three places gradients are allowed.
+                    // A flat, soft disc in the streak's color (no gradients; design.md §4.8).
                     Circle()
-                        .fill(RadialGradient(colors: [result.color.main.opacity(Motion.glowOpacity), .clear],
-                                             center: .center, startRadius: 0,
-                                             endRadius: Sizes.celebrationGlow / 2))
+                        .fill(result.color.badge)
                         .frame(width: Sizes.celebrationGlow, height: Sizes.celebrationGlow)
                         .scaleEffect(popped || !animates ? 1 : Motion.popStartScale)
                         .opacity(popped || !animates ? 1 : 0)
                         .accessibilityHidden(true)
+                }
+                .background {
+                    // Confetti bursts from behind the flame. Not with Reduce Motion.
+                    if animates && popped {
+                        ConfettiView()
+                            .frame(width: 600, height: 900)
+                    }
                 }
 
             Text("\(shownDays ?? (animates ? result.previousStreakDays : streakDays))")
@@ -85,7 +103,13 @@ struct StreakCelebrationView: View {
                 withAnimation(Motion.pop) { popped = true }
                 try? await Task.sleep(for: .milliseconds(250))
                 withAnimation(Motion.settle) { shownDays = streakDays }
+                wiggles += 1
             }
+        }
+        .task {
+            // The flourish, just after the check-in ding.
+            try? await Task.sleep(for: .milliseconds(200))
+            SoundPlayer.shared.play(.celebration, enabled: settings.sounds)
         }
         .task {
             guard closesAutomatically else { return }

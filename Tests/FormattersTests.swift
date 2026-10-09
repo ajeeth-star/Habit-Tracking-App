@@ -150,11 +150,10 @@ struct FormattersTests {
         #expect(plain(format.nextUp(later)) == "Next: Walk Sunday at 10:00 AM")
     }
 
-    @Test func doneMeta() {
-        #expect(plain(format.doneMeta(checkedInAt: TimeOfDay(18, 42), next: .weekday(.friday)))
-            == "Checked in 6:42 PM · Next: Friday")
-        #expect(plain(format.doneMeta(checkedInAt: TimeOfDay(7, 42), next: .tomorrow))
-            == "Checked in 7:42 AM · Next: Tomorrow")
+    @Test func donePill() {
+        #expect(plain(StatusPill(kind: .done(format.time(TimeOfDay(7, 42)))).text) == "Done 7:42 AM")
+        #expect(StatusPill(kind: .done(nil)).text == "Done")
+        #expect(StatusPill(kind: .open).text == "Open now")
     }
 
     @Test func weekProgress() {

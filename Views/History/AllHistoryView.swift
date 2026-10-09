@@ -56,7 +56,9 @@ struct AllHistoryView: View {
                                             .font(Font.app.meta)
                                             .foregroundStyle(Color.app.textTertiary)
                                     }
-                                    ForEach(day.events) { row($0) }
+                                    ForEach(Array(day.events.enumerated()), id: \.element.id) { index, event in
+                                        row(event).appearSlideIn(index: index)
+                                    }
                                 }
                             }
                         }
@@ -77,7 +79,6 @@ struct AllHistoryView: View {
         .navigationTitle(Strings.AllHistory.title)
         .navigationBarTitleDisplayMode(.large)
         .toolbar(.visible, for: .navigationBar)
-        .toolbarBackground(Color.app.background, for: .navigationBar)
         .fullScreenCover(item: $openedPhoto) { event in
             PhotoViewer(date: event.date) { openedPhoto = nil }
         }
@@ -122,7 +123,7 @@ struct AllHistoryView: View {
             HStack(spacing: Spacing.xs) {
                 FilterChip(title: Strings.AllHistory.all, isSelected: filter == nil) { filter = nil }
                 ForEach(chipTasks) { task in
-                    FilterChip(title: task.name, isSelected: filter == task.id, selectedFill: task.color.solid) {
+                    FilterChip(title: task.name, isSelected: filter == task.id, selectedFill: task.color.main) {
                         filter = task.id
                     }
                 }

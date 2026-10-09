@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// The small status capsule on the right of a task card.
+/// A task's status (design.md §2): no box, just bold ALL CAPS text in the status color —
+/// "OPEN NOW", "DONE 7:42 AM", "OPENS 9:00 PM", "SKIPPED", "MISSED".
 struct StatusPill: View {
     enum Kind: Hashable {
         case open
-        case done
+        /// Carries the formatted check-in time, e.g. "7:42 AM" (nil when it isn't known).
+        case done(String?)
         /// Carries the formatted opening time, e.g. "9:00 PM".
         case upcoming(String)
         case skipped
@@ -14,46 +16,34 @@ struct StatusPill: View {
     let kind: Kind
 
     var body: some View {
-        HStack(spacing: Spacing.xxs) {
-            if kind == .done {
-                Image(systemName: "checkmark")
-            }
-            Text(text)
-                .monospacedDigit()
-        }
-        .fixedSize()
-        .font(Font.app.pill)
-        .foregroundStyle(foreground)
-        .padding(.horizontal, Sizes.pillHorizontalPadding)
-        .padding(.vertical, Sizes.pillVerticalPadding)
-        .background(background, in: Capsule())
+        Text(text)
+            .font(Font.app.pill)
+            .monospacedDigit()
+            .capsLabel()
+            .foregroundStyle(color)
+            .fixedSize()
+            .accessibilityLabel(text)
     }
 
+    /// Sentence case, as VoiceOver reads it: "Done 7:42 AM".
     var text: String {
         switch kind {
         case .open: Strings.Pill.open
-        case .done: Strings.Pill.done
+        case .done(let time?): Strings.Pill.doneAt(time)
+        case .done(nil): Strings.Pill.done
         case .upcoming(let time): Strings.Pill.opens(time)
         case .skipped: Strings.Pill.skipped
         case .missed: Strings.Pill.missed
         }
     }
 
-    private var foreground: Color {
+    private var color: Color {
         switch kind {
-        case .open: Color.app.accentText
+        case .open: Color.app.flame
         case .done: Color.app.success
-        case .upcoming, .skipped: Color.app.textSecondary
+        case .upcoming: Color.app.textTertiary
+        case .skipped: Color.app.textSecondary
         case .missed: Color.app.danger
-        }
-    }
-
-    private var background: Color {
-        switch kind {
-        case .open: Color.app.accentSoft
-        case .done: Color.app.successSoft
-        case .upcoming, .skipped: Color.app.surfaceMuted
-        case .missed: Color.app.dangerSoft
         }
     }
 }

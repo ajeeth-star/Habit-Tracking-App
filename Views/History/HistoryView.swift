@@ -30,7 +30,7 @@ struct HistoryView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(Font.app.button)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
                         .contentShape(Rectangle())
                 }

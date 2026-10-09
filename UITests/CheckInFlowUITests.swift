@@ -45,7 +45,7 @@ final class CheckInFlowUITests: XCTestCase {
         snapshot("5-home-after")
 
         doneRow.tap()
-        let gymDone = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gym. Done. Checked in'")).firstMatch
+        let gymDone = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gym. Done '")).firstMatch
         XCTAssertTrue(gymDone.waitForExistence(timeout: 3), "Gym shows as a done card when expanded")
         snapshot("5b-done-expanded")
 
@@ -55,6 +55,29 @@ final class CheckInFlowUITests: XCTestCase {
         XCTAssertTrue(doneToday.waitForExistence(timeout: 5))
         XCTAssertFalse(doneToday.isEnabled, "Check in stays disabled after checking in")
         snapshot("6-task-screen-after")
+    }
+
+    /// Holds the hero card's Check in button down and screenshots it mid-press (the face sinks onto its lip).
+    func testChunkyButtonPressesDown() {
+        let checkIn = app.buttons["Check in"]
+        XCTAssertTrue(checkIn.waitForExistence(timeout: 5))
+        let resting = XCUIScreen.main.screenshot()
+        let restingShot = XCTAttachment(screenshot: resting); restingShot.name = "press-0-resting"; restingShot.lifetime = .keepAlways; add(restingShot)
+        if let dir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"] {
+            try? resting.pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("press-0-resting.png"))
+        }
+        let captured = expectation(description: "mid-press screenshot")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.8) {
+            let shot = XCUIScreen.main.screenshot()
+            if let dir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"] {
+                try? shot.pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("press-1-held.png"))
+            }
+            captured.fulfill()
+        }
+        // Hold on the bottom edge of the button so releasing outside cancels the tap (no camera opens).
+        let start = checkIn.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 1.6, thenDragTo: checkIn.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 6)))
+        wait(for: [captured], timeout: 3)
     }
 
     func testTappingClosesTheCelebrationEarly() {

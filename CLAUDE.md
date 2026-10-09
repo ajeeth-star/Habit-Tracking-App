@@ -29,6 +29,7 @@ Tests/             Unit tests (HabitAppTests target)
 UITests/           UI tests that tap through the app (HabitAppUITests target)
 docs/context.md    Product reference (behavior)
 docs/design.md     Design spec (looks, component and screen names, copy)
+docs/credits.md    Font and sound sources and licenses
 .vscode/           VS Code / SweetPad settings
 ```
 
@@ -39,6 +40,7 @@ docs/design.md     Design spec (looks, component and screen names, copy)
 - To check screens: in a DEBUG build, open Settings → Developer → Design Gallery. Every screen and state is listed there, with light/dark and streak-format switches.
 - Check-in flow UI test: `UITests/CheckInFlowUITests.swift` taps Check in → Use sample photo → Submit → celebration → Home. Set `TEST_RUNNER_SCREENSHOT_DIR=<folder>` on `xcodebuild test` to save a PNG of each step.
 - Animation timing lives in `DesignSystem/Motion.swift`; always check Reduce Motion before animating.
+- Look: always dark navy, Nunito font (`Font.app.*`), chunky 3D `ChunkyButton` / `.chunkyCard()` with a darker lip, bright `flame` brand color, no gradients. Sounds via `SoundPlayer` (Settings → Sounds); sources in `docs/credits.md`.
 - On screen a habit is called a **streak**; code keeps Task/Habit names. Each streak has a `StreakColor` and an SF Symbol icon (`DesignSystem/StreakPalette.swift`).
 - Tabs: Today and Streaks — custom `AppTabBar` (hidden while History is open via `AppRouter.hidesTabBar`). History is pushed from Today (link or a tapped past day); Settings is a sheet from the gear on Today. A Friends tab is planned for later, not built.
 - Gradients are allowed only on the hero card and the celebration glow.

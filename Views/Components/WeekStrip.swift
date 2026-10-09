@@ -50,37 +50,42 @@ private struct DayCircle: View {
     var body: some View {
         ZStack {
             if day.isComplete {
-                Circle().fill(Color.app.accent)
-            } else if day.kind == .today {
+                // Done: a flame circle with a white flame (white is the owner's call here; design.md §1.1).
+                Circle().fill(Color.app.flame)
+                Image(systemName: "flame.fill")
+                    .font(Font.app.badgeIcon)
+                    .foregroundStyle(Color.app.whiteButton)
+                    .transition(.scale.combined(with: .opacity))
+            } else {
                 Circle()
-                    .strokeBorder(Color.app.accent, lineWidth: Sizes.emphasisStroke)
-                    .padding(Sizes.weekStripRing)
+                    .fill(day.kind == .today ? Color.app.surfaceRaised : Color.app.surfaceMuted)
+                    .padding(day.kind == .plain ? 0 : Sizes.weekStripRing)
+                if day.kind != .plain {
+                    // Today: a full flame ring, the part not yet done dimmed. Past days: ring = progress.
+                    Circle()
+                        .stroke(day.kind == .today ? Color.app.flameSoft : Color.app.track,
+                                lineWidth: Sizes.weekStripRing)
+                        .padding(Sizes.weekStripRing / 2)
+                    Circle()
+                        .trim(from: 0, to: day.progress)
+                        .stroke(Color.app.flame, style: StrokeStyle(lineWidth: Sizes.weekStripRing, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .padding(Sizes.weekStripRing / 2)
+                }
+                Text(Formatters.current.dayNumber(day.date))
+                    .font(Font.app.weekStripNumber)
+                    .foregroundStyle(numberColor)
             }
-            if day.kind != .plain && !day.isComplete {
-                // The progress ring hugs the outside of the circle.
-                Circle()
-                    .stroke(Color.app.surfaceMuted, lineWidth: Sizes.weekStripRing)
-                    .padding(Sizes.weekStripRing / 2)
-                Circle()
-                    .trim(from: 0, to: day.progress)
-                    .stroke(Color.app.accent, style: StrokeStyle(lineWidth: Sizes.weekStripRing, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .padding(Sizes.weekStripRing / 2)
-            }
-            Text(Formatters.current.dayNumber(day.date))
-                .font(Font.app.weekStripNumber)
-                .foregroundStyle(numberColor)
         }
         .frame(width: Sizes.weekStripCircle, height: Sizes.weekStripCircle)
         .animation(reduceMotion ? nil : Motion.settle, value: day.done)
     }
 
     private var numberColor: Color {
-        if day.isComplete { return Color.app.onAccent }
         switch day.kind {
-        case .today: return Color.app.accentText
-        case .past: return Color.app.textPrimary
-        case .plain: return Color.app.textTertiary
+        case .today: Color.app.flame
+        case .past: Color.app.textPrimary
+        case .plain: Color.app.textTertiary
         }
     }
 }

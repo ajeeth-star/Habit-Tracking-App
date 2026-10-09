@@ -12,7 +12,6 @@ enum Strings {
         static let createTask = "Create streak"
         static let settings = "Settings"
         static let checkIn = "Check in"
-        static func checkedIn(_ time: String) -> String { "Checked in \(time)" }
         static func next(_ day: String, _ window: String) -> String { "Next: \(day), \(window)" }
         static func streakEnded(_ weekday: String, _ streak: String) -> String { "Streak ended \(weekday) at \(streak)" }
         static func longestStartsFresh(_ streak: String) -> String { "Longest: \(streak) · Starts fresh today" }
@@ -96,10 +95,6 @@ enum Strings {
         static let showStreaksAs = "Show streaks as"
         static let weeksAndDays = "Weeks and days"
         static let daysOnly = "Days only"
-        static let appearance = "Appearance"
-        static let system = "System"
-        static let light = "Light"
-        static let dark = "Dark"
         static let reminders = "Reminders"
         static let notificationsOff = "Notifications are off. Your streaks can end without a warning."
         static let turnOn = "Turn on"
@@ -110,6 +105,7 @@ enum Strings {
         static let remindersFooter = "Reminders are always on for every streak. They stop as soon as you check in or use a skip."
         static let feel = "Feel"
         static let vibrations = "Vibrations"
+        static let sounds = "Sounds"
         static let celebrationAnimation = "Celebration animation"
         static let streaks = "Streaks"
         static let archivedHabits = "Archived streaks"
@@ -166,12 +162,12 @@ enum Strings {
             switch color {
             case .coral: "Coral"
             case .orange: "Orange"
+            case .yellow: "Yellow"
             case .green: "Green"
             case .teal: "Teal"
             case .blue: "Blue"
-            case .indigo: "Indigo"
-            case .pink: "Pink"
             case .purple: "Purple"
+            case .pink: "Pink"
             }
         }
 
@@ -195,6 +191,7 @@ enum Strings {
     enum Pill {
         static let open = "Open now"
         static let done = "Done"
+        static func doneAt(_ time: String) -> String { "Done \(time)" }
         static func opens(_ time: String) -> String { "Opens \(time)" }
         static let skipped = "Skipped"
         static let missed = "Missed"

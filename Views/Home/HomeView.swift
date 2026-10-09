@@ -115,7 +115,7 @@ struct HomeView: View {
                 Button { showingCreate = true } label: {
                     Image(systemName: "plus")
                         .font(Font.app.screenTitle)
-                        .foregroundStyle(Color.app.accentText)
+                        .foregroundStyle(Color.app.flame)
                         .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
                         .contentShape(Rectangle())
                 }
@@ -149,7 +149,7 @@ struct HomeView: View {
                     Image(systemName: "chevron.right")
                 }
                 .font(Font.app.meta)
-                .foregroundStyle(Color.app.accentText)
+                .foregroundStyle(Color.app.flame)
                 .frame(minHeight: Sizes.tapTarget)
                 .contentShape(Rectangle())
             }
@@ -194,7 +194,9 @@ struct HomeView: View {
     @ViewBuilder private func heroCards(now: Date) -> some View {
         if !openToday.isEmpty {
             VStack(spacing: Spacing.sm) {
-                ForEach(openToday) { card($0, now: now) }
+                ForEach(Array(openToday.enumerated()), id: \.element.id) { index, task in
+                    card(task, now: now).appearSlideIn(index: index)
+                }
             }
             .padding(.top, Spacing.md)
         }
@@ -203,7 +205,9 @@ struct HomeView: View {
     @ViewBuilder private func todaySection(now: Date) -> some View {
         if !aheadToday.isEmpty || !doneToday.isEmpty {
             section(Strings.Home.todaySection) {
-                ForEach(aheadToday) { card($0, now: now) }
+                ForEach(Array(aheadToday.enumerated()), id: \.element.id) { index, task in
+                    card(task, now: now).appearSlideIn(index: openToday.count + index)
+                }
                 if !doneToday.isEmpty {
                     DisclosureRow(label: Strings.Today.doneToday, count: doneToday.count, isExpanded: $showsDone)
                     if showsDone {
@@ -240,10 +244,11 @@ struct HomeView: View {
         let items = comingUp(now: now)
         if !items.isEmpty {
             section(Strings.Today.comingUp) {
-                ForEach(items, id: \.task.id) { item in
+                ForEach(Array(items.enumerated()), id: \.element.task.id) { index, item in
                     ComingUpRow(task: item.task, daysAhead: item.daysAhead, today: Weekday(now)) {
                         openedTaskID = item.task.id
                     }
+                    .appearSlideIn(index: openToday.count + aheadToday.count + 1 + index)
                 }
             }
         }
@@ -300,14 +305,8 @@ private struct ComingUpRow: View {
                     .multilineTextAlignment(.trailing)
             }
             .padding(Spacing.md)
-            .background(Color.app.surface, in: .rounded(Radius.lg))
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                    .strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
-            }
-            .contentShape(.rounded(Radius.lg))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChunkyCardButtonStyle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(task.name + Strings.separator + next)
         .accessibilityAddTraits(.isButton)
@@ -336,6 +335,7 @@ private struct StatusLine: View {
             (Text(parts.emphasis ?? "").font(Font.app.statusCount).foregroundStyle(Color.app.textPrimary)
                 + Text(parts.rest).foregroundStyle(Color.app.textSecondary))
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(Font.app.subhead)

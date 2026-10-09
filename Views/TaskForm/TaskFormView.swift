@@ -81,7 +81,7 @@ struct TaskFormView: View {
                     daysField
                     timeField
                     skipsField
-                    PrimaryButton(isEditing ? Strings.Form.save : Strings.Form.create) { dismiss() }
+                    ChunkyButton(isEditing ? Strings.Form.save : Strings.Form.create) { dismiss() }
                         .disabled(!isValid)
                     if isEditing {
                         removeButtons
@@ -121,8 +121,8 @@ struct TaskFormView: View {
 
     private var removeButtons: some View {
         VStack(spacing: Spacing.xs) {
-            SecondaryButton(Strings.Form.archiveHabit) { withoutAnimation { confirming = .archive } }
-            DangerTextButton(Strings.Form.deleteHabit) { withoutAnimation { confirming = .delete } }
+            ChunkyButton(style: .secondary, Strings.Form.archiveHabit) { withoutAnimation { confirming = .archive } }
+            ChunkyButton(style: .danger, Strings.Form.deleteHabit) { withoutAnimation { confirming = .delete } }
         }
     }
 
@@ -188,7 +188,7 @@ struct TaskFormView: View {
     private var cancelLabel: some View {
         Text(Strings.Form.cancel)
             .font(Font.app.body)
-            .foregroundStyle(Color.app.accentText)
+            .foregroundStyle(Color.app.flame)
             .fixedSize()
             .frame(minHeight: Sizes.tapTarget)
             .contentShape(Rectangle())
@@ -274,6 +274,7 @@ struct TaskFormView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Strings.Form.skipsPerWeek)
             .accessibilityValue("\(draft.skips)")
+            .softHaptic(trigger: draft.skips)
             .accessibilityAdjustableAction { direction in
                 switch direction {
                 case .increment: if draft.skips < draft.days.count { draft.skips += 1 }
@@ -309,7 +310,7 @@ struct TaskFormView: View {
 
     private var outline: some View {
         RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-            .strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
+            .strokeBorder(Color.app.border, lineWidth: Sizes.borderWidth)
     }
 
     private func timeBox(_ label: String, _ time: TimeOfDay, _ which: TimeField) -> some View {
@@ -330,8 +331,8 @@ struct TaskFormView: View {
             .background(Color.app.surface, in: .rounded(Radius.md))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                    .strokeBorder(editingTime == which ? Color.app.accent : Color.app.separator,
-                                  lineWidth: editingTime == which ? Sizes.emphasisStroke : Sizes.hairline)
+                    .strokeBorder(editingTime == which ? Color.app.flame : Color.app.border,
+                                  lineWidth: editingTime == which ? Sizes.emphasisStroke : Sizes.borderWidth)
             }
             .contentShape(.rounded(Radius.md))
         }
@@ -344,7 +345,7 @@ struct TaskFormView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(Font.app.button)
-                .foregroundStyle(enabled ? Color.app.accentText : Color.app.textTertiary)
+                .foregroundStyle(enabled ? Color.app.flame : Color.app.textTertiary)
                 .frame(width: Sizes.tapTarget, height: Sizes.tapTarget)
                 .contentShape(Rectangle())
         }

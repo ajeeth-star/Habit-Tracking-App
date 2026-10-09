@@ -222,13 +222,6 @@ struct Formatters {
         }
     }
 
-    /// "Checked in 6:42 PM · Next: Friday".
-    func doneMeta(checkedInAt time: TimeOfDay, next: NextDay?) -> String {
-        let checkedIn = Strings.Home.checkedIn(self.time(time))
-        guard let next else { return checkedIn }
-        return checkedIn + Strings.separator + Strings.Home.nextDay(nextDay(next))
-    }
-
     /// "Good morning" (5 AM–noon), "Good afternoon" (noon–5 PM), "Good evening" (5 PM–5 AM),
     /// plus ", Ajeeth" when a name is set.
     func greeting(_ date: Date, name: String? = nil) -> String {

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A habit on the Habits tab (design.md §4.10): name, schedule, today's status on the left;
-/// current streak and best streak on the right. Archived rows show only the name and best streak.
+/// A streak on the Streaks tab (design.md §4.10): name, schedule, today's status on the left; current
+/// streak and best streak on the right. Wrap it in a Button with `ChunkyCardButtonStyle` for the card. Archived rows show only the name and best streak.
 struct HabitRow: View {
     let task: TaskSnapshot
     @Environment(AppSettings.self) private var settings
@@ -28,6 +28,7 @@ struct HabitRow: View {
                 if !task.isArchived {
                     StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay)
                         .font(Font.app.cardStreak)
+                        .contentTransition(.numericText())
                         .foregroundStyle(Color.app.textPrimary)
                 }
                 Text(format.best(task.best, mode: settings.streakDisplay))
@@ -41,12 +42,6 @@ struct HabitRow: View {
             }
         }
         .padding(Spacing.md)
-        .background(Color.app.surface, in: .rounded(Radius.lg))
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                .strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
-        }
-        .contentShape(.rounded(Radius.lg))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
     }
@@ -54,7 +49,7 @@ struct HabitRow: View {
     @ViewBuilder private var status: some View {
         switch task.cardState {
         case .open: StatusPill(kind: .open)
-        case .done: StatusPill(kind: .done)
+        case .done(let time): StatusPill(kind: .done(format.time(time)))
         case .upcoming: StatusPill(kind: .upcoming(format.time(task.window.start)))
         case .skipped: StatusPill(kind: .skipped)
         case .missed: StatusPill(kind: .missed)

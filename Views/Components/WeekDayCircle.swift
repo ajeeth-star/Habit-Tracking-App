@@ -25,8 +25,8 @@ struct WeekDayCircle: View {
         switch status {
         case .done:
             if let color {
-                Circle().fill(color.solid)
-                    .overlay { mark("checkmark", Color.app.onAccent) }
+                Circle().fill(color.main)
+                    .overlay { mark("checkmark", Color.app.textOnBright) }
             } else {
                 Circle().fill(Color.app.successSoft)
                     .overlay { mark("checkmark", Color.app.success) }
@@ -38,13 +38,13 @@ struct WeekDayCircle: View {
             Circle().fill(Color.app.dangerSoft)
                 .overlay { mark("xmark", Color.app.danger) }
         case .today:
-            Circle().strokeBorder(Color.app.accent, lineWidth: Sizes.emphasisStroke)
+            Circle().strokeBorder(Color.app.flame, lineWidth: Sizes.weekStripRing)
                 .overlay {
-                    Circle().fill(Color.app.accent)
+                    Circle().fill(Color.app.flame)
                         .frame(width: Sizes.todayDot, height: Sizes.todayDot)
                 }
         case .upcoming:
-            Circle().strokeBorder(Color.app.separator, lineWidth: Sizes.hairline)
+            Circle().fill(Color.app.surfaceMuted)
         }
     }
 

@@ -1,47 +1,75 @@
 import SwiftUI
 
-/// The app's color palette (design.md §1.1). Each name matches a color set in
-/// `Resources/Assets.xcassets/Colors/`, which holds its light and dark variants.
-/// Use as `Color.app.accent`.
+/// The app's palette (design.md §1.1). The app is always dark, so each color is a single value.
+/// Names match the color sets in `Resources/Assets.xcassets/Colors/`. Use as `Color.app.flame`.
 struct AppColors {
+    // Neutrals
     let background = Color("background")
     let surface = Color("surface")
+    let surfaceRaised = Color("surfaceRaised")
     let surfaceMuted = Color("surfaceMuted")
-    let separator = Color("separator")
+    let border = Color("border")
     let textPrimary = Color("textPrimary")
     let textSecondary = Color("textSecondary")
     let textTertiary = Color("textTertiary")
-    let accent = Color("accent")
-    let accentText = Color("accentText")
-    let accentSoft = Color("accentSoft")
-    let onAccent = Color("onAccent")
-    let success = Color("success")
-    let successSoft = Color("successSoft")
-    let danger = Color("danger")
-    let dangerSoft = Color("dangerSoft")
-    /// The flame icon only. Never used for text.
-    let streak = Color("streak")
-    /// Dim layer behind the skip dialog.
-    let scrim = Color("scrim")
-    /// Secondary text on the hero card: `onAccent` at 85%.
-    let onAccentMuted = Color("onAccent").opacity(0.85)
-    /// The hero card's icon badge background: `onAccent` at 20%.
-    let onAccentFaint = Color("onAccent").opacity(0.2)
+    /// Small text and icons on any bright fill.
+    let textOnBright = Color("textOnBright")
 
-    /// Camera and photo-preview screens are always black with white controls, in both modes.
+    // Bright colors, each with a darker lip for the 3D edge
+    /// The brand color.
+    let flame = Color("flame")
+    let flameLip = Color("flameLip")
+    let success = Color("success")
+    let successLip = Color("successLip")
+    let danger = Color("danger")
+    let dangerLip = Color("dangerLip")
+    let info = Color("info")
+    let infoLip = Color("infoLip")
+    let gold = Color("gold")
+    let goldLip = Color("goldLip")
+    let purple = Color("purple")
+    let purpleLip = Color("purpleLip")
+
+    // Fixed extras
+    let disabled = Color("disabled")
+    let disabledLip = Color("disabledLip")
+    /// The empty part of progress bars and rings.
+    let track = Color("track")
+    /// The hero card's Check in button.
+    let whiteButton = Color("whiteButton")
+    let whiteButtonLip = Color("whiteButtonLip")
+    /// Dim layer behind dialogs.
+    let scrim = Color("scrim")
+
+    // Tints, derived (design.md §1.1)
+    let flameSoft = Color("flame").opacity(0.2)
+    let successSoft = Color("success").opacity(0.2)
+    let dangerSoft = Color("danger").opacity(0.2)
+    let infoSoft = Color("info").opacity(0.15)
+    /// Secondary text on a hero card.
+    let onBrightMuted = Color("textOnBright").opacity(0.75)
+    /// The icon badge on a hero card.
+    let onBrightFaint = Color("textOnBright").opacity(0.15)
+    /// The glossy stripe along the top of a progress bar fill.
+    let highlight = Color.white.opacity(0.3)
+
+    /// Camera, photo preview, and photo viewer stay black with white controls.
     let cameraBackground = Color.black
     let cameraForeground = Color.white
-    /// "Retake" button fill on the photo preview (white at 15%).
+    /// "Retake" on the photo preview, on black.
     let cameraButtonFill = Color.white.opacity(0.15)
+
+    /// The bright colors confetti is drawn in.
+    var confetti: [Color] { [flame, success, danger, info, gold, purple] }
 
     /// Every asset-catalog color name, so tests can check each one exists.
     static let assetNames = [
-        "background", "surface", "surfaceMuted", "separator",
-        "textPrimary", "textSecondary", "textTertiary",
-        "accent", "accentText", "accentSoft", "onAccent",
-        "success", "successSoft", "danger", "dangerSoft",
-        "streak", "scrim",
-    ] + StreakColor.allCases.flatMap { [$0.assetName, $0.assetName + "Soft"] }
+        "background", "surface", "surfaceRaised", "surfaceMuted", "border",
+        "textPrimary", "textSecondary", "textTertiary", "textOnBright",
+        "flame", "flameLip", "success", "successLip", "danger", "dangerLip",
+        "info", "infoLip", "gold", "goldLip", "purple", "purpleLip",
+        "disabled", "disabledLip", "track", "whiteButton", "whiteButtonLip", "scrim",
+    ] + StreakColor.allCases.flatMap { [$0.assetName, $0.assetName + "Lip"] }
 }
 
 extension Color {

@@ -13,7 +13,8 @@ struct HabitApp: App {
                 .environment(settings)
                 .environment(store)
                 .environment(appDelegate.router)
-                .preferredColorScheme(settings.appearance.colorScheme)
+                // The app is always dark (design.md §1.1).
+                .preferredColorScheme(.dark)
         }
     }
 }
@@ -26,6 +27,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        SoundPlayer.shared.preload()
+        NavigationBarStyle.apply()
         return true
     }
 

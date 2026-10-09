@@ -17,6 +17,7 @@ struct SkipConfirmationView: View {
             actionTitle: Strings.Skip.use,
             actionStyle: .destructive,
             actionHaptic: .warning,
+            actionSound: .skip,
             onAction: onUseSkip)
     }
 }

@@ -7,30 +7,14 @@ import SwiftUI
 struct DesignGalleryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
-    @State private var appearance = Appearance.system
     @State private var path: [String] = []
     @State private var presented: GalleryEntry?
-
-    enum Appearance: String, CaseIterable, Identifiable {
-        case system = "System", light = "Light", dark = "Dark"
-        var id: Self { self }
-        var scheme: ColorScheme? {
-            switch self {
-            case .system: nil
-            case .light: .light
-            case .dark: .dark
-            }
-        }
-    }
 
     var body: some View {
         @Bindable var settings = settings
         NavigationStack(path: $path) {
             List {
                 Section {
-                    Picker("Appearance", selection: $appearance) {
-                        ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
-                    }
                     Picker("Streaks", selection: $settings.streakDisplay) {
                         Text("Weeks + days").tag(StreakDisplayMode.weeksAndDays)
                         Text("Days only").tag(StreakDisplayMode.daysOnly)
@@ -71,13 +55,10 @@ struct DesignGalleryView: View {
         // Sheets can be swiped down to close, which the full-app entries rely on.
         .sheet(item: sheetBinding) { entry in
             entry.content { presented = nil }
-                .preferredColorScheme(appearance.scheme)
         }
         .fullScreenCover(item: coverBinding) { entry in
             entry.content { presented = nil }
-                .preferredColorScheme(appearance.scheme)
         }
-        .preferredColorScheme(appearance.scheme)
     }
 
     private func open(_ entry: GalleryEntry) {
@@ -458,18 +439,40 @@ private struct ComponentsGallery: View {
                              onOpen: {}, onCheckIn: {})
                     TaskCard(task: SampleData.journal, now: SampleData.today, onOpen: {}, onCheckIn: {})
                 }
-                group("Buttons") {
-                    PrimaryButton("Check in", systemImage: "camera.fill") {}
-                    PrimaryButton("Opens 6:00 PM") {}.disabled(true)
-                    SecondaryButton("Use a skip") {}
-                    SecondaryButton("No skips left") {}.disabled(true)
-                    DangerTextButton("Use skip") {}
+                group("Chunky buttons · press and hold to see the press-down") {
+                    ChunkyButton("Check in", systemImage: "camera.fill") {}
+                    ChunkyButton(style: .success, "Submit") {}
+                    ChunkyButton(style: .secondary, "Use a skip") {}
+                    ChunkyButton(style: .danger, "Use skip") {}
+                    ChunkyButton("Opens 6:00 PM") {}.disabled(true)
+                    ChunkyButton(style: .white(label: StreakColor.coral.main), "Check in", systemImage: "camera.fill") {}
+                        .padding(Spacing.md)
+                        .chunkyCard(fill: StreakColor.coral.main, lip: StreakColor.coral.lip, outline: nil)
+                }
+                group("Chunky card · tappable") {
+                    Button {} label: {
+                        Text("Press me").font(Font.app.cardTitle).foregroundStyle(Color.app.textPrimary)
+                            .frame(maxWidth: .infinity).padding(Spacing.md)
+                    }
+                    .buttonStyle(ChunkyCardButtonStyle())
+                }
+                group("Progress bars") {
+                    ProgressBar(progress: 0.15)
+                    ProgressBar(progress: 0.6, color: Color.app.success)
+                    ProgressBar(progress: 1, color: Color.app.gold)
+                }
+                group("Sounds (play with Sounds on)") {
+                    ForEach(SoundPlayer.Sound.allCases, id: \.self) { sound in
+                        ChunkyButton(style: .secondary, "Play \(sound.rawValue)", systemImage: "speaker.wave.2.fill") {
+                            SoundPlayer.shared.play(sound, enabled: true)
+                        }
+                    }
                 }
                 group("Status pills") {
                     // Stacked rather than side by side, so the page fits at the largest text sizes.
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         StatusPill(kind: .open)
-                        StatusPill(kind: .done)
+                        StatusPill(kind: .done("7:42 AM"))
                         StatusPill(kind: .upcoming("9:00 PM"))
                         StatusPill(kind: .skipped)
                         StatusPill(kind: .missed)
@@ -523,9 +526,9 @@ private struct ComponentsGallery: View {
                     DisclosureRow(label: "Done today", count: 2, isExpanded: $expanded)
                 }
                 group("Habit rows") {
-                    HabitRow(task: SampleData.gym)
-                    HabitRow(task: SampleData.climbing)
-                    HabitRow(task: SampleData.meditation)
+                    ForEach([SampleData.gym, SampleData.climbing, SampleData.meditation]) { task in
+                        Button {} label: { HabitRow(task: task) }.buttonStyle(ChunkyCardButtonStyle())
+                    }
                 }
                 group("Empty state") {
                     EmptyStateView {}

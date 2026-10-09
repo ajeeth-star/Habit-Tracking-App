@@ -44,7 +44,7 @@ struct StreakStylePicker: View {
                             .foregroundStyle(symbol == icon ? color.main : Color.app.textSecondary)
                             .dynamicTypeSize(...DynamicTypeSize.xxLarge) // fixed-size cells
                             .frame(maxWidth: .infinity, minHeight: Sizes.iconCell)
-                            .background(symbol == icon ? color.soft : Color.clear, in: .rounded(Radius.md))
+                            .background(symbol == icon ? color.badge : Color.clear, in: .rounded(Radius.md))
                             .contentShape(.rounded(Radius.md))
                     }
                     .buttonStyle(.plain)
@@ -53,5 +53,7 @@ struct StreakStylePicker: View {
                 }
             }
         }
+        .softHaptic(trigger: color)
+        .softHaptic(trigger: icon)
     }
 }

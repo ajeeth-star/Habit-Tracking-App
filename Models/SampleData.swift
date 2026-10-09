@@ -142,7 +142,7 @@ enum SampleData {
         week: [],
         checkIns: Array(checkIns(on: [.monday, .wednesday, .friday], at: TimeOfDay(7, 10), count: 25).dropFirst(9)),
         isArchived: true,
-        color: .indigo, icon: "brain.head.profile")
+        color: .purple, icon: "brain.head.profile")
 
     /// What the app starts with: every Home state plus one archived habit.
     static let allTasksWithArchived = allTasks + [meditation]

@@ -11,11 +11,11 @@ struct IconBadge: View {
     var body: some View {
         Image(systemName: icon)
             .font(Font.app.badgeIcon)
-            .foregroundStyle(onHero ? Color.app.onAccent : color.main)
+            .foregroundStyle(onHero ? Color.app.textOnBright : color.main)
             // The badge has a fixed size, so the icon stops growing past this text size.
             .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .frame(width: Sizes.iconBadge, height: Sizes.iconBadge)
-            .background(onHero ? Color.app.onAccentFaint : color.soft, in: .rounded(Radius.md))
+            .background(onHero ? Color.app.onBrightFaint : color.badge, in: .rounded(Radius.md))
             .accessibilityHidden(true)
     }
 }

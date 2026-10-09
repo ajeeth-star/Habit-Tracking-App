@@ -4,101 +4,116 @@
 
 The visual reference for every screen in v1. Read together with `docs/context.md`, which holds the product rules. If the two conflict on **behavior**, `context.md` wins. If they conflict on **looks**, this file wins. Anything marked **(open)** is undecided: build the default described here, and flag it to the owner instead of inventing something new.
 
-The overall feel is calm, clean, and quietly encouraging. It should never feel punishing. The app uses one accent color for app-wide controls, a color per streak, lots of breathing room, no shadows, gradients only in three places (section 1.5), and no decoration that doesn't carry meaning.
+The overall feel is **playful and game-like**: bold, chunky, and bouncy, with real energy, but our own design (no borrowed artwork, characters, or names). It should never feel punishing. The app is **always dark navy**, uses **one brand color (flame orange)** for app-wide controls and **a bright color per streak**, flat colors only (**no gradients, no shadows**), chunky 3D buttons and cards with a darker "lip" edge, the **Nunito** typeface everywhere, and short sounds and haptics that make actions feel physical.
+
+> **Sections 1 and 2 are the source of truth for every color, font, and component.** Some screen descriptions in section 4 predate this restyle; wherever they name an old token or component, read it through this mapping: `accent` / `accentText` → `flame`; `accentSoft` → `flame` text (no box); `onAccent` → `textOnBright`; `separator` → `border`; `streak` (the flame icon color) → `flame`; `PrimaryButton` → `ChunkyButton(.primary)`; `SecondaryButton` → `ChunkyButton(.secondary)`; `DangerTextButton` → `ChunkyButton(.danger)`; inverted hero button → `ChunkyButton(.white)`; a streak's `solid` / `deep` / `soft` → its `main` / `lip` / `badge`. Gradients mentioned anywhere are gone.
 
 ---
 
 ## 1. Design system
 
-All values live in a `DesignSystem/` folder and are used everywhere through these names. **Never hard-code a color, font, spacing value, or corner radius inside a view.**
+All values live in `DesignSystem/` and are used everywhere through these names. **Never hard-code a color, font, spacing value, or corner radius inside a view.**
 
-### 1.1 Colors
+### 1.1 Colors — `DesignSystem/AppColors.swift`
 
-Define each color as a Color Set in `Resources/Assets.xcassets/Colors/` with **Light and Dark variants**, then expose them as `Color.app.<name>` (e.g. `Color.app.accent`) in `DesignSystem/AppColors.swift`. The app must look right in both light and dark mode.
+**The app is always dark.** There is no light mode and no appearance setting; dark is forced app-wide (`UIUserInterfaceStyle` = Dark in Info.plist, plus `.preferredColorScheme(.dark)` at the root). Each color is a single-value color set in `Resources/Assets.xcassets/Colors/`, exposed as `Color.app.<name>`.
 
-| Name | Light | Dark | Used for |
+**Neutrals**
+
+| Name | Value | Used for |
+|---|---|---|
+| `background` | `#131F24` | Screen background behind everything |
+| `surface` | `#1B2A31` | Cards, tab bar, form fields, secondary buttons |
+| `surfaceRaised` | `#22333B` | Dialog cards, stat tiles, today's week-strip circle |
+| `surfaceMuted` | `#26363E` | Future week-strip days, photo placeholders, unselected chips |
+| `border` | `#2E3D45` | 2pt card and field borders, card lips, secondary button lips |
+| `textPrimary` | `#FFFFFF` | Titles, names, main text |
+| `textSecondary` | `#A9B8C0` | Meta lines, helper text |
+| `textTertiary` | `#6F818B` | Section headers, captions, unselected tabs, disabled labels |
+| `textOnBright` | `#131F24` | Small text and icons on any bright fill |
+
+**Bright colors**, each with a darker **lip** for the 3D edge (`<name>Lip`):
+
+| Name | Fill | Lip | Used for |
 |---|---|---|---|
-| `background` | `#F5F5F7` | `#0B0B0D` | Screen background behind everything |
-| `surface` | `#FFFFFF` | `#1A1A1E` | Task cards, dialog, form fields |
-| `surfaceMuted` | `#EEEEF2` | `#26262B` | Stat tiles, neutral pills, photo placeholders |
-| `separator` | `#E3E3E8` | `#2E2E34` | Card outlines, dividers, unselected chip borders |
-| `textPrimary` | `#141416` | `#F4F4F6` | Titles, task names, main text |
-| `textSecondary` | `#5F5F68` | `#A3A3AD` | Meta lines, helper text, descriptions |
-| `textTertiary` | `#8D8D96` | `#6E6E78` | Section headers, captions, "not today" names |
-| `accent` | `#5A4FF3` | `#5A4FF3` | Filled buttons, selected day chips, the open-task outline |
-| `accentText` | `#5A4FF3` | `#A39DFF` | Accent-colored **text and icons** (links, +, "Edit", "Cancel") |
-| `accentSoft` | `#EEEDFE` | `#25224D` | "Open now" pill background |
-| `onAccent` | `#FFFFFF` | `#FFFFFF` | Text and icons on top of `accent` |
-| `success` | `#1A7F46` | `#4ADE80` | "Done" text and checkmarks |
-| `successSoft` | `#E6F4EC` | `#13301F` | "Done" pill and done-day circle background |
-| `danger` | `#C62828` | `#FF6B60` | "Streak ended" text, "Use skip" text, missed-day mark |
-| `dangerSoft` | `#FDECEA` | `#3A1614` | "Missed" pill and missed-day circle background |
-| `streak` | `#E8590C` | `#FF8A3D` | **The flame icon only.** Never used for text |
-| `scrim` | black at 40% | black at 55% | Dim layer behind the skip dialog |
+| `flame` | `#FF9600` | `#CC7800` | **The brand color** (replaces the old accent): primary buttons, links, +, the week strip, the flame icon, the selected chip and day |
+| `success` | `#58CC02` | `#46A302` | Done text, success buttons, toggles |
+| `danger` | `#FF4B4B` | `#D33131` | Missed, streak ended, destructive labels |
+| `info` | `#1CB0F6` | `#1899D6` | Secondary button labels, the selected tab |
+| `gold` | `#FFC800` | `#E5A800` | Confetti (and later rewards) |
+| `purple` | `#CE82FF` | `#A568CC` | Confetti (and later rewards) |
 
-Rules:
+**Fixed extras**
 
-- `accent` is the only "loud" color. Use it for the one most important action on a screen and nothing else.
-- Never rely on color alone to carry meaning. Every status color is paired with text or an icon (e.g. a checkmark plus "Done").
-- The camera and photo-preview screens are always black with white controls, in both modes.
-- Text on the hero card's secondary line uses `onAccent` at 85% opacity, exposed as `Color.app.onAccentMuted` (derived from `onAccent`, not a separate color set).
+| Name | Value | Used for |
+|---|---|---|
+| `disabled` / `disabledLip` | `#37464F` / `#2B3940` | Disabled buttons |
+| `track` | `#37464F` | Empty part of progress bars and rings |
+| `whiteButton` / `whiteButtonLip` | `#FFFFFF` / `#E5E5E5` | The Check in button on a hero card |
+| `scrim` | black at 55% | Dim layer behind dialogs |
+| `successSoft`, `dangerSoft`, `flameSoft` | the color at 20% | Small tinted backgrounds (missed day circle, notifications warning) |
+| `onBrightMuted` / `onBrightFaint` | `textOnBright` at 75% / 15% | Secondary text and the icon badge on a hero card |
+| `highlight` | white at 30% | The glossy stripe on progress bar fills |
+| `cameraBackground` / `cameraForeground` | black / white | The camera, photo preview, and photo viewer stay black with white controls |
 
+**Contrast rule:** on any **bright fill** (flame, success, danger, info, gold, purple, any streak color), small text and icons use **`textOnBright`** (dark navy), never white. White on a bright fill is allowed only for bold text **20pt or larger** — and for the week strip's done-day flame icon, which the owner asked for in white.
+
+**No gradients anywhere.** Flat, bold color only.
 
 ### 1.1b Streak colors — `DesignSystem/StreakPalette.swift`
 
-Each streak has one of 8 colors. They are color sets in `Resources/Assets.xcassets/Colors/Streak/` with light and dark variants, plus a **soft** set of each at 14% opacity for backgrounds. Expose them as `StreakColor.<name>` with `.main` and `.soft`, plus `.solid` (the light-mode main in both modes, for fills that carry white text or icons, so white stays readable in dark mode) and `.deep` (`.solid` 20% darker, the end of the hero gradient).
+Each streak has one of 8 bright colors, each a `main` and a darker `lip`. Exposed as `StreakColor.<name>` with `.main`, `.lip`, and `.badge` (`main` at 20%, for icon badge backgrounds and selected icon cells). Single values (the app is always dark).
 
-| Name | Light | Dark |
+| Name | Main | Lip |
 |---|---|---|
-| `coral` | `#F2545B` | `#FF6B72` |
-| `orange` | `#E8590C` | `#FF922B` |
-| `green` | `#2B9348` | `#51CF66` |
-| `teal` | `#0B9A8D` | `#38D9C3` |
-| `blue` | `#1C7ED6` | `#4DABF7` |
-| `indigo` | `#5A4FF3` | `#A39DFF` |
-| `pink` | `#D6336C` | `#F783AC` |
-| `purple` | `#9C36B5` | `#DA77F2` |
+| `coral` | `#FF4B4B` | `#D33131` |
+| `orange` | `#FF9600` | `#CC7800` |
+| `yellow` | `#FFC800` | `#E5A800` |
+| `green` | `#58CC02` | `#46A302` |
+| `teal` | `#00CD9C` | `#00A47D` |
+| `blue` | `#1CB0F6` | `#1899D6` |
+| `purple` | `#CE82FF` | `#A568CC` |
+| `pink` | `#FF86D0` | `#CC6BA6` |
+
+Old colors map to the nearest new one: coral → coral, orange → orange, green → green, teal → teal, blue → blue, **indigo → purple**, pink → pink, purple → purple. (`yellow` is new.)
 
 Rules:
 
-- A streak's color marks **that streak** (its icon badge, its done days, its History chip, its hero card, its celebration glow). The app's `accent` stays the brand color for everything app-wide: the tab bar, the gear, +, the History link, the week strip, and primary buttons outside a specific streak.
-- The `flame.fill` streak icon keeps the `streak` color everywhere.
+- A streak's color marks **that streak** (its icon badge, its done days, its History chip, its hero card). `flame` stays the brand color for everything app-wide.
+- The `flame.fill` streak icon is `flame` everywhere except on bright fills.
 
 **Streak icons** (SF Symbols, all available on iOS 17): `dumbbell.fill`, `figure.run`, `figure.walk`, `bicycle`, `drop.fill`, `sparkles`, `book.fill`, `pencil`, `brain.head.profile`, `guitars.fill`, `music.note`, `paintbrush.fill`, `fork.knife`, `cup.and.saucer.fill`, `leaf.fill`, `bed.double.fill`, `moon.fill`, `sun.max.fill`, `heart.fill`, `cross.case.fill`, `house.fill`, `cart.fill`, `laptopcomputer`, `star.fill`.
 
 **Defaults for a new streak:** the first color (in the table's order) not used by an active streak (back to `coral` if all are taken), and an icon guessed from the name, case-insensitive: gym / lift → `dumbbell.fill`; run → `figure.run`; skin / face → `drop.fill`; read → `book.fill`; guitar → `guitars.fill`; dishes / clean → `sparkles`; sleep → `bed.double.fill`; otherwise `star.fill`. The guess follows the name as it's typed until an icon is picked by hand.
 
-### 1.2 Typography
+### 1.2 Typography — `DesignSystem/AppFonts.swift`
 
-Use the system font through **Dynamic Type text styles**, so text scales with the user's iPhone text-size setting. Expose these as `Font.app.<name>` in `DesignSystem/AppFonts.swift`. Put `.monospacedDigit()` on any number that changes (streaks, counts, times) so digits don't jitter.
+**Nunito for all text** (SIL Open Font License; bundled as one variable font file, `Resources/Fonts/Nunito-Variable.ttf`, registered in `project.yml` → Info.plist `UIAppFonts`; credits in `docs/credits.md`). The app uses four of its named weights: **SemiBold** (`Nunito-SemiBold`), **Bold** (`Nunito-Bold`), **ExtraBold** (`Nunito-ExtraBold`), **Black** (`Nunito-Black`). There is no SF Pro anywhere (SF Symbols icons stay).
 
-**Two designs of the system font:** **SF Pro Rounded** (`.rounded` design) for screen titles, card titles, and all numbers (streaks, counts, the progress ring). **SF Pro** (regular design) for meta lines, helper text, body text, and buttons. Which design each style uses is decided in `AppFonts` only.
+Every style is `Font.custom(name, size:, relativeTo:)` mapped to the same Dynamic Type text style as before, so it **grows with the iPhone's text-size setting**. Numbers that change get `.monospacedDigit()`. Exposed as `Font.app.<name>`.
 
-| Name | Text style + weight | Design | Approx. size | Used for |
-|---|---|---|---|---|
-| `screenTitle` | `.title`, bold | Rounded | 28 | "Today", task name on the task screen |
-| `successTitle` | `.title2`, bold | Rounded | 22 | "Gym done" |
-| `emptyTitle` | `.title3`, semibold | Rounded | 20 | "Start your first streak" |
-| `statValue` | `.title3`, semibold, monospaced digits | Rounded | 20 | "3w 2d", "1 of 1", the streak on the hero card |
-| `cardTitle` | `.headline` (semibold) | Rounded | 17 | Task name on a card, dialog title, form screen title |
-| `cardStreak` | `.headline` (semibold), monospaced digits | Rounded | 17 | The streak on the right of a (non-hero) task card |
-| `statusCount` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | The "2 of 3" count in Today's status line |
-| `celebrationNumber` | bold, monospaced digits, fixed size | Rounded | 64 | The big streak number on the celebration |
-| `celebrationIcon` | fixed size | — | 96 | The big flame on the celebration |
-| `button` | `.body`, semibold | Regular | 17 | All button labels |
-| `body` | `.body`, regular | Regular | 17 | Form field text |
-| `subhead` | `.subheadline`, regular | Regular | 15 | Date line, dialog body, empty-state body, "day streak" |
-| `meta` | `.footnote`, regular | Regular | 13 | Card meta line, helper text, schedule line |
-| `sectionHeader` | `.footnote`, semibold | Regular | 13 | "Today", "Not today", "This week", "Recent check-ins" |
-| `pill` | `.caption`, semibold | Regular | 12 | Status pills |
-| `caption` | `.caption`, regular | Regular | 12 | Stat tile labels, field labels, day labels under circles, photo dates |
-| `badgeIcon` | `.body`, semibold | — | 17 | The icon inside an `IconBadge` |
-| `weekStripNumber` | `.subheadline`, semibold, monospaced digits | Rounded | 15 | Date numbers in the week strip |
-| `tabIcon` | fixed size | — | 22 | Side tab icons |
+| Name | Weight | Size, relative to | Used for |
+|---|---|---|---|
+| `screenTitle` | ExtraBold | 28, `.title` | "Today", "Streaks", "Settings", task name on the task screen |
+| `successTitle` | ExtraBold | 22, `.title2` | "Gym done" |
+| `emptyTitle` | ExtraBold | 20, `.title3` | "Start your first streak" |
+| `statValue` | Black, monospaced digits | 20, `.title3` | "3w 2d", "1 of 1", the streak on the hero card |
+| `cardTitle` | Bold | 17, `.headline` | Task name on a card, dialog title, form screen title |
+| `cardStreak` | Black, monospaced digits | 17, `.headline` | The streak on the right of a task card |
+| `statusCount` | Black, monospaced digits | 15, `.subheadline` | The "2 of 3" count in Today's status line |
+| `weekStripNumber` | Black, monospaced digits | 15, `.subheadline` | Date numbers in the week strip |
+| `celebrationNumber` | Black, monospaced digits | 64, fixed | The big streak number on the celebration |
+| `button` | ExtraBold, ALL CAPS, 0.8pt tracking | 15, `.subheadline` | All button labels ("CHECK IN", "USE A SKIP") |
+| `body` | SemiBold | 17, `.body` | Form field text, list rows |
+| `subhead` | SemiBold | 15, `.subheadline` | Date line, dialog body, empty-state body |
+| `meta` | SemiBold | 13, `.footnote` | Card meta line, helper text, schedule line |
+| `sectionHeader` | ExtraBold | 13, `.footnote` | "Today", "Coming up", "This week", "Recent check-ins" |
+| `pill` | Bold, ALL CAPS, 0.8pt tracking | 12, `.caption` | Status pills ("DONE 7:42 AM", "OPENS 9:00 PM") |
+| `caption` | SemiBold | 12, `.caption` | Stat tile labels, field labels, day letters, photo dates |
+| `badgeIcon`, `tabIcon`, `largeIcon`, `celebrationIcon` | — | as before | SF Symbol sizes |
 
-`celebrationNumber` and `celebrationIcon` are fixed sizes: they're decorative and already very large. The text around them still scales.
-
-Section headers are sentence case ("Not today"), not ALL CAPS.
+- **ALL CAPS + 0.8pt letter spacing** (`Typography.capsTracking`) for every **button label** and **status pill**. Only the display is uppercased: the strings stay in sentence case in `Strings`, and VoiceOver reads them in sentence case.
+- Section headers stay sentence case.
 
 ### 1.3 Spacing
 
@@ -126,125 +141,108 @@ Standard uses:
 - Gap between side-by-side buttons: `xs` (8)
 - Gap between form sections: `xl` (24); field label to field: `xs` (8)
 
-### 1.4 Corner radius
+### 1.4 Corner radius — `DesignSystem/Radius.swift`
 
-Expose this as `Radius.<name>` in `DesignSystem/Radius.swift`. Use continuous corners (`.continuous`) everywhere.
+Continuous corners everywhere.
 
 | Name | Value | Used for |
 |---|---|---|
 | `sm` | 8 | Photo thumbnails |
-| `md` | 12 | Buttons, form fields, stat tiles |
-| `lg` | 16 | Task cards |
-| `xl` | 20 | Skip dialog |
-| `full` | capsule / circle | Pills, day chips, day circles, the empty-state + |
+| `md` | 12 | Icon badges, form fields, stat tiles, icon cells, the selected tab's square |
+| `lg` | 16 | **Chunky buttons and chunky cards** (incl. the hero card) |
+| `xl` | 20 | Dialog card |
+| `full` | capsule / circle | Chips, day chips, week-strip circles, progress bars |
 
-### 1.5 Sizes, lines, and icons
+### 1.5 Sizes, lines, and depth
 
-- **Buttons:** 50pt tall, full width of their container unless side by side.
-- **Tap targets:** at least 44×44pt everywhere, including icon-only buttons like + and Back.
-- **Card outline:** a 0.5pt `separator` stroke. The hero card (open task) has no outline; its gradient fill sets it apart.
-- **Celebration:** 96pt flame, 64pt streak number.
-- **Shadows:** none.
-- **Gradients:** allowed **only** on the hero card (its streak's `solid` → `deep`, top-left to bottom-right) and the celebration screen (a soft radial glow). Nowhere else.
-- **Icon badge:** 40pt square, `Radius.md`, the streak's `soft` fill, its icon in the streak's `main`.
-- **Tab bar:** 64pt tall plus the bottom safe area.
-- **Week strip:** 36pt day circles, 3pt progress rings.
-- **Icons:** SF Symbols only, sized to match the text next to them.
-  - `plus` (create task, empty state)
-  - `camera.fill` (Check in)
-  - `flame.fill` (streaks, in `streak` color; `onAccent` on the hero card)
-  - `checkmark` (done)
-  - `xmark` (missed, close camera)
-  - `minus` (skipped day)
-  - `chevron.left` (back)
-  - `camera.rotate` (flip camera)
-  - `photo` (placeholder thumbnail)
-  - `sun.max.fill`, `flame.fill` (tab bar), `gearshape` (Settings button), `chevron.right` (History link)
-  - `moon.fill` (rest day), `checkmark` in `success` (all done) on the status line
-  - The streak icons in section 1.1b
-  - `chevron.down` / `chevron.up` (collapsible "Done today" and "Archived" rows), `chevron.right` (rows that open a screen)
-  - `exclamationmark.triangle.fill` (notifications-off warning)
+- **Chunky buttons:** 52pt tall (the face), plus a 4pt lip under it.
+- **Chunky cards:** 2pt `border` outline plus a 5pt lip along the bottom.
+- **Pressing:** buttons move down 4pt and their lip disappears; tappable cards move down 3pt. About 0.08s.
+- **Tap targets:** at least 44×44pt everywhere.
+- **Progress bars:** 16pt tall, fully rounded, `track` behind, colored fill, and a 4pt `highlight` stripe along the top of the fill (inset from the ends), like a glossy candy bar. `ProgressBar` component; nothing on screen uses one yet (the rings in the week strip stay rings).
+- **Week strip:** 36pt circles, 3pt rings.
+- **Tab bar:** 64pt tall plus the bottom safe area, 2pt `border` line on top.
+- **Shadows and gradients:** none.
+- **Icons:** SF Symbols only.
 
-### 1.6 Motion and haptics
+### 1.6 Motion, haptics, and sound
 
-- Keep motion subtle and quick: system default animations, about 0.25s.
-- **Streak celebration:** the flame scales from 0.5 to 1.0 with a spring, a **success haptic** plays, and the streak number counts up from the previous value. It closes on its own after **2.5 seconds** (tap anywhere to close sooner).
-- **Week strip, today:** its progress ring animates to the new amount when a check-in completes.
-- **Closing a task:** back on Today after a check-in, the hero card animates away and into the "Done today" row.
-- **Confirming "Use skip":** a **warning haptic** plays.
-- **Celebration glow:** fades and grows in behind the flame with the pop.
-- **Settings → Vibrations** off turns off every haptic in the app.
-- **Settings → Celebration animation** off shows the celebration's flame and number straight away, with no pop and no count-up (like Reduce Motion). It still closes on its own.
-- Respect the Reduce Motion setting: when it's on, skip the pop, the count-up, the ring animation, and the card animation, and just show the end state. The glow is simply there. The celebration still closes on its own.
+**Motion** (`DesignSystem/Motion.swift`, SwiftUI only):
+
+- **First appearance of a screen:** its cards slide up 12pt and fade in, staggered 40ms apart (only the first ~10 are staggered). Not repeated when you come back to a screen that's already been shown.
+- **Changing numbers** (streaks, counts, the status line count, stat tiles, "Done today · n") use `.contentTransition(.numericText())`.
+- **Task card state changes** (e.g. open → done) animate with a spring, not a snap.
+- **Celebration:** the flame pops in (0.5 → 1.0, spring), then does a quick happy **wiggle**; a **confetti burst** of 50 small particles in the bright colors shoots up from behind the flame and falls with gravity over about 1.5s (drawn with `Canvas` + `TimelineView`). The number counts up. It closes on its own after 2.5s.
+- **Chunky press:** down 4pt (cards 3pt) over ~0.08s, back up on release.
+- **Reduce Motion on** (or Settings → Celebration animation off for the celebration): no confetti, no wiggle, no pop, no count-up, no slide-ins, no press movement — content just appears.
+
+**Haptics** (all off when Settings → Vibrations is off):
+
+- **Light** on every chunky button press.
+- **Success** on a check-in.
+- **Warning** on using a skip.
+- **Soft** on toggles and pickers (Settings toggles and pickers, day chips, the color and icon picker, the skips stepper).
+
+**Sounds** (`Services/SoundPlayer.swift`; files in `Resources/Sounds/`, sources in `docs/credits.md`):
+
+| Moment | Sound |
+|---|---|
+| Check-in submitted | `checkin` — a bright "ding" |
+| Celebration appears | `celebration` — a short cheerful flourish (under 1.5s) |
+| A skip is used | `skip` — a soft whoosh |
+| A streak ends | `streakEnded` — a low, gentle "bloop" (played by the streak rules once they exist; until then only from the Design Gallery) |
+
+- Nothing on regular button taps.
+- **Ambient** audio session: the iPhone's silent switch mutes them, and they mix with music instead of stopping it.
+- All four are **preloaded** at launch so they play without delay.
+- **Settings → Sounds** (on by default) turns them all off.
 
 ---
 
 ## 2. Reusable components
 
-Put each in its own file under `Views/Components/`, with these exact names:
+Each in its own file under `Views/Components/`:
 
-- **`PrimaryButton`**
-  - 50pt tall, `accent` fill, `onAccent` label in `Font.app.button`, `Radius.md`, optional leading SF Symbol.
-  - Disabled: `surfaceMuted` fill, `textTertiary` label.
-  - **Inverted** variant (only on the hero card): `onAccent` fill (white in both modes), `accent` label.
-- **`SecondaryButton`**
-  - Same size, `surface` fill, 0.5pt `separator` stroke, `textPrimary` label.
-  - Disabled: `textTertiary` label.
-- **`DangerTextButton`**
-  - Same size, `surface` fill, 0.5pt `separator` stroke, `danger` label.
-  - Used only for "Use skip".
-- **`StatusPill`**
-  - Capsule, `Font.app.pill`, horizontal padding 8, vertical 3. Variants:
-    - `open`: `accentSoft` / `accentText`, "Open now"
-    - `done`: `successSoft` / `success`, checkmark + "Done"
-    - `upcoming`: `surfaceMuted` / `textSecondary`, "Opens 9:00 PM"
-    - `skipped`: `surfaceMuted` / `textSecondary`, "Skipped"
-    - `missed`: `dangerSoft` / `danger`, "Missed"
-- **`StreakLabel`**
-  - Flame icon (`streak` color) followed by the formatted streak (section 3).
-  - Has a `short` style ("3w 2d") and a `long` style ("3 weeks 2 days").
-- **`TaskCard`**
-  - The home-screen card, including the hero (open) card. Every state is described in section 4.1.
-- **`StatTile`**
-  - `surfaceMuted` fill, `Radius.md`, padding `sm` (12).
-  - Label in `Font.app.caption` / `textSecondary`, with the value below it in `Font.app.statValue` / `textPrimary`.
-- **`WeekDayCircle`**
-  - 32pt circle with a weekday label below it ("Mon") in `Font.app.caption` / `textSecondary`, 4pt gap. States:
-    - `done`: the streak's `solid` fill, `onAccent` (white) checkmark
-    - `skipped`: `surfaceMuted` fill, `textSecondary` minus
-    - `missed`: `dangerSoft` fill, `danger` xmark
-    - `today`: no fill, 1.5pt `accent` ring, 6pt `accent` dot in the center
-    - `upcoming`: no fill, 0.5pt `separator` ring
-- **`DayChip`**
-  - 36pt circle with a single letter in `Font.app.subhead`.
-  - Selected: `accent` fill, `onAccent` letter. Unselected: no fill, 0.5pt `separator` stroke, `textSecondary` letter.
-  - The VoiceOver label is the full day name ("Tuesday"), since T and S repeat.
-- **`PhotoThumbnail`**
-  - Square, `Radius.sm`, image fills it (cropped).
-  - Placeholder: `surfaceMuted` with a centered `photo` icon in `textTertiary`.
-- **`EmptyStateView`**
-  - The first-launch view (section 4.2).
-- **`FilterChip`**
-  - Capsule with a label in `Font.app.subhead`, horizontal padding `sm`, vertical padding `xs`, 44pt tap target.
-  - Selected: `accent` fill, `onAccent` label. Unselected: `surface` fill, 0.5pt `separator` stroke, `textPrimary` label.
-- **`DisclosureRow`**
-  - A collapsible row: label in `meta` / `textSecondary` (e.g. "Done today · 2", "Archived · 1"), `chevron.down` / `chevron.up` on the right, 44pt tall. VoiceOver reads it as a button with "expanded" / "collapsed".
-- **`HabitRow`**
-  - The Streaks tab card (section 4.10).
-- **`AppDialog`**
-  - The centered confirmation dialog over a `scrim` (layout as in section 4.5): title, body, then two stacked buttons. The **first, highlighted button is always the safe choice** ("Cancel", "Keep my skip") as a `PrimaryButton`; the second is the action, as a `SecondaryButton` (neutral) or `DangerTextButton` (destructive). Tapping the scrim counts as the safe choice. Used by the skip confirmation and every confirmation in sections 4.3, 4.11, and 4.13.
-- **`PhotoViewer`**
-  - One check-in photo full screen on black, its date and time at the top, and an `xmark` close button. Used by both History screens.
-- **`IconBadge`**
-  - 40pt square, `Radius.md`: the streak's `soft` fill with its icon in the streak's `main`, in `Font.app.badgeIcon`.
-  - **On the hero card:** `onAccent` at 20% (`Color.app.onAccentFaint`) with the icon in `onAccent`.
-  - Decorative: VoiceOver skips it (the name next to it says what it is).
-- **`AppTabBar`**
-  - The custom two-tab bar (section 4.0).
-- **`WeekStrip`**
-  - The Monday–Sunday strip on Today (section 4.1). Past days are tappable.
-- **`StreakStylePicker`**
-  - The "Color and icon" section of the form (section 4.3): a row of 8 color swatches and a 6-column icon grid.
+- **`ChunkyButton`** — replaces the old Primary / Secondary / DangerText buttons.
+  - Face: `Radius.lg`, 52pt tall, full width unless side by side; label in `Font.app.button` (ALL CAPS, 0.8pt tracking), optional leading SF Symbol. Lip: 4pt of the lip color under the face.
+  - **Pressed:** the face moves down 4pt and the lip disappears (~0.08s), with a **light haptic**.
+  - Variants:
+    - `primary`: `flame` fill, `flameLip` lip, `textOnBright` label
+    - `success`: `success` fill, `successLip` lip, `textOnBright` label
+    - `secondary`: `surface` fill, 2pt `border` outline, `border` lip, `info` label
+    - `danger`: `surface` fill, 2pt `border` outline, `border` lip, `danger` label
+    - `white(label:)`: `whiteButton` fill, `whiteButtonLip` lip, label in the given color (the hero card's Check in, in the streak's `main`)
+    - `onDark`: white at 15% fill and lip, white label (photo preview's Retake, on black)
+    - **disabled** (any variant): `disabled` fill, `disabledLip` lip, `textTertiary` label, no press
+  - VoiceOver reads the title in sentence case.
+- **`ChunkyCard`** (`.chunkyCard()` modifier, `ChunkyCardButtonStyle` for tappable cards)
+  - `surface` fill, 2pt `border` outline, 5pt `border` lip along the bottom, `Radius.lg`. Tappable cards press down 3pt.
+  - A custom fill and lip can be given (the hero card).
+- **`StatusPill`** — no box: just `Font.app.pill` text (ALL CAPS, tracked) in the status color.
+  - `open`: `flame`, "OPEN NOW"
+  - `done(time)`: `success`, "DONE 7:42 AM"
+  - `upcoming(time)`: `textTertiary`, "OPENS 9:00 PM"
+  - `skipped`: `textSecondary`, "SKIPPED"
+  - `missed`: `danger`, "MISSED"
+- **`StreakLabel`** — `flame.fill` in `flame` followed by the formatted streak (section 3); `short` ("3w 2d") and `long` ("3 weeks 2 days") styles.
+- **`TaskCard`** — a `ChunkyCard` (tappable, presses down). **Hero** (the open streak): filled with the streak's `main`, its `lip` as the 5pt bottom edge, no outline; all text in `textOnBright` (`onBrightMuted` for the meta line); the badge in its hero style; a `ChunkyButton(.white)` "CHECK IN" with the label in the streak's `main`. The hero card itself doesn't press down (its Check in button does).
+- **`StatTile`** — `surfaceRaised` fill, 2pt `border`, `Radius.md`; label `caption` / `textSecondary`, value `statValue` / `textPrimary`.
+- **`WeekDayCircle`** (task screen, "This week") — 32pt: `done` the streak's `main` with a `textOnBright` checkmark; `skipped` `surfaceMuted` with a `textSecondary` minus; `missed` `dangerSoft` with a `danger` xmark; `today` a 3pt `flame` ring with a `flame` dot; `upcoming` `surfaceMuted`.
+- **`DayChip`** — 36pt circle, letter in `Font.app.cardTitle`. Selected: `flame` fill, `textOnBright` letter. Unselected: `surfaceMuted` fill, 2pt `border`, `textSecondary` letter. Soft haptic on tap.
+- **`PhotoThumbnail`** — square, `Radius.sm`; placeholder `surfaceMuted` with a `photo` icon in `textTertiary`.
+- **`EmptyStateView`** — an 88pt `flame` circle with a `textOnBright` `plus` (a chunky circle with a 4pt `flameLip` lip that presses down), "Start your first streak", and the explanation line.
+- **`FilterChip`** — capsule, label `Font.app.cardTitle`. Selected: the streak's `main` (or `flame` for "All") with a `textOnBright` label. Unselected: `surface` fill, 2pt `border`, `textPrimary` label.
+- **`DisclosureRow`** — "Done today · 2" / "Archived · 1" in `meta` / `textSecondary` with a chevron, 44pt tall; the count animates.
+- **`HabitRow`** — the Streaks tab card, a tappable `ChunkyCard` (section 4.10).
+- **`AppDialog`** — centered over `scrim`: `surfaceRaised` card, 2pt `border`, `Radius.xl`; title, body, then two stacked `ChunkyButton`s. The **first is always the safe choice** as `.primary`; the second is the action, as `.secondary` (neutral) or `.danger` (destructive).
+- **`PhotoViewer`** — one photo full screen on black with its date and a close button.
+- **`IconBadge`** — 40pt square, `Radius.md` (12): the streak's `badge` (20%) fill, icon in its `main`. **On the hero card:** `onBrightFaint` fill, `textOnBright` icon. Decorative for VoiceOver.
+- **`AppTabBar`** — section 4.0: `surface` background, 2pt `border` line on top. **Selected tab:** its icon sits in a `Radius.md` rounded square with a 2pt `info` border and `info` at 15% behind it; icon and label `info`. **Unselected:** `textTertiary`.
+- **`WeekStrip`** — section 4.1: **completed** days are `flame` circles with a white `flame.fill` icon instead of the number; **today** is a `surfaceRaised` circle with its number in `flame` and a 3pt `flame` ring (the part not yet done at 35%, so it doubles as today's progress); **partly completed past days** are `surfaceMuted` with a 3pt `flame` ring proportional to progress over `track`; **future days and days with nothing scheduled** are `surfaceMuted` with the number in `textTertiary`. Past days are tappable.
+- **`StreakStylePicker`** — 8 color swatches (32pt, the selected one ringed in `textPrimary`) and a 6-column icon grid (`Radius.md` cells; selected: the color's `badge` fill and `main` icon). Soft haptic on each pick.
+- **`ProgressBar`** — 16pt, capsule, `track` behind, colored fill with the glossy `highlight` stripe. Shown in the Design Gallery; not used on a screen yet.
+- **`ConfettiView`** — the celebration's particle burst (`Canvas` + `TimelineView`).
+- **`StaggeredAppear`** (`.appearSlideIn(index:)` modifier) — the first-appearance slide-up and fade.
 
 ---
 
@@ -321,8 +319,8 @@ The app always opens on **Today**. Each tab has its own navigation stack, so goi
 
 **Look:**
 
-- `surface` background reaching into the bottom safe area, a 0.5pt `separator` line along the top, 64pt tall plus the safe area.
-- **Each tab:** a 22pt icon (`Font.app.tabIcon`) with its label in `caption` underneath. Selected: `accentText`. Unselected: `textTertiary`. Each half of the bar is its tab's tap target.
+- `surface` background reaching into the bottom safe area, a 2pt `border` line along the top, 64pt tall plus the safe area.
+- **Each tab:** a 22pt icon (`Font.app.tabIcon`) with its label in `caption` underneath. **Selected:** the icon sits inside a `Radius.md` rounded square with a 2pt `info` border and `info` at 15% behind it; icon and label in `info`. **Unselected:** `textTertiary`, no square. Each half of the bar is its tab's tap target.
 - VoiceOver reads them as tabs, with the current one marked selected.
 
 **Planned, not built:** a third **Friends** tab comes with shared folders. Then Today moves to the center as a raised round button. Nothing for it exists in this version.
@@ -367,7 +365,7 @@ Cards and rows are separated by `Spacing.sm`. **Tapping anywhere on a card** (ot
 
 **Hero card** (the open task: window open, not checked in or skipped):
 
-- Fill: a gradient of the streak's color, `solid` to `deep`, top-left to bottom-right. `Radius.lg`, `Spacing.md` padding, no outline. All text and icons on it are `onAccent` (white).
+- A chunky card filled with the streak's `main`, with its `lip` as the 5pt bottom edge. `Radius.lg`, `Spacing.md` padding, no outline. All text and icons on it are `textOnBright` (the meta line `onBrightMuted`). The streak number may be white only at 20pt bold or larger; it uses `textOnBright` like everything else.
 - Title row: the `IconBadge` in its hero style on the left, `Spacing.sm` before the task name (`cardTitle`); on the right, the `flame.fill` icon and the streak (`statValue`), both `onAccent`. The streak follows Settings → Show streaks as.
 - `xxs` below: "Closes in 1h 20m · 1 skip left" in `meta` / `onAccentMuted`. The countdown updates every minute; under an hour it reads "Closes in 12m".
 - `Spacing.sm` below: a full-width **inverted** `PrimaryButton` "Check in" with `camera.fill`: `onAccent` (white) fill, label and icon in the streak's `solid` color. **No skip button here.**
@@ -379,7 +377,7 @@ Cards and rows are separated by `Spacing.sm`. **Tapping anywhere on a card** (ot
 
 | State | Pill | Meta line | Notes |
 |---|---|---|---|
-| **Done** | `done` | "Checked in 6:42 PM · Next: Friday" | Task name and streak in `textSecondary`. Shown inside the expanded "Done today" row. |
+| **Done** | `done` "DONE 6:42 PM" | "Next: Friday" | Task name and streak in `textSecondary`. Shown inside the expanded "Done today" row. |
 | **Upcoming** (later today) | `upcoming` "Opens 9:00 PM" | "2 skips left" | — |
 | **Skipped today** | `skipped` | "No skips left" | Shown inside the expanded "Done today" row. |
 | **Missed today** | `missed` | — | Streak-ended lines (below) |
@@ -517,7 +515,7 @@ This is a centered dialog over a `scrim`. It is not Apple's default alert, becau
 Shown full screen right after Submit. It replaces the old check-in success screen and settles the earlier "full screen vs. popup" question: **full screen, then it closes on its own.**
 
 - `background` color, content centered vertically:
-  - Behind the flame: a soft **radial glow** in the checked-in streak's `main`, about 280pt across, from 35% opacity in the middle fading to transparent at the edge. It grows and fades in with the pop (just there with Reduce Motion or Celebration animation off).
+  - Behind the flame: a flat, soft disc of the checked-in streak's `badge` color (its color at 20%), about 280pt across, that grows in with the pop. No gradient. The confetti bursts from behind the flame and the flame wiggles after it lands (section 1.6).
   - A large `flame.fill` (`celebrationIcon`, about 96pt) in `streak` color. It pops in, scaling from 0.5 to 1.0 with a spring, and the **success haptic** plays.
   - Below it, the streak **in days** as a big number in `celebrationNumber` / `textPrimary` (e.g. "23"). It counts up quickly from the previous value (22 → 23).
   - Directly under the number: "day streak" in `subhead` / `textSecondary`.
@@ -597,7 +595,6 @@ A standard iOS grouped list (inset grouped), on `background`, with rows on `surf
 
 **Display**
 - "Show streaks as" → "Weeks and days" (default) / "Days only". This is the only weeks/days switch in the app.
-- "Appearance" → "System" (default) / "Light" / "Dark".
 
 **Reminders**
 - Only when iPhone notifications are turned off for this app (denied in the iPhone's Settings): a warning row first, `dangerSoft` background, `exclamationmark.triangle.fill` in `danger`, "Notifications are off. Your streaks can end without a warning." in `subhead` / `textPrimary`, and a "Turn on" button in `accentText` that opens this app's page in the iPhone Settings app.
@@ -607,6 +604,7 @@ A standard iOS grouped list (inset grouped), on `background`, with rows on `surf
 
 **Feel**
 - "Vibrations" → toggle, on by default. Off turns off every haptic.
+- "Sounds" → toggle, on by default. Off silences every sound effect (section 1.6). The iPhone's silent switch also mutes them.
 - "Celebration animation" → toggle, on by default. Off: the celebration shows the flame and number without the pop and count-up.
 
 **Streaks**
@@ -647,11 +645,12 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Home title | Today |
 | Section headers | Today · Not today · This week · Recent check-ins |
 | Empty state | Start your first streak / Pick the days, a time window, and how many skips you get each week. |
-| Pills | Open now · Done · Opens {time} · Skipped · Missed |
+| Pills (shown ALL CAPS) | Open now · Done {time} · Opens {time} · Skipped · Missed |
+| Buttons | Every button label is shown ALL CAPS with 0.8pt letter spacing ("CHECK IN", "USE A SKIP"); the text below is how it's written and how VoiceOver reads it. |
 | Today status line | {n} of {m} done today · All done for today · Rest day · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} {weekday} at {time} · {task} is open now |
 | This week row | This week · History |
 | Hero card | Closes in {h}h {m}m · Closes in {h}h · Closes in {m}m · Check in |
-| Card meta | Checked in {time} · Next: {day} · {n} skips left |
+| Card meta | Next: {day} · {n} skips left |
 | Streak ended | Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today |
 | Form | New streak · Edit streak · Cancel · Name · Color and icon · Which days · Time window · From · To · Skips per week · Create streak · Save changes |
 | Form errors | End time must be after start time. |
@@ -673,7 +672,7 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Streaks tab | Streaks · Active · Archived · {n} · Not today · Best: {streak} |
 | Archived streak | Archived · Best streak · Photos · Restore · Delete permanently |
 | History tab | History · All · Today · Yesterday · Skipped {Task} · Missed {Task} · Missed {Task} · streak ended at {streak} · No check-ins yet. Your photos will show up here. |
-| Settings | Settings · You · Your name · Optional · Only used for your greeting. It stays on this iPhone. · Display · Show streaks as · Weeks and days · Days only · Appearance · System · Light · Dark · Reminders · Notifications are off. Your streaks can end without a warning. · Turn on · Repeat during window · Every 10 min · Every 15 min · Every 30 min · Last-call warning · 10 min before · 15 min before · 30 min before · Reminders are always on for every streak. They stop as soon as you check in or use a skip. · Feel · Vibrations · Celebration animation · Streaks · Archived streaks · No archived streaks. · Your data · Photo storage · {n} photos · {size} · No photos · Delete all data · Everything stays on this iPhone. Nothing is uploaded. · About · Version · Developer · Design Gallery · Done |
+| Settings | Settings · You · Your name · Optional · Only used for your greeting. It stays on this iPhone. · Display · Show streaks as · Weeks and days · Days only · Reminders · Notifications are off. Your streaks can end without a warning. · Turn on · Repeat during window · Every 10 min · Every 15 min · Every 30 min · Last-call warning · 10 min before · 15 min before · 30 min before · Reminders are always on for every streak. They stop as soon as you check in or use a skip. · Feel · Vibrations · Sounds · Celebration animation · Streaks · Archived streaks · No archived streaks. · Your data · Photo storage · {n} photos · {size} · No photos · Delete all data · Everything stays on this iPhone. Nothing is uploaded. · About · Version · Developer · Design Gallery · Done |
 | Edit streak | Archive streak · Delete streak |
 | Archive dialog | Archive {Task}? · It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings. · Cancel · Archive |
 | Delete dialog | Delete {Task}? · This permanently deletes the streak and all its photos. · Cancel · Delete |
