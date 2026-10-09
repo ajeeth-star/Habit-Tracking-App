@@ -4,7 +4,7 @@ import UIKit
 @testable import HabitApp
 
 /// Streak colors and icons, the greeting, and the week strip. Sample "now" is Thursday,
-/// October 1, 2026, 6:30 PM.
+/// October 1, 2026, 6:40 PM.
 struct StreakStyleTests {
     let format = Formatters(locale: Locale(identifier: "en_US"), timeZone: TimeZone(identifier: "UTC")!)
 
@@ -32,7 +32,7 @@ struct StreakStyleTests {
     @Test("Icons guessed from the name", arguments: [
         ("Gym", "dumbbell.fill"), ("Lift weights", "dumbbell.fill"), ("Morning run", "figure.run"),
         ("Skincare", "drop.fill"), ("Wash face", "drop.fill"), ("Read 20 pages", "book.fill"),
-        ("Guitar", "guitars.fill"), ("Do the dishes", "sparkles"), ("Clean room", "sparkles"),
+        ("Guitar", "music.note"), ("Do the dishes", "sparkles"), ("Clean room", "sparkles"),
         ("Sleep by 11", "bed.double.fill"), ("Meditation", "star.fill"), ("", "star.fill"),
     ])
     func iconGuess(name: String, icon: String) {

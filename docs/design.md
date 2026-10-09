@@ -82,9 +82,11 @@ Rules:
 - A streak's color marks **that streak** (its icon badge, its done days, its History chip, its hero card). `flame` stays the brand color for everything app-wide.
 - The `flame.fill` streak icon is `flame` everywhere except on bright fills.
 
-**Streak icons** (SF Symbols, all available on iOS 17): `dumbbell.fill`, `figure.run`, `figure.walk`, `bicycle`, `drop.fill`, `sparkles`, `book.fill`, `pencil`, `brain.head.profile`, `guitars.fill`, `music.note`, `paintbrush.fill`, `fork.knife`, `cup.and.saucer.fill`, `leaf.fill`, `bed.double.fill`, `moon.fill`, `sun.max.fill`, `heart.fill`, `cross.case.fill`, `house.fill`, `cart.fill`, `laptopcomputer`, `star.fill`.
+**Streak icons** (SF Symbols, all available on iOS 17): `dumbbell.fill`, `figure.run`, `figure.walk`, `bicycle`, `drop.fill`, `sparkles`, `book.fill`, `pencil`, `brain.head.profile`, `music.note`, `mic.fill`, `paintbrush.fill`, `fork.knife`, `cup.and.saucer.fill`, `leaf.fill`, `bed.double.fill`, `moon.fill`, `sun.max.fill`, `heart.fill`, `cross.case.fill`, `house.fill`, `cart.fill`, `laptopcomputer`, `star.fill`.
 
-**Defaults for a new streak:** the first color (in the table's order) not used by an active streak (back to `coral` if all are taken), and an icon guessed from the name, case-insensitive: gym / lift → `dumbbell.fill`; run → `figure.run`; skin / face → `drop.fill`; read → `book.fill`; guitar → `guitars.fill`; dishes / clean → `sparkles`; sleep → `bed.double.fill`; otherwise `star.fill`. The guess follows the name as it's typed until an icon is picked by hand.
+All 24 were checked at 20pt on a 40pt badge and read clearly. (`guitars.fill` was replaced by `music.note`, and `mic.fill` took `music.note`'s old slot; existing streaks were remapped.)
+
+**Defaults for a new streak:** the first color (in the table's order) not used by an active streak (back to `coral` if all are taken), and an icon guessed from the name, case-insensitive: gym / lift → `dumbbell.fill`; run → `figure.run`; skin / face → `drop.fill`; read → `book.fill`; guitar → `music.note`; dishes / clean → `sparkles`; sleep → `bed.double.fill`; otherwise `star.fill`. The guess follows the name as it's typed until an icon is picked by hand.
 
 ### 1.2 Typography — `DesignSystem/AppFonts.swift`
 
@@ -110,7 +112,9 @@ Every style is `Font.custom(name, size:, relativeTo:)` mapped to the same Dynami
 | `sectionHeader` | ExtraBold | 13, `.footnote` | "Today", "Coming up", "This week", "Recent check-ins" |
 | `pill` | Bold, ALL CAPS, 0.8pt tracking | 12, `.caption` | Status pills ("DONE 7:42 AM", "OPENS 9:00 PM") |
 | `caption` | SemiBold | 12, `.caption` | Stat tile labels, field labels, day letters, photo dates |
-| `badgeIcon`, `tabIcon`, `largeIcon`, `celebrationIcon` | — | as before | SF Symbol sizes |
+| `badgeIcon` | — | 20, fixed | The icon in an `IconBadge` and the icon picker |
+| `settingsIcon` | — | 15, fixed | The icon in a Settings row's 28pt badge |
+| `tabIcon`, `largeIcon`, `celebrationIcon` | — | as before | SF Symbol sizes |
 
 - **ALL CAPS + 0.8pt letter spacing** (`Typography.capsTracking`) for every **button label** and **status pill**. Only the display is uppercased: the strings stay in sentence case in `Strings`, and VoiceOver reads them in sentence case.
 - Section headers stay sentence case.
@@ -236,7 +240,7 @@ Each in its own file under `Views/Components/`:
 - **`HabitRow`** — the Streaks tab card, a tappable `ChunkyCard` (section 4.10).
 - **`AppDialog`** — centered over `scrim`: `surfaceRaised` card, 2pt `border`, `Radius.xl`; title, body, then two stacked `ChunkyButton`s. The **first is always the safe choice** as `.primary`; the second is the action, as `.secondary` (neutral) or `.danger` (destructive).
 - **`PhotoViewer`** — one photo full screen on black with its date and a close button.
-- **`IconBadge`** — 40pt square, `Radius.md` (12): the streak's `badge` (20%) fill, icon in its `main`. **On the hero card:** `onBrightFaint` fill, `textOnBright` icon. Decorative for VoiceOver.
+- **`IconBadge`** — 40pt square, `Radius.md` (12): the streak's `badge` (20%) fill, icon in its `main`. **On the hero card:** white at 25% (`heroBadge`) behind a `textOnBright` icon, so it stands out against the streak color. Decorative for VoiceOver.
 - **`AppTabBar`** — section 4.0: `surface` background, 2pt `border` line on top. **Selected tab:** its icon sits in a `Radius.md` rounded square with a 2pt `info` border and `info` at 15% behind it; icon and label `info`. **Unselected:** `textTertiary`.
 - **`WeekStrip`** — section 4.1: **completed** days are `flame` circles with a white `flame.fill` icon instead of the number; **today** is a `surfaceRaised` circle with its number in `flame` and a 3pt `flame` ring (the part not yet done at 35%, so it doubles as today's progress); **partly completed past days** are `surfaceMuted` with a 3pt `flame` ring proportional to progress over `track`; **future days and days with nothing scheduled** are `surfaceMuted` with the number in `textTertiary`. Past days are tappable.
 - **`StreakStylePicker`** — 8 color swatches (32pt, the selected one ringed in `textPrimary`) and a 6-column icon grid (`Radius.md` cells; selected: the color's `badge` fill and `main` icon). Soft haptic on each pick.
@@ -260,7 +264,7 @@ Put all of these in `DesignSystem/Formatters.swift`. Write unit tests for the st
 | 3 weeks, 0 days | "3 weeks" |
 | 0 and 0 | "No streak yet" |
 
-**Streak, short style:** "3w 2d", "1w 1d", "2d", "3w", and "—" for zero.
+**Streak, short style:** "3w 2d", "1w 1d", "2d", "3w", and **"0"** for zero. On cards and tiles zero reads "0" in the days-only mode too, and the flame next to a zero streak is `textTertiary` (grey) instead of `flame`. (The long style on the celebration keeps "No streak yet".)
 
 **Streak, days-only mode** (the owner's toggle): "14 days", "1 day", and "No streak yet" for zero.
 
@@ -327,7 +331,7 @@ The app always opens on **Today**. Each tab has its own navigation stack, so goi
 
 ### 4.1 Today tab — `Views/Home/HomeView.swift`
 
-Top to bottom: header → "This week" row → week strip → status line → hero card(s) → Today → Coming up. On a rest day there's no hero card and no Today section.
+Top to bottom: header → "This week" row → week strip → status line → hero card(s) → Later today → Coming up. On a rest day there's no hero card and no Later today section.
 **Header** (scrolls with the content, no navigation bar title):
 
 - Top row: a **gear** button on the left (`gearshape`, `textSecondary`, 44pt tap target, VoiceOver "Settings") opens Settings as a sheet (section 4.13). A **+** button on the right (`plus`, `accentText`, 44pt) opens Create Task.
@@ -357,7 +361,7 @@ Top to bottom: header → "This week" row → week strip → status line → her
 
 **Body:** two sections below the hero card(s), each headed with `sectionHeader` / `textTertiary` (`Spacing.xl` above, `Spacing.xs` below).
 
-- **"Today":** the other tasks still ahead today (window opens later) — **sorted by window start time**. Open tasks aren't repeated here; they're the hero cards above. Hidden on a rest day, and when it would have no cards and no "Done today" row. A task that was **missed** today also stays here in its time-sorted spot, so its "Streak ended" lines stay visible.
+- **"Later today":** the other tasks still ahead today (window opens later) — **sorted by window start time**. Open tasks aren't repeated here; they're the hero cards above. Hidden on a rest day, and when it would have no cards and no "Done today" row. A task that was **missed** today also stays here in its time-sorted spot, so its "Streak ended" lines stay visible.
 - **"Done today" row**, at the bottom of the Today section: tasks **checked in or skipped** today collapse into one row, "Done today · 2" in `meta` / `textSecondary`, with a `chevron.down` (collapsed) or `chevron.up` (expanded) on the right. Tapping it shows or hides their compact cards (done and skipped states below), in window order. It starts collapsed; whether it's open is remembered until the app closes. Hidden when nothing is done or skipped. If nothing is ahead or missed either, the Today section shows only this row.
 - **"Coming up":** one row per task **not scheduled today**, sorted by its next window (soonest first). Hide this section if it's empty. Each row: `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline; the streak's `IconBadge`, then its name in `cardTitle` / `textPrimary` on the left; the next window's day and start time on the right in `meta` / `textSecondary` ("Tomorrow, 9:00 PM", "Sunday, 10:00 AM"). VoiceOver reads "Guitar · Tomorrow, 9:00 PM". Tapping it opens the task screen.
 
@@ -373,7 +377,7 @@ Cards and rows are separated by `Spacing.sm`. **Tapping anywhere on a card** (ot
 **Other `TaskCard` states.** `surface` fill, `Radius.lg`, `Spacing.md` padding, 0.5pt `separator` outline.
 
 - **Title row:** the task name (`cardTitle`) on the left; on the right, the `flame.fill` icon (`streak` color) and the streak in `cardStreak`, short or days-only following the owner's toggle. The streak's `IconBadge` sits on the left of the whole card, `Spacing.sm` before the name and status rows.
-- **Status row** (`xxs` below the title): the `StatusPill`, then the meta line in `meta` / `textSecondary` next to it, `Spacing.xs` apart. At accessibility text sizes the meta line wraps below the pill.
+- **Status row** (`xxs` below the title): the `StatusPill` text, then **" · "** (`textTertiary`), then the meta line in `meta` / `textSecondary`, as one line that wraps: "OPENS 9:00 PM · 1 skip left", "DONE 7:42 AM · Next: Tomorrow". With no meta, just the pill.
 
 | State | Pill | Meta line | Notes |
 |---|---|---|---|
@@ -386,8 +390,8 @@ A done task can't be checked in again until its next scheduled window. On the ta
 
 **Streak-ended lines** (shown on a card after a streak breaks), stacked below the status row with `xxs` spacing:
 
-- Line 1, `meta` / `danger`: "Streak ended Friday at 3w 3d"
-- Line 2, `meta` / `textSecondary`: "Longest: 5w 1d · Starts fresh today"
+- Line 1, `meta` / `danger`: "Streak ended **today** at 3w 3d" if the miss was today, "Streak ended **yesterday** at 3w 3d" if yesterday, otherwise "Streak ended **Friday** at 3w 3d".
+- Line 2, `meta` / `textSecondary`: "Longest: 5w 1d · Starts fresh today" **only** if today is a scheduled day whose window hasn't closed yet; otherwise "Longest: 5w 1d · Next try: Tomorrow" (or the weekday of the next scheduled day, e.g. "Next try: Saturday").
 - How long these stay visible is **(open)**. For now, show them until the next check-in on that task.
 
 ### 4.2 Home, empty state
@@ -587,7 +591,28 @@ Not a tab. **Pushed from Today** with a standard navigation push: the "History" 
 
 Opened from the gear on Today, as a sheet (swipe down or "Done" to close). The navigation bar shows only **"Done"** at the top right (`body`, semibold, `accentText`); everything below is unchanged.
 
-A standard iOS grouped list (inset grouped), on `background`, with rows on `surface`. Row labels in `body` / `textPrimary`, values in `body` / `textSecondary`, section headers in `sectionHeader` / `textTertiary`, footers in `meta` / `textSecondary`. Title: "Settings" in `screenTitle` above the list (scrolls with it). Pickers use the standard menu picker, tinted `accentText`. Everything here is saved on the device.
+Every group is a **chunky card** (`SettingsSection`: `surface` fill, 2pt `border`, 5pt bottom lip, `Radius.lg`) with its header above in `sectionHeader` / `textTertiary` and an optional footer below in `meta` / `textSecondary`. Rows are 52pt tall with 1pt `border` lines between them (starting after the icon). Title: "Settings" in `screenTitle` above the groups (scrolls with them). Everything here is saved on the device.
+
+**Each row** (`SettingsRow`) starts with a **28pt rounded-square icon badge** (`Radius.sm`, bright fill, icon in `textOnBright`), then the label in `body` / `textPrimary` (long labels wrap), then its control or value on the right:
+
+| Row | Icon | Badge color |
+|---|---|---|
+| Your name | `person.fill` | `purple` |
+| Show streaks as | `flame.fill` | `flame` (orange) |
+| Repeat during window | `bell.fill` | `info` (blue) |
+| Last-call warning | `alarm.fill` | coral |
+| Vibrations | `iphone.radiowaves.left.and.right` | `success` (green) |
+| Sounds | `speaker.wave.2.fill` | teal |
+| Celebration animation | `sparkles` | `gold` (yellow) |
+| Archived streaks | `archivebox.fill` | `purple` |
+| Photo storage | `photo.fill` | `info` (blue) |
+| Delete all data | `trash.fill` | `danger` (label in `danger` too) |
+| Version | `info.circle.fill` | `textTertiary` (grey) |
+| Design Gallery (DEBUG) | `paintbrush.fill` | `textTertiary` (grey) |
+
+- Choices (Show streaks as, Repeat during window, Last-call warning) show the current value in `cardTitle` / `flame` with a `chevron.up.chevron.down`; tapping opens Apple's standard menu of options.
+- Toggles are tinted `success`. Values (photo storage, version, archived count) are `body` / `textSecondary`; rows that open a screen end with a `chevron.right`.
+- The notifications-off warning is the first row of the Reminders card, on `dangerSoft`.
 
 **You** (the first section)
 - "Your name" on the left in `body` / `textPrimary`; a text field on the right, right-aligned, placeholder "Optional", in `body` / `textSecondary`. Up to 30 characters; leading and trailing spaces are trimmed. Saved on the device.
@@ -643,15 +668,16 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Where | Text |
 |---|---|
 | Home title | Today |
-| Section headers | Today · Not today · This week · Recent check-ins |
+| Section headers | Later today · Coming up · This week · Recent check-ins |
 | Empty state | Start your first streak / Pick the days, a time window, and how many skips you get each week. |
 | Pills (shown ALL CAPS) | Open now · Done {time} · Opens {time} · Skipped · Missed |
 | Buttons | Every button label is shown ALL CAPS with 0.8pt letter spacing ("CHECK IN", "USE A SKIP"); the text below is how it's written and how VoiceOver reads it. |
 | Today status line | {n} of {m} done today · All done for today · Rest day · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} {weekday} at {time} · {task} is open now |
 | This week row | This week · History |
 | Hero card | Closes in {h}h {m}m · Closes in {h}h · Closes in {m}m · Check in |
-| Card meta | Next: {day} · {n} skips left |
-| Streak ended | Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today |
+| Card meta | {status} · Next: {day} · {status} · {n} skips left |
+| Zero streak | 0 |
+| Streak ended | Streak ended today at {short streak} · Streak ended yesterday at {short streak} · Streak ended {weekday} at {short streak} / Longest: {short streak} · Starts fresh today · Longest: {short streak} · Next try: {Tomorrow or weekday} |
 | Form | New streak · Edit streak · Cancel · Name · Color and icon · Which days · Time window · From · To · Skips per week · Create streak · Save changes |
 | Form errors | End time must be after start time. |
 | Next-week note | Starting next week: {n} skips (this week: {m}) |

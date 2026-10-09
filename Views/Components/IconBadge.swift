@@ -5,7 +5,7 @@ import SwiftUI
 struct IconBadge: View {
     let icon: String
     let color: StreakColor
-    /// The hero card style: faint white square, white icon.
+    /// The hero card style: white at 25% behind a dark navy icon.
     var onHero = false
 
     var body: some View {
@@ -15,7 +15,7 @@ struct IconBadge: View {
             // The badge has a fixed size, so the icon stops growing past this text size.
             .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .frame(width: Sizes.iconBadge, height: Sizes.iconBadge)
-            .background(onHero ? Color.app.onBrightFaint : color.badge, in: .rounded(Radius.md))
+            .background(onHero ? Color.app.heroBadge : color.badge, in: .rounded(Radius.md))
             .accessibilityHidden(true)
     }
 }

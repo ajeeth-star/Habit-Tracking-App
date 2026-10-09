@@ -1,10 +1,11 @@
 import Foundation
 
 /// Fake tasks for building and checking the screens. Nothing here is saved.
-/// "Now" is fixed at Thursday, October 1, 2026, around 6:30 PM, so every state lines up.
+/// "Now" is one fixed pretend time, Thursday, October 1, 2026, 6:40 PM, used by every sample state and
+/// Design Gallery screen so every time, countdown, and status agrees.
 enum SampleData {
     static let today: Date = Calendar.current.date(
-        from: DateComponents(year: 2026, month: 10, day: 1, hour: 18, minute: 30))!
+        from: DateComponents(year: 2026, month: 10, day: 1, hour: 18, minute: 40))!
 
     // MARK: Home — Today (window start order: 7 AM, 12 PM, 5 PM, 6 PM, 9 PM)
 
@@ -43,7 +44,7 @@ enum SampleData {
             .init(day: .thursday, status: .missed), .init(day: .saturday, status: .upcoming),
         ],
         checkIns: checkIns(on: [.monday, .wednesday, .thursday, .saturday], at: TimeOfDay(12, 20), count: 15, skippingToday: true),
-        color: .purple, icon: "guitars.fill")
+        color: .purple, icon: "music.note")
 
     /// Skipped today, but the window is still open (checking in would give the skip back).
     static let run = TaskSnapshot(

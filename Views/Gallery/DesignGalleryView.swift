@@ -105,7 +105,7 @@ private struct SampleScope<Content: View>: View {
 
     init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today,
          tab: AppRouter.Tab = .today, name: String? = nil, @ViewBuilder content: () -> Content) {
-        _store = State(initialValue: TaskStore(tasks: tasks, now: now))
+        _store = State(initialValue: TaskStore(tasks: tasks, now: now, frozen: true))
         let router = AppRouter()
         router.selectedTab = tab
         _router = State(initialValue: router)
@@ -416,6 +416,16 @@ private struct ComponentsGallery: View {
                 }
                 group("Week strip · every day state") {
                     WeekStrip(days: Self.sampleWeek)
+                }
+                group("Every streak icon on a badge (20pt)") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 6), spacing: Spacing.xs) {
+                        ForEach(Array(StreakIcon.all.enumerated()), id: \.element) { index, icon in
+                            IconBadge(icon: icon, color: StreakColor.allCases[index % StreakColor.allCases.count])
+                        }
+                    }
+                    IconBadge(icon: "music.note", color: .coral, onHero: true)
+                        .padding(Spacing.sm)
+                        .background(StreakColor.coral.main, in: .rounded(Radius.lg))
                 }
                 group("Icon badges · every color") {
                     HStack(spacing: Spacing.xs) {

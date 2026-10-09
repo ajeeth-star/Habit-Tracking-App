@@ -43,7 +43,7 @@ struct TaskCard: View {
                             .font(Font.app.cardTitle)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         StreakLabel.text(task.streak, style: .short, mode: settings.streakDisplay,
-                                         flameColor: Color.app.textOnBright)
+                                         flameColor: Color.app.textOnBright, dimsZero: false)
                             .font(Font.app.statValue)
                             .contentTransition(.numericText())
                     }
@@ -89,31 +89,37 @@ struct TaskCard: View {
                 }
                 .foregroundStyle(nameColor(state))
 
-                let meta = metaText(state)
-                if pill(state) != nil || meta != nil {
-                    AdaptiveStack(horizontalAlignment: .leading, verticalAlignment: .firstTextBaseline) {
-                        if let pill = pill(state) {
-                            StatusPill(kind: pill)
-                        }
-                        if let meta {
-                            Text(meta)
-                                .font(Font.app.meta)
-                                .monospacedDigit()
-                                .foregroundStyle(Color.app.textSecondary)
-                        }
-                    }
+                if let line = statusLine(state) {
+                    line
+                        .monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if let ended = task.streakEnded {
-                    Text(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
+                    Text(format.streakEndedLine(ended, today: Weekday(now)))
                         .font(Font.app.meta)
                         .foregroundStyle(Color.app.danger)
-                    Text(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))
+                    Text(format.longestLine(for: task, today: Weekday(now)))
                         .font(Font.app.meta)
                         .foregroundStyle(Color.app.textSecondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The status in caps, then " · " and the meta line, wrapping as one line: "OPENS 9:00 PM · 1 skip left".
+    private func statusLine(_ state: TaskCardState) -> Text? {
+        let pill = pill(state).map { StatusPill(kind: $0).styledText }
+        let meta = metaText(state).map {
+            Text($0).font(Font.app.meta).foregroundStyle(Color.app.textSecondary)
+        }
+        switch (pill, meta) {
+        case let (pill?, meta?):
+            return pill + Text(Strings.separator).font(Font.app.meta).foregroundStyle(Color.app.textTertiary) + meta
+        case let (pill?, nil): return pill
+        case let (nil, meta?): return meta
+        case (nil, nil): return nil
         }
     }
 
@@ -153,8 +159,8 @@ struct TaskCard: View {
         if let meta = metaText(state) { sentences.append(meta) }
         sentences.append(Strings.Accessibility.streak(StreakLabel.string(task.streak, style: .short, mode: settings.streakDisplay)))
         if let ended = task.streakEnded {
-            sentences.append(Strings.Home.streakEnded(format.weekdayName(ended.on), format.streakShort(ended.at)))
-            sentences.append(Strings.Home.longestStartsFresh(format.streakShort(task.longest)))
+            sentences.append(format.streakEndedLine(ended, today: Weekday(now)))
+            sentences.append(format.longestLine(for: task, today: Weekday(now)))
         }
         return sentences.joined(separator: ". ") + "."
     }

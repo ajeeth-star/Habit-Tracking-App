@@ -31,8 +31,10 @@ struct AppFonts {
     let caption = Nunito.semiBold(12, .caption)
 
     // SF Symbol sizes (icons only, never text)
-    /// The icon inside an `IconBadge`.
-    let badgeIcon = Font.body.weight(.semibold)
+    /// Fixed size: the icon inside an `IconBadge` (and icon picker cells, the week strip's done flame).
+    let badgeIcon = Font.system(size: 20, weight: .semibold)
+    /// Fixed size: the icon inside a Settings row's 28pt badge.
+    let settingsIcon = Font.system(size: 15, weight: .semibold)
     /// Fixed size: tab bar icons.
     let tabIcon = Font.system(size: 22, weight: .semibold)
     /// The `plus` in the empty-state circle.

@@ -204,7 +204,7 @@ struct HomeView: View {
 
     @ViewBuilder private func todaySection(now: Date) -> some View {
         if !aheadToday.isEmpty || !doneToday.isEmpty {
-            section(Strings.Home.todaySection) {
+            section(Strings.Home.laterToday) {
                 ForEach(Array(aheadToday.enumerated()), id: \.element.id) { index, task in
                     card(task, now: now).appearSlideIn(index: openToday.count + index)
                 }

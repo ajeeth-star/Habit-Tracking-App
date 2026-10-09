@@ -32,7 +32,7 @@ enum StreakColor: String, CaseIterable, Hashable, Identifiable {
 enum StreakIcon {
     static let all = [
         "dumbbell.fill", "figure.run", "figure.walk", "bicycle", "drop.fill", "sparkles",
-        "book.fill", "pencil", "brain.head.profile", "guitars.fill", "music.note", "paintbrush.fill",
+        "book.fill", "pencil", "brain.head.profile", "music.note", "mic.fill", "paintbrush.fill",
         "fork.knife", "cup.and.saucer.fill", "leaf.fill", "bed.double.fill", "moon.fill", "sun.max.fill",
         "heart.fill", "cross.case.fill", "house.fill", "cart.fill", "laptopcomputer", "star.fill",
     ]
@@ -45,7 +45,7 @@ enum StreakIcon {
         (["run"], "figure.run"),
         (["skin", "face"], "drop.fill"),
         (["read"], "book.fill"),
-        (["guitar"], "guitars.fill"),
+        (["guitar"], "music.note"),
         (["dishes", "clean"], "sparkles"),
         (["sleep"], "bed.double.fill"),
     ]

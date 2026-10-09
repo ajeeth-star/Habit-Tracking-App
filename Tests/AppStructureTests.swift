@@ -3,7 +3,7 @@ import Testing
 @testable import HabitApp
 
 /// Settings, the shared task store, and the History timeline. Sample "now" is Thursday,
-/// October 1, 2026, 6:30 PM.
+/// October 1, 2026, 6:40 PM.
 struct AppStructureTests {
     // MARK: Settings
 

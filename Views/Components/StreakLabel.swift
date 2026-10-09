@@ -26,9 +26,11 @@ struct StreakLabel: View {
 
     /// The same label as `Text`, so it can sit inline inside a longer line.
     /// `flameColor` is `flame` everywhere except on a bright fill (the hero card), where it's `textOnBright`.
+    /// A zero streak shows a grey flame and "0" (unless `dimsZero` is off, e.g. on a bright hero card).
     static func text(_ streak: Streak, style: Style, mode: StreakDisplayMode,
-                     flameColor: Color = Color.app.flame) -> Text {
-        Text(Image(systemName: "flame.fill")).foregroundStyle(flameColor)
+                     flameColor: Color = Color.app.flame, dimsZero: Bool = true) -> Text {
+        let isZero = streak.weeks == 0 && streak.days == 0 && streak.totalCheckIns == 0
+        return Text(Image(systemName: "flame.fill")).foregroundStyle(isZero && dimsZero ? Color.app.textTertiary : flameColor)
             + Text(" " + string(streak, style: style, mode: mode)).monospacedDigit()
     }
 }

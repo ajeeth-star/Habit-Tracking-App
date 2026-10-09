@@ -5,7 +5,6 @@ enum Strings {
 
     enum Home {
         static let title = "Today"
-        static let todaySection = "Today"
         static let notTodaySection = "Not today"
         static let emptyTitle = "Start your first streak"
         static let emptyBody = "Pick the days, a time window, and how many skips you get each week."
@@ -15,6 +14,11 @@ enum Strings {
         static func next(_ day: String, _ window: String) -> String { "Next: \(day), \(window)" }
         static func streakEnded(_ weekday: String, _ streak: String) -> String { "Streak ended \(weekday) at \(streak)" }
         static func longestStartsFresh(_ streak: String) -> String { "Longest: \(streak) · Starts fresh today" }
+        static func longestNextTry(_ streak: String, _ day: String) -> String { "Longest: \(streak) · Next try: \(day)" }
+        /// Fills "Streak ended {day} at …" when the miss was today or yesterday.
+        static let endedToday = "today"
+        static let endedYesterday = "yesterday"
+        static let laterToday = "Later today"
         static func nextDay(_ day: String) -> String { "Next: \(day)" }
     }
 
@@ -179,7 +183,7 @@ enum Strings {
         private static let iconNames = [
             "dumbbell.fill": "Dumbbell", "figure.run": "Running", "figure.walk": "Walking",
             "bicycle": "Bicycle", "drop.fill": "Drop", "sparkles": "Sparkles", "book.fill": "Book",
-            "pencil": "Pencil", "brain.head.profile": "Brain", "guitars.fill": "Guitar",
+            "pencil": "Pencil", "brain.head.profile": "Brain", "mic.fill": "Microphone",
             "music.note": "Music", "paintbrush.fill": "Paintbrush", "fork.knife": "Fork and knife",
             "cup.and.saucer.fill": "Cup", "leaf.fill": "Leaf", "bed.double.fill": "Bed",
             "moon.fill": "Moon", "sun.max.fill": "Sun", "heart.fill": "Heart",
@@ -199,7 +203,7 @@ enum Strings {
 
     enum Streak {
         static let none = "No streak yet"
-        static let shortNone = "—"
+        static let shortNone = "0"
         static func weeks(_ n: Int) -> String { n == 1 ? "1 week" : "\(n) weeks" }
         static func days(_ n: Int) -> String { n == 1 ? "1 day" : "\(n) days" }
         static func shortWeeks(_ n: Int) -> String { "\(n)w" }

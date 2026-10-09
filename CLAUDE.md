@@ -44,7 +44,7 @@ docs/credits.md    Font and sound sources and licenses
 - On screen a habit is called a **streak**; code keeps Task/Habit names. Each streak has a `StreakColor` and an SF Symbol icon (`DesignSystem/StreakPalette.swift`).
 - Tabs: Today and Streaks — custom `AppTabBar` (hidden while History is open via `AppRouter.hidesTabBar`). History is pushed from Today (link or a tapped past day); Settings is a sheet from the gear on Today. A Friends tab is planned for later, not built.
 - Gradients are allowed only on the hero card and the celebration glow.
-- The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`).
+- The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`). Sample "now" is one fixed pretend time, Thursday Oct 1 2026, 6:40 PM (`SampleData.today`); the gallery's clock is frozen there so every time, countdown, and status agrees. Use `--time 18:40` for simulator screenshots.
 - App-wide state: `TaskStore` (habits, shared by all tabs), `AppSettings` (saved settings), `AppRouter` (selected tab). All three are put in the environment in `App/HabitApp.swift`.
 - To open one gallery entry directly (e.g. for screenshots): launch with `-galleryEntry <id>`, e.g. `xcrun simctl launch booted com.ajeethsrinivasan.habitapp -galleryEntry home.all`. Ids are in `Views/Gallery/DesignGalleryView.swift`.
 

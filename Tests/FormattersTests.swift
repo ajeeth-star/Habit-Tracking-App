@@ -37,7 +37,7 @@ struct FormattersTests {
         (1, 1, "1w 1d"),
         (0, 2, "2d"),
         (3, 0, "3w"),
-        (0, 0, "—"),
+        (0, 0, "0"),
     ])
     func streakShort(weeks: Int, days: Int, expected: String) {
         #expect(format.streakShort(streak(weeks, days)) == expected)
@@ -50,6 +50,13 @@ struct FormattersTests {
     ])
     func streakDaysOnly(total: Int, expected: String) {
         #expect(format.streakDaysOnly(streak(2, 0, total: total)) == expected)
+    }
+
+    @Test func zeroStreakReadsZeroOnCards() {
+        #expect(format.streakCompact(.zero, mode: .weeksAndDays) == "0")
+        #expect(format.streakCompact(.zero, mode: .daysOnly) == "0")
+        // The spelled-out style (celebration) keeps its words.
+        #expect(format.streakLong(.zero) == "No streak yet")
     }
 
     @Test func streakFollowsToggle() {
@@ -202,7 +209,7 @@ struct FormattersTests {
     @Test func bestStreak() {
         #expect(format.best(Streak(weeks: 5, days: 1, totalCheckIns: 21), mode: .weeksAndDays) == "Best: 5w 1d")
         #expect(format.best(Streak(weeks: 5, days: 1, totalCheckIns: 21), mode: .daysOnly) == "Best: 21 days")
-        #expect(format.best(.zero, mode: .weeksAndDays) == "Best: —")
+        #expect(format.best(.zero, mode: .weeksAndDays) == "Best: 0")
     }
 
     @Test func historyDayHeaders() {

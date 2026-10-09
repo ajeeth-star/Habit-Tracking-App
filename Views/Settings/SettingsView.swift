@@ -1,7 +1,8 @@
 import SwiftUI
 import UserNotifications
 
-/// The Settings tab (design.md §4.13): a standard grouped list in the app's colors and fonts.
+/// Settings (design.md §4.13), a sheet from Today's gear: groups of rows in chunky cards, each row with a
+/// colored icon badge.
 /// Every choice is saved on the device through `AppSettings`. Must sit inside a `NavigationStack`.
 struct SettingsView: View {
     /// Forces the "Notifications are off" warning on or off (the Design Gallery uses this);
@@ -26,135 +27,120 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        List {
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(Strings.Settings.title)
                     .font(Font.app.screenTitle)
                     .foregroundStyle(Color.app.textPrimary)
                     .accessibilityAddTraits(.isHeader)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
-            }
+                    .padding(.horizontal, Spacing.xxs)
 
-            Section {
-                HStack {
-                    Text(Strings.Settings.yourName)
-                    TextField(Strings.Settings.namePlaceholder, text: $settings.name)
-                        .multilineTextAlignment(.trailing)
-                        .foregroundStyle(Color.app.textSecondary)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .onSubmit { settings.finishEditingName() }
-                        .accessibilityLabel(Strings.Settings.yourName)
-                }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.you)
-            } footer: {
-                footer(Strings.Settings.nameFooter)
-            }
-
-            Section {
-                Group {
-                    Picker(Strings.Settings.showStreaksAs, selection: $settings.streakDisplay) {
-                        Text(Strings.Settings.weeksAndDays).tag(StreakDisplayMode.weeksAndDays)
-                        Text(Strings.Settings.daysOnly).tag(StreakDisplayMode.daysOnly)
+                SettingsSection(title: Strings.Settings.you, footer: Strings.Settings.nameFooter) {
+                    SettingsRow(icon: "person.fill", color: Color.app.purple, title: Strings.Settings.yourName) {
+                        TextField(Strings.Settings.namePlaceholder, text: $settings.name)
+                            .font(Font.app.body)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(Color.app.textSecondary)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .submitLabel(.done)
+                            .onSubmit { settings.finishEditingName() }
+                            .accessibilityLabel(Strings.Settings.yourName)
                     }
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.display)
-            }
 
-            Section {
-                Group {
+                SettingsSection(title: Strings.Settings.display) {
+                    SettingsRow(icon: "flame.fill", color: Color.app.flame, title: Strings.Settings.showStreaksAs) {
+                        menuPicker(Strings.Settings.showStreaksAs, selection: $settings.streakDisplay,
+                                   current: settings.streakDisplay == .weeksAndDays ? Strings.Settings.weeksAndDays : Strings.Settings.daysOnly) {
+                            Text(Strings.Settings.weeksAndDays).tag(StreakDisplayMode.weeksAndDays)
+                            Text(Strings.Settings.daysOnly).tag(StreakDisplayMode.daysOnly)
+                        }
+                    }
+                }
+
+                SettingsSection(title: Strings.Settings.reminders, footer: Strings.Settings.remindersFooter) {
                     if notificationsOffOverride ?? notificationsDenied {
                         notificationsWarning
+                        SettingsDivider()
                     }
-                    Picker(Strings.Settings.repeatDuringWindow, selection: $settings.repeatMinutes) {
-                        ForEach(AppSettings.repeatChoices, id: \.self) { Text(Strings.Settings.every($0)).tag($0) }
+                    SettingsRow(icon: "bell.fill", color: Color.app.info, title: Strings.Settings.repeatDuringWindow) {
+                        menuPicker(Strings.Settings.repeatDuringWindow, selection: $settings.repeatMinutes,
+                                   current: Strings.Settings.every(settings.repeatMinutes)) {
+                            ForEach(AppSettings.repeatChoices, id: \.self) { Text(Strings.Settings.every($0)).tag($0) }
+                        }
                     }
-                    Picker(Strings.Settings.lastCall, selection: $settings.lastCallMinutes) {
-                        ForEach(AppSettings.lastCallChoices, id: \.self) { Text(Strings.Settings.before($0)).tag($0) }
+                    SettingsDivider()
+                    SettingsRow(icon: "alarm.fill", color: StreakColor.coral.main, title: Strings.Settings.lastCall) {
+                        menuPicker(Strings.Settings.lastCall, selection: $settings.lastCallMinutes,
+                                   current: Strings.Settings.before(settings.lastCallMinutes)) {
+                            ForEach(AppSettings.lastCallChoices, id: \.self) { Text(Strings.Settings.before($0)).tag($0) }
+                        }
                     }
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.reminders)
-            } footer: {
-                footer(Strings.Settings.remindersFooter)
-            }
 
-            Section {
-                Group {
-                    Toggle(Strings.Settings.vibrations, isOn: $settings.vibrations)
-                        .tint(Color.app.success)
-                    Toggle(Strings.Settings.sounds, isOn: $settings.sounds)
-                        .tint(Color.app.success)
-                    Toggle(Strings.Settings.celebrationAnimation, isOn: $settings.celebrationAnimation)
-                        .tint(Color.app.success)
+                SettingsSection(title: Strings.Settings.feel) {
+                    toggleRow("iphone.radiowaves.left.and.right", Color.app.success, Strings.Settings.vibrations,
+                              $settings.vibrations)
+                    SettingsDivider()
+                    toggleRow("speaker.wave.2.fill", StreakColor.teal.main, Strings.Settings.sounds, $settings.sounds)
+                    SettingsDivider()
+                    toggleRow("sparkles", Color.app.gold, Strings.Settings.celebrationAnimation,
+                              $settings.celebrationAnimation)
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.feel)
-            }
 
-            Section {
-                Group {
+                SettingsSection(title: Strings.Settings.streaks) {
                     NavigationLink {
                         ArchivedHabitsScreen()
                     } label: {
-                        LabeledContent(Strings.Settings.archivedHabits, value: "\(store.archived.count)")
+                        SettingsRow(icon: "archivebox.fill", color: Color.app.purple, title: Strings.Settings.archivedHabits) {
+                            valueText("\(store.archived.count)")
+                            chevron
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.streaks)
-            }
 
-            Section {
-                Group {
-                    LabeledContent(Strings.Settings.photoStorage, value: format.photoStorage(
-                        count: store.photoCount, bytes: Int64(store.photoCount) * SampleData.estimatedPhotoBytes))
+                SettingsSection(title: Strings.Settings.yourData, footer: Strings.Settings.dataFooter) {
+                    SettingsRow(icon: "photo.fill", color: Color.app.info, title: Strings.Settings.photoStorage) {
+                        valueText(format.photoStorage(count: store.photoCount,
+                                                      bytes: Int64(store.photoCount) * SampleData.estimatedPhotoBytes))
+                    }
+                    .accessibilityElement(children: .combine)
+                    SettingsDivider()
                     Button {
                         withoutAnimation { deleteStep = .confirm }
                     } label: {
-                        Text(Strings.Settings.deleteAllData)
-                            .foregroundStyle(Color.app.danger)
+                        SettingsRow(icon: "trash.fill", color: Color.app.danger, title: Strings.Settings.deleteAllData,
+                                    titleColor: Color.app.danger)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Strings.Settings.deleteAllData)
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.yourData)
-            } footer: {
-                footer(Strings.Settings.dataFooter)
-            }
 
-            Section {
-                Group {
-                    LabeledContent(Strings.Settings.version, value: version)
+                SettingsSection(title: Strings.Settings.about) {
+                    SettingsRow(icon: "info.circle.fill", color: Color.app.textTertiary, title: Strings.Settings.version) {
+                        valueText(version)
+                    }
+                    .accessibilityElement(children: .combine)
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.about)
-            }
 
-            #if DEBUG
-            Section {
-                Group {
-                    Button(Strings.Settings.designGallery) { showingGallery = true }
-                        .foregroundStyle(Color.app.flame)
+                #if DEBUG
+                SettingsSection(title: Strings.Settings.developer) {
+                    Button { showingGallery = true } label: {
+                        SettingsRow(icon: "paintbrush.fill", color: Color.app.textTertiary, title: Strings.Settings.designGallery) {
+                            chevron
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Strings.Settings.designGallery)
                 }
-                .listRowBackground(Color.app.surface)
-            } header: {
-                header(Strings.Settings.developer)
+                #endif
             }
-            #endif
+            .padding(.horizontal, Spacing.lg)
+            .padding(.bottom, Spacing.xxl)
         }
-        .listStyle(.insetGrouped)
-        .font(Font.app.body)
-        .foregroundStyle(Color.app.textPrimary)
+        .scrollDismissesKeyboard(.interactively)
         .tint(Color.app.flame)
         // Soft haptic on every toggle and picker.
         .softHaptic(trigger: settings.streakDisplay)
@@ -163,7 +149,6 @@ struct SettingsView: View {
         .softHaptic(trigger: settings.vibrations)
         .softHaptic(trigger: settings.sounds)
         .softHaptic(trigger: settings.celebrationAnimation)
-        .scrollContentBackground(.hidden)
         .background(Color.app.background)
         .toolbar {
             if showsDone {
@@ -200,17 +185,52 @@ struct SettingsView: View {
 
     // MARK: Pieces
 
-    private func header(_ text: String) -> some View {
-        Text(text)
-            .font(Font.app.sectionHeader)
-            .foregroundStyle(Color.app.textTertiary)
-            .textCase(nil)
+    /// A menu of choices whose button shows the current one in Nunito ("Weeks and days ⌃⌄"); the list that
+    /// pops up is Apple's standard menu.
+    private func menuPicker<Value: Hashable, Options: View>(_ label: String, selection: Binding<Value>, current: String,
+                                                        @ViewBuilder options: () -> Options) -> some View {
+        Menu {
+            Picker(label, selection: selection, content: options)
+        } label: {
+            HStack(spacing: Spacing.xxs) {
+                Text(current)
+                    .font(Font.app.cardTitle)
+                    .monospacedDigit()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(Font.app.meta)
+                    .fontWeight(.bold)
+            }
+            .foregroundStyle(Color.app.flame)
+            .fixedSize()
+            .frame(minHeight: Sizes.tapTarget)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel(label)
+        .accessibilityValue(current)
     }
 
-    private func footer(_ text: String) -> some View {
+    private func toggleRow(_ icon: String, _ color: Color, _ title: String, _ isOn: Binding<Bool>) -> some View {
+        SettingsRow(icon: icon, color: color, title: title) {
+            Toggle(title, isOn: isOn)
+                .labelsHidden()
+                .tint(Color.app.success)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func valueText(_ text: String) -> some View {
         Text(text)
-            .font(Font.app.meta)
+            .font(Font.app.body)
+            .monospacedDigit()
             .foregroundStyle(Color.app.textSecondary)
+            .contentTransition(.numericText())
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right")
+            .font(Font.app.meta)
+            .fontWeight(.bold)
+            .foregroundStyle(Color.app.textTertiary)
     }
 
     private var notificationsWarning: some View {
@@ -232,8 +252,10 @@ struct SettingsView: View {
                 .buttonStyle(.borderless)
             }
         }
-        .padding(.vertical, Spacing.xxs)
-        .listRowBackground(Color.app.dangerSoft)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.app.dangerSoft)
     }
 
     private var version: String {

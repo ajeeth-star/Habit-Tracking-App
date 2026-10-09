@@ -41,7 +41,9 @@ struct Formatters {
 
     /// The compact streak used on cards and stat tiles, following the owner's toggle.
     func streakCompact(_ streak: Streak, mode: StreakDisplayMode) -> String {
-        mode == .daysOnly ? streakDaysOnly(streak) : streakShort(streak)
+        // Zero reads "0" in both modes (no "No streak yet" on cards).
+        if mode == .daysOnly { return streak.totalCheckIns == 0 ? Strings.Streak.shortNone : streakDaysOnly(streak) }
+        return streakShort(streak)
     }
 
     /// The spelled-out streak used on the success screen, following the owner's toggle.
@@ -257,6 +259,32 @@ struct Formatters {
     func comingUp(daysAhead: Int, weekday: Weekday, start: TimeOfDay) -> String {
         let day = daysAhead == 1 ? Strings.Schedule.tomorrow : weekdayName(weekday)
         return Strings.Today.dayAndTime(day, time(start))
+    }
+
+    // MARK: Streak ended (design.md §4.1)
+
+    /// "Streak ended today at 3w 3d", "Streak ended yesterday at …", or "Streak ended Friday at …".
+    func streakEndedLine(_ ended: StreakEnded, today: Weekday) -> String {
+        let day: String
+        if ended.on == today {
+            day = Strings.Home.endedToday
+        } else if today.daysUntil(ended.on) == 6 {
+            day = Strings.Home.endedYesterday
+        } else {
+            day = weekdayName(ended.on)
+        }
+        return Strings.Home.streakEnded(day, streakShort(ended.at))
+    }
+
+    /// "Longest: 5w 1d · Starts fresh today" only when today is scheduled and its window hasn't closed;
+    /// otherwise "Longest: 5w 1d · Next try: Tomorrow" (or a weekday).
+    func longestLine(for task: TaskSnapshot, today: Weekday) -> String {
+        let longest = streakShort(task.longest)
+        if case .scheduled(let phase, _) = task.today, phase != .after {
+            return Strings.Home.longestStartsFresh(longest)
+        }
+        guard let next = task.nextDay(after: today) else { return Strings.Detail.longest(longest) }
+        return Strings.Home.longestNextTry(longest, nextDay(next))
     }
 
     // MARK: Habits and History tabs

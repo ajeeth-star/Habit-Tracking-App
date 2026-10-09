@@ -48,6 +48,11 @@ enum Sizes {
     /// A streak's icon badge.
     static let iconBadge: CGFloat = 40
 
+    /// Settings: row height, the icon badge on each row, and the thin line between rows.
+    static let settingsRow: CGFloat = 52
+    static let settingsBadge: CGFloat = 28
+    static let rowDivider: CGFloat = 1
+
     /// Streak style picker: color swatches, the ring around the selected one, and icon cells.
     static let colorSwatch: CGFloat = 32
     static let swatchRing: CGFloat = 2

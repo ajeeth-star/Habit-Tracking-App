@@ -3,7 +3,7 @@ import Testing
 @testable import HabitApp
 
 /// The in-memory rules behind the new Home: next scheduled day, the countdown, what a check-in
-/// changes, and the today summary. Sample "now" is Thursday, October 1, 2026, 6:30 PM.
+/// changes, and the today summary. Sample "now" is Thursday, October 1, 2026, 6:40 PM.
 struct HomeModelTests {
     let now = SampleData.today
 
@@ -27,9 +27,9 @@ struct HomeModelTests {
     }
 
     @Test func minutesUntilClose() {
-        #expect(SampleData.gym.minutesUntilClose(from: now) == 90)                  // 6:30 → 8:00
+        #expect(SampleData.gym.minutesUntilClose(from: now) == 80)                  // 6:40 → 8:00
         #expect(SampleData.gym.minutesUntilClose(from: SampleData.closingSoon) == 12)
-        #expect(SampleData.gym.minutesUntilClose(from: now.addingTimeInterval(30)) == 90) // rounds up
+        #expect(SampleData.gym.minutesUntilClose(from: now.addingTimeInterval(30)) == 80) // rounds up
         #expect(SampleData.gym.minutesUntilClose(from: SampleData.time(21, 0)) == 0)
     }
 

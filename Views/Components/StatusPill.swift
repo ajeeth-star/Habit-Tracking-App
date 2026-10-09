@@ -25,6 +25,14 @@ struct StatusPill: View {
             .accessibilityLabel(text)
     }
 
+    /// The same look as `Text`, so a meta line can follow it on one line: "OPENS 9:00 PM · 1 skip left".
+    var styledText: Text {
+        Text(text.uppercased())
+            .font(Font.app.pill)
+            .tracking(Typography.capsTracking)
+            .foregroundStyle(color)
+    }
+
     /// Sentence case, as VoiceOver reads it: "Done 7:42 AM".
     var text: String {
         switch kind {

@@ -48,8 +48,8 @@ struct AppColors {
     let infoSoft = Color("info").opacity(0.15)
     /// Secondary text on a hero card.
     let onBrightMuted = Color("textOnBright").opacity(0.75)
-    /// The icon badge on a hero card.
-    let onBrightFaint = Color("textOnBright").opacity(0.15)
+    /// The icon badge background on a hero card: white at 25%, so it stands out on the streak color.
+    let heroBadge = Color.white.opacity(0.25)
     /// The glossy stripe along the top of a progress bar fill.
     let highlight = Color.white.opacity(0.3)
 

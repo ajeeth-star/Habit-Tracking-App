@@ -13,14 +13,18 @@ final class TaskStore {
     /// this phase; the countdown still ticks along from there.
     @ObservationIgnored let startNow: Date
     @ObservationIgnored private let openedAt = Date()
+    /// The clock stands still at `startNow` (the Design Gallery), so every screen shows the same time.
+    @ObservationIgnored private let isFrozen: Bool
 
-    init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today) {
+    init(tasks: [TaskSnapshot] = SampleData.allTasksWithArchived, now: Date = SampleData.today, frozen: Bool = false) {
         self.tasks = tasks
         self.startNow = now
+        self.isFrozen = frozen
     }
 
     func now(at date: Date = Date()) -> Date {
-        startNow.addingTimeInterval(max(0, date.timeIntervalSince(openedAt)))
+        guard !isFrozen else { return startNow }
+        return startNow.addingTimeInterval(max(0, date.timeIntervalSince(openedAt)))
     }
 
     var today: Weekday { Weekday(startNow) }
