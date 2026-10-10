@@ -44,8 +44,13 @@ struct DeveloperSection: View {
             SettingsDivider()
             row("bell.badge.fill", Color.app.flame, Strings.Developer.sendTestReminder) {
                 Task {
+                    if await ReminderScheduler.status() == .notDetermined {
+                        await ReminderScheduler.requestPermission()
+                    }
+                    // The real schedule goes to iOS first, so the test reminder is the newest and isn't dropped.
+                    store.refresh()
+                    await store.reminders?.finishScheduling()
                     await ReminderScheduler.sendTest()
-                    store.refresh() // schedules the real reminders too, if they were just allowed
                 }
             }
             SettingsDivider()

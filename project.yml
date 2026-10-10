@@ -40,6 +40,11 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSCameraUsageDescription: Take a photo to prove you completed a habit.
+        # Background app refresh: catch up and redo the reminder schedule (Services/BackgroundRefresh.swift).
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.ajeethsrinivasan.habitapp.refresh
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ajeethsrinivasan.habitapp

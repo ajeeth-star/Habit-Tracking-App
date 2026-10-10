@@ -138,6 +138,8 @@ enum Strings {
         static func lastCallSkips(_ n: Int) -> String { "Check in or use a skip (\(n) left)." }
         static func lastCallStreak(_ days: Int) -> String { "Last chance to keep your \(days)-day streak." }
         static let lastCallNoStreak = "Last chance to check in today."
+        /// Comes after the last scheduled reminder, in case the app isn't opened to schedule more.
+        static let safetyNet = "Open the app so I can keep reminding you."
         static let testTitle = "Test reminder"
         static let testBody = "Reminders are working."
 

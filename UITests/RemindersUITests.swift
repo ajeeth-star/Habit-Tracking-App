@@ -18,19 +18,19 @@ final class RemindersUITests: XCTestCase {
         for _ in 0..<8 where !sendTest.isHittable { app.swipeUp() }
         sendTest.tap()
 
-        // The first time, iOS asks for permission.
-        let allow = springboard.alerts.buttons["Allow"]
-        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        // The first time (a fresh install), iOS asks for permission. The 5 seconds start once it's answered.
+        let alert = springboard.alerts.firstMatch
+        if alert.waitForExistence(timeout: 10) {
+            let allow = alert.buttons["Allow"]
+            XCTAssertTrue(allow.waitForExistence(timeout: 5))
+            allow.tap()
+            XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "Permission answered")
+        }
 
         // The banner shows even with the app open.
         let banner = springboard.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Reminders are working'"))
             .firstMatch
-        let arrived = banner.waitForExistence(timeout: 15)
-        if !arrived {
-            snapshot("debug-no-banner")
-            print("SPRINGBOARD-DUMP-START\n\(springboard.debugDescription)\nSPRINGBOARD-DUMP-END")
-        }
-        XCTAssertTrue(arrived, "The test reminder arrived")
+        XCTAssertTrue(banner.waitForExistence(timeout: 20), "The test reminder arrived")
         snapshot("1-test-reminder")
 
         // The sample streaks' reminders are scheduled (with the real time, so how many depends on the hour).

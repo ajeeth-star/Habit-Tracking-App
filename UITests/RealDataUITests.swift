@@ -76,21 +76,28 @@ final class RealDataUITests: XCTestCase {
         // `-askForReminders YES` shows it even if this simulator already allows reminders.
         app.launchArguments = ["-resetData", "YES", "-askForReminders", "YES", "-settings.name", ""]
         app.launch()
+        // The empty state is up (so the app has started) and no offer came with it.
+        XCTAssertTrue(app.buttons["Create a streak"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Turn on reminders"].waitForExistence(timeout: 2), "Not on first launch")
 
         createStreak("Stretch")
         let turnOn = app.buttons["Turn on reminders"]
-        XCTAssertTrue(turnOn.waitForExistence(timeout: 5), "Offered right after the first streak")
+        XCTAssertTrue(turnOn.waitForExistence(timeout: 10), "Offered right after the first streak")
         XCTAssertTrue(app.staticTexts[
-            "I'll remind you when your windows open, so your streak never sneaks away."].exists)
+            "I'll remind you when your windows open, so your streak never sneaks away."].waitForExistence(timeout: 3))
         snapshot("reminders-offer")
-        app.buttons["Not now"].tap()
-        XCTAssertTrue(turnOn.waitForNonExistence(timeout: 3))
+        let notNow = app.buttons["Not now"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 3))
+        notNow.tap()
+        XCTAssertTrue(turnOn.waitForNonExistence(timeout: 5))
 
         // A second streak doesn't ask again.
-        app.buttons["Create streak"].firstMatch.tap()
+        let plus = app.buttons["Create streak"].firstMatch
+        XCTAssertTrue(plus.waitForExistence(timeout: 5))
+        wait(until: "hittable == true", on: plus)
+        plus.tap()
         createStreak("Read", openForm: false)
-        XCTAssertFalse(turnOn.waitForExistence(timeout: 3), "Only once")
+        XCTAssertFalse(turnOn.waitForExistence(timeout: 4), "Only once")
     }
 
     private func createStreak(_ name: String, openForm: Bool = true) {
@@ -100,11 +107,25 @@ final class RealDataUITests: XCTestCase {
             create.tap()
         }
         let field = app.textFields["e.g. Gym"]
-        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
-        field.typeText(name + "\n")
-        app.buttons["Monday"].tap()
-        app.buttons["form.save"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Keyboard is up")
+        field.typeText(name)
+        wait(until: "value == %@", name, on: field)
+        field.typeText("\n")
+        let monday = app.buttons["Monday"]
+        XCTAssertTrue(monday.waitForExistence(timeout: 3))
+        monday.tap()
+        wait(until: "selected == true", on: monday)
+        let save = app.buttons["form.save"]
+        wait(until: "enabled == true", on: save)
+        save.tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: 5), "The form closed")
+    }
+
+    private func wait(until format: String, _ arguments: CVarArg..., on element: XCUIElement) {
+        let predicate = NSPredicate(format: format, argumentArray: arguments)
+        wait(for: [expectation(for: predicate, evaluatedWith: element)], timeout: 5)
     }
 
     /// "Fill with sample data" gives a few weeks of history; every main screen shows it.

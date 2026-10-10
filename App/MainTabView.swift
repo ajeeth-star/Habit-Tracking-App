@@ -50,6 +50,7 @@ struct MainTabView: View {
         // "Your streak ended" shows once per break, when the app opens or comes back (design.md §4.15).
         .onAppear { showingEnded = dayStreak.state.needsEndedScreen }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .background { BackgroundRefresh.schedule() }
             guard phase == .active else { return }
             store.refresh()
             if dayStreak.state.needsEndedScreen { showingEnded = true }

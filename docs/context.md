@@ -165,7 +165,12 @@ Built in the reminders phase. Local notifications only, scheduled on the phone; 
 - **Reminders always use the real time**, never the DEBUG pretend clock.
 - **Last-call warnings are "time sensitive"** where the iPhone allows it, so they can come through a Focus mode. This needs an Apple capability that may not work with a free Apple ID; until it's confirmed on the owner's iPhone they arrive as normal notifications.
 - **Asking permission:** never on first launch. Right after the **first streak is created**, a friendly screen (the happy flame: "I'll remind you when your windows open, so your streak never sneaks away.") with **Turn on reminders** (shows the iPhone's permission prompt) and **Not now**. It's shown only once. No bribes or rewards for allowing. If declined, the Settings warning row ("Notifications are off…") handles it.
-- **Scheduling:** iOS allows only 64 pending notifications per app, so the app keeps a rolling schedule: the soonest reminders first, stopping at 64. The whole schedule is recalculated when the app opens or comes back, a streak is created, edited, archived, restored, or deleted, a check-in or skip happens, a reminder setting changes, or a day is processed.
+- **Scheduling:** iOS allows only 64 pending notifications per app, so the app plans the **next 7 days** in priority tiers so reminders never run out silently:
+  1. **Tier 1:** every window's **opening** and **last call**, for all streaks. If even these don't all fit, **last calls** come first, then openings, soonest first.
+  2. **Tier 2:** **repeats**, soonest first, filling whatever room is left.
+  3. **Safety net:** one final notification just after the last scheduled reminder, "Open the app so I can keep reminding you." It takes the last of the 64 places and is replaced every time the schedule is redone.
+- The whole schedule is recalculated when the app opens or comes back, a streak is created, edited, archived, restored, or deleted, a check-in or skip happens, a reminder setting changes, or a day is processed.
+- **Background refresh:** the app also asks iOS for background time ("background app refresh") to process finished days and redo the schedule while it isn't open. iOS decides when (and whether) that happens, based on things like how often the app is used, battery, and Low Power Mode, and it never runs if the owner turns Background App Refresh off. It helps keep reminders going but isn't guaranteed; the safety net covers the rest.
 
 ## 8. Things it should NOT do (v1)
 

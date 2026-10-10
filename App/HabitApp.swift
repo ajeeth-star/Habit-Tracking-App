@@ -63,7 +63,8 @@ struct HabitApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        let store = store
+        return WindowGroup {
             RootView()
                 .environment(settings)
                 .environment(store)
@@ -72,6 +73,10 @@ struct HabitApp: App {
                 .environment(appDelegate.router)
                 // The app is always dark (design.md §1.1).
                 .preferredColorScheme(.dark)
+        }
+        // When iOS gives the app background time: catch up and redo the reminder schedule (context.md §7).
+        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+            await BackgroundRefresh.run(store)
         }
     }
 }

@@ -125,14 +125,49 @@ struct RemindersAndFixesTests {
         #expect(plan.map(\.kind) == [.opens])
     }
 
-    @Test func atMostSixtyFourSoonestFirst() {
-        let streaks = (0..<10).map { streak(TimeOfDay(8), TimeOfDay(20), name: "S\($0)") }
-        let plan = planner(repeat: 10).plan(streaks, now: date(5, 7))
+    private func count(_ plan: [PlannedReminder], _ kind: PlannedReminder.Kind) -> Int {
+        plan.filter { $0.kind == kind }.count
+    }
+
+    @Test func threeStreaksForAWeekFitEveryOpeningAndLastCall() {
+        let streaks = [streak(TimeOfDay(7), TimeOfDay(9), name: "Skincare"),
+                       streak(TimeOfDay(12), TimeOfDay(13), name: "Guitar"),
+                       streak(TimeOfDay(18), TimeOfDay(20), name: "Gym")]
+        // Monday 6 AM: the next 7 days hold 7 windows for each streak.
+        let plan = planner().plan(streaks, now: date(5, 6))
         #expect(plan.count == ReminderPlanner.limit)
+        #expect(count(plan, .opens) == 21, "Every opening")
+        #expect(count(plan, .lastCall) == 21, "Every last call")
+        #expect(count(plan, .repeating) == 21, "Repeats fill the rest")
         #expect(plan.map(\.date) == plan.map(\.date).sorted())
-        let allToday = plan.allSatisfy { calendar.isDate($0.date, inSameDayAs: midnight(5)) }
-        #expect(allToday, "Today's fill the 64 first")
         #expect(Set(plan.map(\.id)).count == plan.count, "Every id is unique")
+        // The repeats that fit are the soonest ones.
+        let repeats = plan.filter { $0.kind == .repeating }
+        #expect(repeats.first.map { calendar.isDate($0.date, inSameDayAs: midnight(5)) } == true)
+    }
+
+    @Test func manyStreaksKeepLastCallsFirst() {
+        // 6 streaks × 7 days: 42 last calls and 42 openings can't all fit in 63 places.
+        let streaks = (0..<6).map { streak(TimeOfDay(18), TimeOfDay(20), name: "S\($0)") }
+        let plan = planner().plan(streaks, now: date(5, 6))
+        #expect(plan.count == ReminderPlanner.limit)
+        #expect(count(plan, .lastCall) == 42, "Every last call")
+        #expect(count(plan, .opens) == 21, "Then the soonest openings")
+        #expect(count(plan, .repeating) == 0, "No room for repeats")
+        let openingDays = plan.filter { $0.kind == .opens }.map { calendar.component(.day, from: $0.date) }
+        #expect(openingDays.filter { $0 == 5 }.count == 6 && openingDays.max() == 8, "Soonest first: Mon–Thu")
+    }
+
+    @Test func theSafetyNetComesLast() {
+        let plan = planner().plan([streak(TimeOfDay(18), TimeOfDay(20))], now: date(5, 6))
+        let safetyNet = try? #require(plan.last)
+        #expect(safetyNet?.kind == .safetyNet)
+        #expect(safetyNet?.id == ReminderPlanner.safetyNetID)
+        #expect(safetyNet?.title == "Open the app so I can keep reminding you.")
+        #expect(safetyNet?.date == plan.dropLast().last!.date.addingTimeInterval(60), "A minute after the last one")
+        #expect(count(plan, .safetyNet) == 1)
+        // Nothing to remind about, no safety net either.
+        #expect(planner().plan([], now: date(5, 6)).isEmpty)
     }
 
     // MARK: Brand-new streaks

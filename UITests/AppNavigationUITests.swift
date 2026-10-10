@@ -123,21 +123,46 @@ final class AppNavigationUITests: XCTestCase {
         XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 5))
         openSettings()
         let field = app.textFields["Your name"]
-        XCTAssertTrue(field.waitForExistence(timeout: 3))
-        field.tap()
-        field.typeText("  Ajeeth  \n")
-        app.navigationBars.buttons["Done"].tap()
-        XCTAssertTrue(greeting("Good evening, Ajeeth · ").waitForExistence(timeout: 3))
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        type("  Ajeeth  ", into: field)
+        // Leading spaces are dropped while typing; trailing ones when the field is left.
+        wait(for: field, value: "Ajeeth  ")
+        closeSettings(field)
+        XCTAssertTrue(greeting("Good evening, Ajeeth · ").waitForExistence(timeout: 5))
         snapshot("greeting-named")
 
-        // Clear it again.
+        // Clear it again: cursor at the end, then delete every character.
         openSettings()
-        field.tap()
-        field.press(forDuration: 1.0)
-        if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
-        field.typeText(XCUIKeyboardKey.delete.rawValue)
-        app.navigationBars.buttons["Done"].tap()
-        XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 3))
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        let current = (field.value as? String) ?? ""
+        type(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 2), into: field)
+        wait(for: field, value: "")
+        closeSettings(field)
+        XCTAssertTrue(greeting("Good evening · ").waitForExistence(timeout: 5))
+    }
+
+    /// Taps at the right end of the field (so the cursor lands after the text), waits for the keyboard, and types.
+    private func type(_ text: String, into field: XCUIElement) {
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Keyboard is up")
+        field.typeText(text)
+    }
+
+    /// Waits until the field holds exactly `value` (an empty field reports its placeholder).
+    private func wait(for field: XCUIElement, value: String) {
+        let matches = NSPredicate { object, _ in
+            let text = ((object as? XCUIElement)?.value as? String) ?? ""
+            return text == value || (value.isEmpty && text == "Optional")
+        }
+        wait(for: [expectation(for: matches, evaluatedWith: field)], timeout: 5)
+    }
+
+    /// Closes the Settings sheet with Done and waits until it's gone.
+    private func closeSettings(_ field: XCUIElement) {
+        let done = app.navigationBars.buttons["Done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        done.tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: 5), "Settings closed")
     }
 
     func testDoneTodayExpandsAndCollapses() {

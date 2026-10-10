@@ -2,11 +2,12 @@ import Foundation
 
 /// One reminder to schedule.
 struct PlannedReminder: Hashable, Identifiable {
-    enum Kind: String { case opens, repeating = "repeat", lastCall }
+    enum Kind: String { case opens, repeating = "repeat", lastCall, safetyNet }
 
     /// "reminder.<streak id>.<yyyy-mm-dd>.<kind>.<hh-mm>", unique and stable, so a streak's reminders can be found.
     var id: String
-    var streakID: UUID
+    /// Nil for the safety net, which isn't about one streak.
+    var streakID: UUID?
     var date: Date
     var kind: Kind
     var title: String
@@ -23,7 +24,9 @@ struct PlannedReminder: Hashable, Identifiable {
 /// - only on days a streak counts, and only while today's isn't checked in or skipped;
 /// - when the window opens, every `repeatMinutes` during it, and a last call `lastCallMinutes` before it closes;
 /// - no repeat within 5 minutes before the last call, and none after it;
-/// - the soonest first, at most `limit` (iOS keeps only 64 pending per app).
+/// - the next 7 days, in tiers within `limit` (iOS keeps only 64 pending per app): every opening and last call
+///   first (if even those don't fit, last calls before openings), then repeats, soonest first;
+/// - and in the last place, a safety net just after the last reminder asking to open the app.
 struct ReminderPlanner {
     var rules: StreakRules
     var format = Formatters.current
@@ -33,22 +36,47 @@ struct ReminderPlanner {
     static let limit = 64
     /// A normal repeat never comes this close before the last call.
     static let lastCallGap: TimeInterval = 5 * 60
-    /// How far ahead to look; the 64 limit is usually reached well before.
-    static let daysAhead = 14
+    /// How far ahead to plan.
+    static let horizon: TimeInterval = 7 * 86_400
+    /// The safety net comes this long after the last reminder.
+    static let safetyNetDelay: TimeInterval = 60
+    static let safetyNetID = PlannedReminder.idPrefix + "safety-net"
 
     func plan(_ streaks: [StreakData], now: Date, limit: Int = ReminderPlanner.limit) -> [PlannedReminder] {
         let today = rules.calendar.startOfDay(for: now)
-        var reminders: [PlannedReminder] = []
+        let end = now.addingTimeInterval(Self.horizon)
+        var candidates: [PlannedReminder] = []
         for streak in streaks where !streak.isArchived {
             let streakDays = rules.summary(streak, now: now).current.totalCheckIns
-            for offset in 0..<Self.daysAhead {
+            // Today plus the next 7 days, so a window exactly a week away is included.
+            for offset in 0...7 {
                 guard let day = rules.calendar.date(byAdding: .day, value: offset, to: today),
                       rules.outcome(streak, on: day, now: now) == .pending,
                       let version = rules.version(streak, on: day) else { continue }
-                reminders += window(streak, version: version, day: day, streakDays: streakDays)
+                candidates += window(streak, version: version, day: day, streakDays: streakDays)
             }
         }
-        return Array(reminders.filter { $0.date > now }.sorted { ($0.date, $0.id) < ($1.date, $1.id) }.prefix(limit))
+        candidates = candidates.filter { $0.date > now && $0.date <= end }
+        guard limit > 0, !candidates.isEmpty else { return [] }
+
+        func soonest(_ kind: PlannedReminder.Kind) -> [PlannedReminder] {
+            candidates.filter { $0.kind == kind }.sorted(by: Self.isSooner)
+        }
+        let room = limit - 1 // the last place is the safety net's
+        // Tier 1: last calls, then openings (all of both, when they fit). Tier 2: repeats in what's left.
+        var chosen = Array((soonest(.lastCall) + soonest(.opens)).prefix(room))
+        chosen += soonest(.repeating).prefix(room - chosen.count)
+        chosen.sort(by: Self.isSooner)
+
+        guard let last = chosen.last else { return [] }
+        let safetyNet = PlannedReminder(id: Self.safetyNetID, streakID: nil,
+                                        date: last.date.addingTimeInterval(Self.safetyNetDelay), kind: .safetyNet,
+                                        title: Strings.Reminder.safetyNet, body: "")
+        return chosen + [safetyNet]
+    }
+
+    private static func isSooner(_ a: PlannedReminder, _ b: PlannedReminder) -> Bool {
+        (a.date, a.id) < (b.date, b.id)
     }
 
     private func window(_ streak: StreakData, version: ScheduleData, day: Date, streakDays: Int) -> [PlannedReminder] {

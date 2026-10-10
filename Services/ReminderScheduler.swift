@@ -9,6 +9,14 @@ final class ReminderScheduler {
     private let settings: AppSettings
     /// What was last handed to iOS, so nothing is rescheduled when nothing changed.
     private var scheduled: [PlannedReminder] = []
+    /// The latest hand-over to iOS, still running or done.
+    private var work: Task<Void, Never>?
+
+    /// Waits until the latest schedule has been handed to iOS (background refresh waits for this before it
+    /// tells iOS it's finished).
+    func finishScheduling() async {
+        await work?.value
+    }
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -20,7 +28,7 @@ final class ReminderScheduler {
                                    lastCallMinutes: settings.lastCallMinutes).plan(streaks, now: now)
         guard plan != scheduled else { return }
         let center = center
-        Task {
+        work = Task {
             // Without permission iOS refuses them; try again on the next refresh (e.g. once allowed).
             guard Self.allowed(await Self.status()) else { return }
             let pending = await center.pendingNotificationRequests()
@@ -78,9 +86,10 @@ final class ReminderScheduler {
     // MARK: DEBUG tools
 
     #if DEBUG
-    /// Settings → Developer → Send test reminder in 5 seconds.
+    /// Settings → Developer → Send test reminder in 5 seconds. Asks for permission first if needed. Call it only
+    /// after the real schedule has been handed to iOS (`finishScheduling`): iOS keeps at most 64 per app and drops
+    /// the earliest added beyond that, so a test reminder added before a full schedule would be the one dropped.
     static func sendTest() async {
-        if await status() == .notDetermined { await requestPermission() }
         let content = UNMutableNotificationContent()
         content.title = Strings.Reminder.testTitle
         content.body = Strings.Reminder.testBody
