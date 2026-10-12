@@ -12,6 +12,10 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     TARGETED_DEVICE_FAMILY: "1" # iPhone only
+    # Signing for running on the owner's iPhone: their free Apple ID ("Personal Team"). Xcode creates the
+    # certificate and a 7-day provisioning profile automatically. A Team ID isn't secret: it's inside every app.
+    DEVELOPMENT_TEAM: LXXVFX7XYX
+    CODE_SIGN_STYLE: Automatic
 
 targets:
   HabitApp:
