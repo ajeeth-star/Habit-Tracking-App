@@ -17,6 +17,8 @@ struct AppFonts {
     let weekStripNumber = Nunito.black(15, .subheadline).monospacedDigit()
     /// Fixed size: decorative and already very large.
     let celebrationNumber = Font.custom(Nunito.blackName, fixedSize: 64).monospacedDigit()
+    /// The big numbers on the Progress tab's stat cards.
+    let statNumber = Nunito.black(28, .title).monospacedDigit()
     /// The day streak in Today's header, in `flame`.
     let dayStreakNumber = Nunito.black(44, .largeTitle).monospacedDigit()
     /// "DAY STREAK" under it and "GYM STREAK" on the celebration: shown ALL CAPS with `capsLabel()`.
@@ -41,7 +43,9 @@ struct AppFonts {
     /// Fixed size: the icon inside a Settings row's 28pt badge.
     let settingsIcon = Font.system(size: 15, weight: .semibold)
     /// Fixed size: tab bar icons.
-    let tabIcon = Font.system(size: 22, weight: .semibold)
+    let tabIcon = Font.system(size: 26, weight: .semibold)
+    /// Fixed size: the icon in a round chunky button (Today's gear and +).
+    let circleButtonIcon = Font.system(size: 22, weight: .bold)
     /// The `plus` in the empty-state circle.
     let largeIcon = Font.system(.largeTitle, weight: .heavy)
     /// Fixed size: the big flame on the celebration.

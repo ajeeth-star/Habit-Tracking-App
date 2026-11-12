@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The Today tab (design.md §4.1–4.2): the flame and day streak with its speech bubble, this week, one
 /// status line, the open streak's hero card, the rest of today with a collapsible "Done today" row, and
-/// "Coming up". History and the Flame screen are pushed from here. Must sit inside a `NavigationStack`.
+/// "Coming up". History is pushed from here; the flame switches to the Flame tab. Must sit inside a
+/// `NavigationStack`.
 /// Reads the shared `TaskStore` and `DayStreakStore`.
 struct HomeView: View {
     @Environment(TaskStore.self) private var store
@@ -32,8 +33,9 @@ struct HomeView: View {
         withAnimation(reduceMotion ? nil : Motion.settle) { heldTask = nil }
     }
     @State private var showingCreate = false
+    /// A "Popular streaks" chip was tapped: the create form opens filled in.
+    @State private var creatingFrom: StreakPreset?
     @State private var showingSettings = false
-    @State private var showingFlame = false
     /// Picks the speech bubble's line from its pool; random once per launch unless the gallery fixes it.
     @State private var bubbleVariant: Int
 
@@ -70,18 +72,15 @@ struct HomeView: View {
         .navigationDestination(item: $history) { route in
             AllHistoryView(focus: route.focus)
         }
-        .navigationDestination(isPresented: $showingFlame) {
-            FlameView()
-        }
-        // History and the Flame screen are pages of their own: the tab bar slides away while they're open.
+        // History is a page of its own: the tab bar slides away while it's open.
         .onChange(of: history) { _, route in
-            router.hidesTabBar = route != nil || showingFlame
-        }
-        .onChange(of: showingFlame) { _, showing in
-            router.hidesTabBar = showing || history != nil
+            router.hidesTabBar = route != nil
         }
         .sheet(isPresented: $showingCreate) {
             TaskFormView(mode: .create)
+        }
+        .sheet(item: $creatingFrom) { preset in
+            TaskFormView(mode: .create, draft: preset.draft)
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack { SettingsView(showsDone: true) }
@@ -98,7 +97,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     topRow
                     Spacer(minLength: Spacing.xl)
-                    EmptyStateView { showingCreate = true }
+                    EmptyStateView(onPick: { creatingFrom = $0 }) { showingCreate = true }
                     Spacer(minLength: Spacing.xl)
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -138,36 +137,25 @@ struct HomeView: View {
         }
     }
 
-    /// Gear on the left, + on the right. The middle is left for the rewards phase (coins and XP).
+    /// Round chunky gear on the left, + on the right. The middle is left for the rewards phase (coins and XP).
     private var topRow: some View {
         HStack {
-            Button { showingSettings = true } label: {
-                Image(systemName: "gearshape")
-                    .font(Font.app.button)
-                    .foregroundStyle(Color.app.textSecondary)
-                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(Strings.Home.settings)
+            CircleIconButton(systemImage: "gearshape.fill", color: Color.app.textSecondary,
+                             label: Strings.Home.settings) { showingSettings = true }
             Spacer()
-            Button { showingCreate = true } label: {
-                Image(systemName: "plus")
-                    .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.flame)
-                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget, alignment: .trailing)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(Strings.Home.createTask)
+            CircleIconButton(systemImage: "plus", color: Color.app.flame,
+                             label: Strings.Home.createTask) { showingCreate = true }
         }
+        .padding(.top, Spacing.xs)
     }
 
     /// The flame on the left; the day streak, "DAY STREAK", and the greeting on the right.
-    /// Tapping the flame or the number opens the Flame screen.
+    /// Tapping the flame or the number switches to the Flame tab.
     private func flameRow(now: Date) -> some View {
         let state = dayStreak.state
         let mood = dayStreak.status(tasks: tasks, now: now).mood
         return HStack(alignment: .center, spacing: Spacing.md) {
-            Button { showingFlame = true } label: {
+            Button { router.selectedTab = .flame } label: {
                 FlameCharacterView(form: state.form, mood: mood, size: Sizes.flameHeader, days: state.current)
                     .contentShape(Rectangle())
             }
@@ -176,7 +164,7 @@ struct HomeView: View {
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 0) {
-                Button { showingFlame = true } label: {
+                Button { router.selectedTab = .flame } label: {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("\(state.current)")
                             .font(Font.app.dayStreakNumber)

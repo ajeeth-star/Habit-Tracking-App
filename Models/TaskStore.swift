@@ -272,13 +272,13 @@ final class TaskStore {
 /// Which tab is showing. Shared so that tapping a reminder notification can switch to Today.
 @Observable
 final class AppRouter {
-    enum Tab: Hashable {
-        case today, streaks
+    enum Tab: Hashable, CaseIterable {
+        case today, streaks, progress, flame
     }
 
     var selectedTab = Tab.today
 
-    /// True while a full-page screen (History) is pushed: the tab bar slides away.
+    /// True while a full-page screen (History, from Today or Progress) is pushed: the tab bar slides away.
     var hidesTabBar = false
 
     /// Tapping a reminder notification opens the Today tab.

@@ -11,6 +11,7 @@ struct DeveloperSection: View {
     @Environment(AppClock.self) private var clock
     @State private var confirmingErase = false
     @State private var eraseConfirmed = false
+    @State private var showingWelcome = false
 
     var body: some View {
         SettingsSection(title: Strings.Settings.developer) {
@@ -65,7 +66,12 @@ struct DeveloperSection: View {
             }
             .buttonStyle(.plain)
             SettingsDivider()
+            row("hand.wave.fill", Color.app.gold, Strings.Developer.showWelcome) { showingWelcome = true }
+            SettingsDivider()
             row("paintbrush.fill", Color.app.textTertiary, Strings.Settings.designGallery, action: onOpenGallery)
+        }
+        .fullScreenCover(isPresented: $showingWelcome) {
+            WelcomeView { showingWelcome = false }
         }
         .dialogCover(isPresented: $confirmingErase, onDismiss: eraseIfConfirmed) {
             AppDialog(title: Strings.Developer.eraseTitle, message: Strings.Developer.eraseBody,

@@ -302,18 +302,19 @@ final class AppNavigationUITests: XCTestCase {
         app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", start)).firstMatch
     }
 
-    func testFlameScreenOpensFromTheHeader() {
+    func testFlameTabOpensFromTheHeader() {
         let flame = app.buttons["today.flame"]
         XCTAssertTrue(flame.waitForExistence(timeout: 5))
         XCTAssertEqual(flame.label, "Your flame. Ember form. Sad. 0 day streak.")
         XCTAssertTrue(app.staticTexts["That's okay. One check-in brings me back."].exists)
         flame.tap()
-        XCTAssertTrue(app.navigationBars["Your flame"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Your flame"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["1 day to Spark"].exists)
-        XCTAssertFalse(tabButton("Today").exists, "The tab bar hides on the Flame screen")
-        snapshot("flame-screen")
-        app.navigationBars.buttons["Today"].tap()
-        XCTAssertTrue(tabButton("Today").waitForExistence(timeout: 3))
+        XCTAssertTrue(tabButton("Flame").isSelected, "The flame switches to the Flame tab")
+        XCTAssertFalse(app.navigationBars.buttons["Today"].exists, "A tab has no back button")
+        snapshot("flame-tab")
+        tab("Today")
+        XCTAssertTrue(flame.waitForExistence(timeout: 3))
     }
 
     func testCheckInCheersTheFlameUp() {

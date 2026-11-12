@@ -36,6 +36,10 @@ enum Motion {
     static let celebrationAdvance: Duration = .seconds(2)
     /// The white flash when the flame reaches a new form.
     static let evolutionFlash: Double = 0.2
+    /// The Progress tab's numbers start counting up this long after it appears.
+    static let countUpDelay: Double = 0.15
+    /// Welcome pages and the welcome closing.
+    static let welcomeFade = Animation.easeInOut(duration: 0.35)
     /// The flame hopping when the day streak lands.
     static let hopHeight: CGFloat = 28
 }

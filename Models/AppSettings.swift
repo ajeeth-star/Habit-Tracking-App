@@ -21,6 +21,8 @@ final class AppSettings {
     var celebrationAnimation: Bool { didSet { save(celebrationAnimation, Key.celebrationAnimation) } }
     /// The reminder permission screen has been shown (it only shows once, after the first streak).
     var askedForReminders: Bool { didSet { save(askedForReminders, Key.askedForReminders) } }
+    /// The welcome screens have been shown (or skipped). They only show once, on a fresh install.
+    var seenWelcome: Bool { didSet { save(seenWelcome, Key.seenWelcome) } }
     /// Only used for the greeting on Today. Up to 30 characters, no leading spaces while typing;
     /// `greetingName` trims the rest.
     var name: String {
@@ -49,6 +51,7 @@ final class AppSettings {
         static let vibrations = "settings.vibrations"
         static let celebrationAnimation = "settings.celebrationAnimation"
         static let askedForReminders = "settings.askedForReminders"
+        static let seenWelcome = "settings.seenWelcome"
         static let name = "settings.name"
     }
 
@@ -61,6 +64,7 @@ final class AppSettings {
         sounds = defaults.object(forKey: Key.sounds) as? Bool ?? true
         celebrationAnimation = defaults.object(forKey: Key.celebrationAnimation) as? Bool ?? true
         askedForReminders = defaults.bool(forKey: Key.askedForReminders)
+        seenWelcome = defaults.bool(forKey: Key.seenWelcome)
         name = Self.clean(defaults.string(forKey: Key.name) ?? "")
     }
 

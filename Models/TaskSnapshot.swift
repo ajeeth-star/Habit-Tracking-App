@@ -31,6 +31,9 @@ struct TaskSnapshot: Identifiable, Hashable {
     /// Every past skip and miss, worked out from saved data. Nil for sample data, where History falls back
     /// to this week's circles.
     var recordedEvents: [HistoryEvent]?
+    /// How every day that counts went, by the start of the day, worked out from saved data (the Progress tab).
+    /// Nil for sample data, where `progressDays` falls back to the check-ins and this week's circles.
+    var recordedDays: [Date: DayMark]?
     /// Days or skips changing next Monday (shown on the edit form).
     var nextWeek: NextWeekChange?
 }
@@ -81,6 +84,13 @@ struct WeekDayEntry: Hashable, Identifiable {
 
 enum WeekDayStatus: Hashable {
     case done, skipped, missed, today, upcoming
+}
+
+/// How one counted day went for one streak (the Progress tab).
+enum DayMark: Hashable {
+    case done, skipped, missed
+    /// Today, with the window still to come or open.
+    case pending
 }
 
 /// The status a home-screen card shows.

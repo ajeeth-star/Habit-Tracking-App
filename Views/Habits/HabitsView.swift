@@ -8,6 +8,8 @@ struct HabitsView: View {
     @State private var showsArchived: Bool
     @State private var openedTaskID: String?
     @State private var showingCreate = false
+    /// A "Popular streaks" chip was tapped: the create form opens filled in.
+    @State private var creatingFrom: StreakPreset?
 
     init(showsArchived: Bool = false) {
         _showsArchived = State(initialValue: showsArchived)
@@ -18,7 +20,7 @@ struct HabitsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 header
                 if store.active.isEmpty {
-                    EmptyStateView { showingCreate = true }
+                    EmptyStateView(onPick: { creatingFrom = $0 }) { showingCreate = true }
                         .padding(.vertical, Spacing.xxxl)
                 } else {
                     sectionTitle(Strings.Habits.active)
@@ -50,6 +52,9 @@ struct HabitsView: View {
         }
         .sheet(isPresented: $showingCreate) {
             TaskFormView(mode: .create)
+        }
+        .sheet(item: $creatingFrom) { preset in
+            TaskFormView(mode: .create, draft: preset.draft)
         }
     }
 

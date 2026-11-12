@@ -126,7 +126,10 @@ Every style is `Font.custom(name, size:, relativeTo:)` mapped to the same Dynami
 | `caption` | SemiBold | 12, `.caption` | Stat tile labels, field labels, day letters, photo dates |
 | `badgeIcon` | — | 20, fixed | The icon in an `IconBadge` and the icon picker |
 | `settingsIcon` | — | 15, fixed | The icon in a Settings row's 28pt badge |
-| `tabIcon`, `largeIcon`, `celebrationIcon` | — | as before | SF Symbol sizes |
+| `statNumber` | Black, monospaced digits | 28, `.title` | The big numbers on the Progress tab's stat cards |
+| `tabIcon` | — | 26, fixed | Tab bar icons (always in the tab's own color) |
+| `circleButtonIcon` | — | 22, fixed | The icon in a round chunky button (Today's gear and +) |
+| `largeIcon`, `celebrationIcon` | — | as before | SF Symbol sizes |
 
 - **ALL CAPS + 0.8pt letter spacing** (`Typography.capsTracking`) for every **button label** and **status pill**. Only the display is uppercased: the strings stay in sentence case in `Strings`, and VoiceOver reads them in sentence case.
 - Section headers stay sentence case.
@@ -173,11 +176,13 @@ Continuous corners everywhere.
 
 - **Chunky buttons:** 52pt tall (the face), plus a 4pt lip under it.
 - **Chunky cards:** 2pt `border` outline plus a 5pt lip along the bottom.
+- **Round chunky buttons** (Today's gear and +): a 44pt circle, `surfaceRaised` fill, 2pt `border` outline, a 3pt `border` lip under it; pressing moves it down 3pt.
+- **Progress calendar days:** 40pt rounded squares (`Radius.md`), 3pt rings and outlines.
 - **Pressing:** buttons move down 4pt and their lip disappears; tappable cards move down 3pt. About 0.08s.
 - **Tap targets:** at least 44×44pt everywhere.
-- **Progress bars:** 16pt tall, fully rounded, `track` behind, colored fill, and a 4pt `highlight` stripe along the top of the fill (inset from the ends), like a glossy candy bar. `ProgressBar` component; nothing on screen uses one yet (the rings in the week strip stay rings).
+- **Progress bars:** 16pt tall, fully rounded, `track` behind, colored fill, and a 4pt `highlight` stripe along the top of the fill (inset from the ends), like a glossy candy bar. `ProgressBar` component: the Flame tab and the Progress tab's streak rows use it (the rings in the week strip stay rings).
 - **Week strip:** 36pt circles, 3pt rings.
-- **Tab bar:** 64pt tall plus the bottom safe area, 2pt `border` line on top.
+- **Tab bar:** 64pt tall plus the bottom safe area, 2pt `border` line on top. Icons 26pt; the selected tab's rounded square is 44pt.
 - **Shadows and gradients:** none.
 - **Icons:** SF Symbols only.
 
@@ -247,17 +252,22 @@ Each in its own file under `Views/Components/`:
 - **`WeekDayCircle`** (task screen, "This week") — 32pt: `done` the streak's `main` with a `textOnBright` checkmark; `skipped` `surfaceMuted` with a `textSecondary` minus; `missed` `dangerSoft` with a `danger` xmark; `today` a 3pt `flame` ring with a `flame` dot; `upcoming` `surfaceMuted`.
 - **`DayChip`** — 36pt circle, letter in `Font.app.cardTitle`. Selected: `flame` fill, `textOnBright` letter. Unselected: `surfaceMuted` fill, 2pt `border`, `textSecondary` letter. Soft haptic on tap.
 - **`PhotoThumbnail`** — square, `Radius.sm`; placeholder `surfaceMuted` with a `photo` icon in `textTertiary`.
-- **`EmptyStateView`** — the happy Ember, a speech bubble, and a chunky "CREATE A STREAK" button (section 4.2).
+- **`EmptyStateView`** — the happy Ember, a speech bubble, the "Popular streaks" chips, and a chunky "CREATE A STREAK" button (section 4.2).
 - **`FilterChip`** — capsule, label `Font.app.cardTitle`. Selected: the streak's `main` (or `flame` for "All") with a `textOnBright` label. Unselected: `surface` fill, 2pt `border`, `textPrimary` label.
 - **`DisclosureRow`** — "Done today · 2" / "Archived · 1" in `meta` / `textSecondary` with a chevron, 44pt tall; the count animates.
 - **`HabitRow`** — the Streaks tab card, a tappable `ChunkyCard` (section 4.10).
 - **`AppDialog`** — centered over `scrim`: `surfaceRaised` card, 2pt `border`, `Radius.xl`; title, body, then two stacked `ChunkyButton`s. The **first is always the safe choice** as `.primary`; the second is the action, as `.secondary` (neutral) or `.danger` (destructive).
 - **`PhotoViewer`** — one photo full screen on black with its date and a close button.
 - **`IconBadge`** — 40pt square, `Radius.md` (12): the streak's `badge` (20%) fill, icon in its `main`. **On the hero card:** white at 25% (`heroBadge`) behind a `textOnBright` icon, so it stands out against the streak color. Decorative for VoiceOver.
-- **`AppTabBar`** — section 4.0: `surface` background, 2pt `border` line on top. **Selected tab:** its icon sits in a `Radius.md` rounded square with a 2pt `info` border and `info` at 15% behind it; icon and label `info`. **Unselected:** `textTertiary`.
+- **`AppTabBar`** — section 4.0: `surface` background, 2pt `border` line on top. Every icon is always in **its tab's own color** (never grey). **Selected tab:** its icon sits in a `Radius.md` rounded square with a 2pt border in the tab's color and that color at 15% behind it, with its label underneath in the tab's color. **Unselected:** the icon at 55% opacity, no label.
+- **`CircleIconButton`** — a 44pt round chunky button: `surfaceRaised` fill, 2pt `border` outline, 3pt `border` lip, a 22pt icon (`circleButtonIcon`) in the given color. Presses down 3pt with a **light haptic**, like `ChunkyButton`. VoiceOver reads its label.
+- **`StarterChip`** — a "Popular streaks" chip: a small chunky capsule (`surface` fill, 2pt `border`, 3pt `border` lip) with the streak's icon in a 28pt circle of its `badge` color (icon in its `main`), then the name in `cardTitle` / `textPrimary`. Presses down 3pt with a light haptic. Chips wrap onto as many lines as needed (`FlowLayout`), `Spacing.xs` apart.
+- **`MonthCalendar`** — the Progress tab's calendar (section 4.19).
+- **`ProgressStatCard`** — a `ChunkyCard` stat: an SF Symbol in its own color (`badgeIcon` size), the number in `statNumber` / `textPrimary` counting up, and its label in `caption` / `textSecondary`.
+- **`PageDots`** — the welcome's 3 dots: 8pt circles, `Spacing.xs` apart; the current one is a 24pt-wide `flame` capsule, the others `surfaceMuted`.
 - **`WeekStrip`** — section 4.1: **completed** days are `flame` circles with a white `flame.fill` icon instead of the number; **today** is a `surfaceRaised` circle with its number in `flame` and a 3pt `flame` ring (the part not yet done at 35%, so it doubles as today's progress); **partly completed past days** are `surfaceMuted` with a 3pt `flame` ring proportional to progress over `track`; **future days and days with nothing scheduled** are `surfaceMuted` with the number in `textTertiary`. Past days are tappable.
 - **`StreakStylePicker`** — 8 color swatches (32pt, the selected one ringed in `textPrimary`) and a 6-column icon grid (`Radius.md` cells; selected: the color's `badge` fill and `main` icon). Soft haptic on each pick.
-- **`ProgressBar`** — 16pt, capsule, `track` behind, colored fill with the glossy `highlight` stripe. Shown in the Design Gallery; not used on a screen yet.
+- **`ProgressBar`** — 16pt, capsule, `track` behind, colored fill with the glossy `highlight` stripe. Used on the Flame tab and the Progress tab.
 - **`ConfettiView`** — the celebration's particle burst (`Canvas` + `TimelineView`).
 - **`StaggeredAppear`** (`.appearSlideIn(index:)` modifier) — the first-appearance slide-up and fade.
 
@@ -293,7 +303,7 @@ The **glow** is two flat, translucent circles of the body color behind the flame
 | `sleepy` | closed (gentle curves) | small "o" | a "z" floats up and fades every few seconds |
 | `worried` | wide ovals, small pupils | wavy line | a blue (`info`) sweat drop |
 | `sad` | droopy, half closed | frown | the whole flame dimmer |
-| `cheering` | "^ ^" | wide open | bouncing (celebrations only) |
+| `cheering` | "^ ^" | wide open | bouncing (celebrations, the welcome, and the first-streak line on Today) |
 
 **Idle animation:** each tongue sways on its own offset sine wave; the body "breathes" between 98% and 102% over about 2 seconds; the eyes blink every 3–6 seconds at random. **Reduce Motion:** no sway, breathing, bouncing, floating, or orbiting (embers, sparkles, and the "z" hold still); blinking stays. Small copies (the Flame screen's form path, the Flame Lab grid) are drawn still (`animated: false`).
 
@@ -367,35 +377,40 @@ Put screens in `Views/<Area>/` with these exact names. Every screen uses `Color.
 
 ### 4.0 Tab bar — `App/MainTabView.swift`, `Views/Components/AppTabBar.swift`
 
-A custom tab bar with two tabs, left to right:
+A custom tab bar with four tabs, left to right:
 
-1. **Today** — `sun.max.fill`, label "Today" — section 4.1
-2. **Streaks** — `flame.fill`, label "Streaks" — section 4.10
+| Tab | Icon | Color | Screen |
+|---|---|---|---|
+| **Today** | `sun.max.fill` | `gold` | section 4.1 |
+| **Streaks** | `checklist` | `info` (blue) | section 4.10 |
+| **Progress** | `chart.bar.fill` | `success` (green) | section 4.19 |
+| **Flame** | `flame.fill` | `flame` (orange) | section 4.14 |
 
-The app always opens on **Today**. Each tab has its own navigation stack, so going back never jumps to another tab, and switching tabs keeps each tab where it was. Tapping a reminder notification switches to Today. Screens presented full screen (camera, celebration, dialogs) and sheets cover the tab bar. **The tab bar hides while History is open** (section 4.12) and slides back when you return to Today.
+The app always opens on **Today**. Each tab has its own navigation stack, so going back never jumps to another tab, and switching tabs keeps each tab where it was. Tapping a reminder notification switches to Today. Screens presented full screen (camera, celebration, dialogs) and sheets cover the tab bar. **The tab bar hides while History is open** (section 4.12) and slides back when you return.
 
-**Look:**
+**Look** (like Duolingo's: colorful icons, never grey):
 
 - `surface` background reaching into the bottom safe area, a 2pt `border` line along the top, 64pt tall plus the safe area.
-- **Each tab:** a 22pt icon (`Font.app.tabIcon`) with its label in `caption` underneath. **Selected:** the icon sits inside a `Radius.md` rounded square with a 2pt `info` border and `info` at 15% behind it; icon and label in `info`. **Unselected:** `textTertiary`, no square. Each half of the bar is its tab's tap target.
-- VoiceOver reads them as tabs, with the current one marked selected.
+- **Each tab:** a 26pt icon (`Font.app.tabIcon`), always in its own color. **Selected:** the icon sits inside a 44pt `Radius.md` rounded square with a 2pt border in the tab's color and that color at 15% behind it, with the label in `caption` underneath, in the tab's color. **Unselected:** the icon at 55% opacity, no square, no label. Each quarter of the bar is its tab's tap target.
+- VoiceOver reads them as tabs ("Today", "Streaks", "Progress", "Flame"), with the current one marked selected.
 
-**Planned, not built:** a third **Friends** tab comes with shared folders. Then Today moves to the center as a raised round button. Nothing for it exists in this version.
+**Planned, not built:** when the rewards phase adds the **Shop**, the bar becomes five tabs and Today moves to the center as a raised round button. A **Friends** tab comes later with shared folders.
 
 ### 4.1 Today tab — `Views/Home/HomeView.swift`
 
 Top to bottom: header (top row, flame row, speech bubble) → "This week" row → week strip → status line → hero card(s) → Later today → Coming up. On a rest day there's no hero card and no Later today section.
 **Header** (scrolls with the content, no navigation bar title, no big "Today" title any more):
 
-- **Top row:** a **gear** button on the left (`gearshape`, `textSecondary`, 44pt tap target, VoiceOver "Settings") opens Settings as a sheet (section 4.13). A **+** button on the right (`plus`, `flame`, 44pt) opens Create Task. The middle stays empty (the rewards phase puts coins and XP there).
+- **Top row:** two round chunky buttons (`CircleIconButton`, 44pt: `surfaceRaised` fill, 2pt `border`, 3pt lip, 22pt icon, presses down with a light haptic). The **gear** on the left (`gearshape.fill` in `textSecondary`, VoiceOver "Settings") opens Settings as a sheet (section 4.13). The **+** on the right (`plus` in `flame`, VoiceOver "Create streak") opens Create Task. The middle stays empty (the rewards phase puts coins and XP there).
 - **Flame row:** the flame (`FlameCharacterView`, about 96pt, in its current mood) on the left. On the right, `Spacing.md` away and stacked:
   - the **day streak** number in `dayStreakNumber` (Nunito Black, about 44pt) in `flame` (`textTertiary` when it's 0); it animates with `.numericText()` when it changes;
   - **"DAY STREAK"** in `dayStreakLabel` (Bold, ALL CAPS, 0.8 tracking) / `textSecondary`;
   - the greeting and short date in `meta` / `textTertiary`: "Good evening, Ajeeth · Thu, Oct 1" (greeting rules in section 3; ", {name}" only when a name is set).
-- **Tapping the flame or the number** opens the Flame screen (section 4.14). VoiceOver reads them as one button: "Your flame. Blaze form. Happy. 23 day streak."
+- **Tapping the flame or the number** switches to the **Flame tab** (section 4.14). VoiceOver reads them as one button: "Your flame. Blaze form. Happy. 23 day streak."
 - **Speech bubble** (`SpeechBubble`), `Spacing.sm` below the flame row, full width, its pointer under the flame. One line, picked at random from the pool for the situation (first match wins); always kind:
   1. The day streak **ended today** and nothing is checked in since: "That's okay. One check-in brings me back."
   2. An open window **closes within 15 minutes**: "{Task} closes in {m} min! Quick, snap a photo!"
+  2b. **No check-in has ever happened** (right after the first streak is created): the flame is **cheering** and says "Our first streak! Check in during its window to light me up."
   3. A window is **open**: "{Task} is open — let's do this!" / "Time for {task}. I'm ready when you are."
   4. Only **later today** is left: "Next up: {task} at {time}."
   5. **Everything resolved** today: "All done today. I'm glowing!" / "That's everything. Proud of you."
@@ -461,13 +476,25 @@ A done task can't be checked in again until its next scheduled window. On the ta
 
 ### 4.2 Home, empty state — `Views/Components/EmptyStateView.swift`
 
-Shown when there are no active streaks at all. Only the header's top row stays (gear and +); the flame row, speech bubble, "This week" row, week strip, and status line are hidden. The rest is centered vertically and horizontally:
+Shown when there are no active streaks at all (Today and the Streaks tab). On Today only the header's top row stays (gear and +); the flame row, speech bubble, "This week" row, week strip, and status line are hidden. The rest is centered:
 
 - The **Ember** in its happy mood, about 120pt.
 - `Spacing.sm` below: a `SpeechBubble` (pointer up, centered): "Hi! I'm your flame. Create a streak and help me grow."
-- `Spacing.xl` below: a chunky primary button **"CREATE A STREAK"** (`ChunkyButton(.primary)`, `plus` icon) that opens Create Task.
+- `Spacing.xl` below: **"Popular streaks"** in `sectionHeader` / `textTertiary`, then `Spacing.xs` below it the `StarterChip`s, wrapping, `Spacing.xs` apart. Tapping a chip opens Create Task already filled in:
 
-There are no intro screens and no onboarding.
+| Chip | Icon | Color | Days | Window |
+|---|---|---|---|---|
+| Gym | `dumbbell.fill` | coral | Mon, Tue, Thu, Fri | 6:00 – 8:00 PM |
+| Morning skincare | `drop.fill` | pink | Every day | 7:00 – 9:00 AM |
+| Read | `book.fill` | orange | Every day | 9:00 – 10:00 PM |
+| Journal | `pencil` | teal | Every day | 9:00 – 10:00 PM |
+| Drink water | `cup.and.saucer.fill` | blue | Every day | 12:00 – 2:00 PM |
+| Walk | `figure.walk` | green | Every day | 5:00 – 7:00 PM |
+| Study | `brain.head.profile` | purple | Mon – Fri | 4:00 – 6:00 PM |
+| Clean up | `sparkles` | yellow | Sun | 10:00 AM – 12:00 PM |
+
+  Skips start at 0. Each chip's VoiceOver label is its name with the hint "Opens a new streak, filled in".
+- `Spacing.xl` below: a chunky primary button **"CREATE A STREAK"** (`ChunkyButton(.primary)`, `plus` icon) that opens an empty Create Task.
 
 ### 4.3 Create / Edit Task — `Views/TaskForm/TaskFormView.swift`
 
@@ -729,12 +756,12 @@ Every group is a **chunky card** (`SettingsSection`: `surface` fill, 2pt `border
 
 **Developer** (DEBUG builds only, not compiled into Release)
 - "Design Gallery" → opens the gallery. There is no paintbrush button on the Today tab any more.
-- Above it (DEBUG only), the developer tools (context.md §11): the current time on top ("Pretend time: Thursday, October 8 · 6:40 PM" in `flame`, or "Real time: …" in `textPrimary`); a row of four small buttons "+15 min", "+1 hour", "+1 day", "+1 week" (`pill` text in `info` on `surfaceRaised`); then rows "Reset to real time", "Fill with sample data", "Erase everything" (with an `AppDialog` confirmation), "Send test reminder in 5 seconds", and "Show pending reminders" (pushes a plain list of every scheduled reminder: its time, title, and body).
+- Above it (DEBUG only), the developer tools (context.md §11): the current time on top ("Pretend time: Thursday, October 8 · 6:40 PM" in `flame`, or "Real time: …" in `textPrimary`); a row of four small buttons "+15 min", "+1 hour", "+1 day", "+1 week" (`pill` text in `info` on `surfaceRaised`); then rows "Reset to real time", "Fill with sample data", "Erase everything" (with an `AppDialog` confirmation), "Send test reminder in 5 seconds", "Show pending reminders" (pushes a plain list of every scheduled reminder: its time, title, and body), and "Show welcome again" (shows the welcome screens straight away, section 4.20).
 - **Pretend-time banner** (DEBUG only, `Views/Components/PretendTimeBanner.swift`): while the pretend clock is on, a 20pt full-width strip across the top of every screen, in its own window above sheets and full-screen covers, just under the status bar and Dynamic Island (above the gear and +): `gold` fill, `textOnBright` text in `pill` reading "Pretend time: Thu 8:01 PM · TAP TO RESET". Tapping it resets to real time.
 
 ### 4.14 Flame screen — `Views/Flame/FlameView.swift`
 
-Pushed from the Today header (back button "< Today"; the tab bar hides, like History). Inline title "Your flame". Scrolls. Centered, top to bottom:
+The **Flame tab**'s root screen (no back button; tapping the flame in Today's header switches here). Title **"Your flame"** in `screenTitle` at the top left, like the Streaks tab. Scrolls. Centered below the title, top to bottom:
 
 - The flame at about **200pt** in its current mood (animated).
 - `Spacing.md` below: the form name ("Blaze") in `screenTitle`, then "23 day streak" in `subhead` / `textSecondary`.
@@ -778,6 +805,55 @@ Shown once, as a sheet, right after the first streak is created (context.md §7)
 
 Standard iPhone notifications with the app icon. Kind, never guilt-tripping (copy in §6). Repeats show the time left like the hero card ("1h 20m", "45m"). Last-call warnings are "time sensitive" where allowed.
 
+### 4.19 Progress tab — `Views/Progress/ProgressView.swift`
+
+All values are calculated from saved data (context.md §5). Scrolls; the cards slide in on first appearance. Top to bottom:
+
+**Header**
+- "Progress" in `screenTitle` on the left; on the right, **"View all photos"** and a `chevron.right` in `meta` / `flame` (44pt tap target), which opens History (section 4.12; the tab bar hides).
+- `Spacing.xs` below: the **month switcher**, centered: a `chevron.left` button, the month ("November 2026") in `cardTitle` / `textPrimary`, a `chevron.right` button (both `flame`, 44pt, `textTertiary` and disabled at the limits: the current month, and the month the first streak was created). VoiceOver: "Previous month", "Next month".
+
+**Month calendar** (`MonthCalendar`), `Spacing.md` below, inside a `ChunkyCard` (`Spacing.md` padding):
+- Weekday letters M T W T F S S in `caption` / `textTertiary`, then a 7-column grid, Monday first, of 40pt rounded squares (`Radius.md`), `Spacing.xs` between rows. Empty cells pad the first week.
+- **Full day:** `flame` fill with a white `flame.fill` icon (the owner's white-on-bright exception, like the week strip).
+- **Partial day:** `surfaceMuted` fill, a 3pt `flame` ring around the square proportional to that day's check-ins (over a `track` ring), the date in `textPrimary`.
+- **A day with a miss:** `dangerSoft` fill, the date in `danger`.
+- **Rest day, or before any streak existed:** `surfaceMuted` fill, the date in `textTertiary`.
+- **Today:** a 3pt `flame` outline around the square, the date in `flame` (with a `flame` fill and white icon once it's full).
+- **Future:** just the date in `textTertiary`, no fill.
+- Dates in `weekStripNumber`. Tapping a past day (from the first streak's day on) opens History scrolled to that day; other days do nothing.
+- VoiceOver per day: "November 3, all done. Opens history." / "November 4, 1 of 3 done. Opens history." / "November 5, missed. Opens history." / "November 6, nothing scheduled." / "November 10, today, 1 of 2 done" / "November 20".
+
+**"This month"** (`sectionHeader`, `Spacing.xl` above): four `ProgressStatCard`s in a 2×2 grid, `Spacing.sm` apart:
+
+| Card | Icon | Color |
+|---|---|---|
+| Check-ins | `camera.fill` | `info` (blue) |
+| Completion rate ("86%", or "—") | `checkmark.circle.fill` | `success` (green) |
+| Perfect days | `star.fill` | `gold` |
+| Longest day streak (this month) | `flame.fill` | `flame` (orange) |
+
+The numbers count up from 0 each time the tab appears (`.numericText()`; not with Reduce Motion). Switching months updates them.
+
+**"Your streaks"** (`sectionHeader`, `Spacing.xl` above; label "Last 30 days" on the right in `caption` / `textTertiary`): one `ChunkyCard` row per active streak (Streaks tab order), `Spacing.sm` apart: the `IconBadge`, then the name in `cardTitle` / `textPrimary` with the candy `ProgressBar` under it filled in the streak's `main`; the percentage on the right in `cardStreak` / `textPrimary` ("—" with nothing to count). VoiceOver: "Gym, 86% over the last 30 days".
+
+**"Best day"** (`Spacing.xl` above), only once the first streak is at least 14 days old: one line in `subhead` / `textSecondary` with a `trophy.fill` in `gold`: "Tuesdays are your strongest day (92%)".
+
+**Empty** (no streaks at all): under the header (no month switcher), centered: the happy Ember (120pt) and a centered `SpeechBubble`: "Check in for a few days and your progress shows up here."
+
+### 4.20 Welcome — `Views/Welcome/WelcomeView.swift`
+
+Full screen on `background`, the first time a fresh install opens (context.md §5). Three pages; swiping between them also works.
+
+- Top right: **"Skip"** in `body` / `textSecondary` (44pt tap target). Skipping finishes the welcome.
+- Centered: the flame (animated), about 160pt, then `Spacing.md` below a centered `SpeechBubble` with the page's line:
+  1. Ember, happy: "Hi! I'm your flame. I grow every day you show up."
+  2. Flame form, cheering: "Pick a time for each habit, then snap a photo during it to prove you did it."
+  3. Blaze form, proud: "Life happens, so you get a few skips each week. Ready? Let's light this up!"
+- Bottom: a chunky primary **"CONTINUE"** button (page 3: **"LET'S GO"**, which finishes), then `Spacing.md` below the `PageDots`.
+- Finishing (Let's go or Skip) closes it with a fade and remembers it's been seen. Pages change with a slide (a fade with Reduce Motion).
+- VoiceOver: each page reads the bubble's line; the dots read "Page 1 of 3".
+
 ## 5. Accessibility
 
 - Support Dynamic Type up to the largest accessibility sizes. Layouts must wrap rather than clip: side-by-side buttons stack vertically at accessibility sizes.
@@ -795,7 +871,7 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Where | Text |
 |---|---|
 | Section headers | Later today · Coming up · This week · Recent check-ins |
-| Empty state | Hi! I'm your flame. Create a streak and help me grow. · Create a streak |
+| Empty state | Hi! I'm your flame. Create a streak and help me grow. · Popular streaks · Gym · Morning skincare · Read · Journal · Drink water · Walk · Study · Clean up · Opens a new streak, filled in (VoiceOver hint) · Create a streak |
 | Pills (shown ALL CAPS) | Open now · Done {time} · Opens {time} · Skipped · Missed |
 | Buttons | Every button label is shown ALL CAPS with 0.8pt letter spacing ("CHECK IN", "USE A SKIP"); the text below is how it's written and how VoiceOver reads it. |
 | Today status line | {n} of {m} done today · All done for today · Rest day · Next: {task} at {time} · Next: {task} tomorrow at {time} · Next: {task} {weekday} at {time} · {task} is open now |
@@ -814,8 +890,8 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Preview | Retake · Submit |
 | Celebration | {days} · {Task} streak · {Task} done · {n} more to finish the week · Week complete · Your skip is back — {n} skip left · Day streak · Your flame is back! · {n} days to {form} · 1 day to {form} · You've reached the final form. · Your flame became a {form}! · Continue |
 | History | {Task} History · No check-ins yet. Your photos will show up here. |
-| Tab bar | Today · Streaks |
-| Today header | Settings (VoiceOver, gear) · Create streak (VoiceOver, +) · Good morning · Good afternoon · Good evening · , {name} · {greeting} · {Thu, Oct 1} · Day streak · Opens your flame (VoiceOver hint) |
+| Tab bar | Today · Streaks · Progress · Flame |
+| Today header | Settings (VoiceOver, gear) · Create streak (VoiceOver, +) · Opens the Flame tab (VoiceOver hint) · Good morning · Good afternoon · Good evening · , {name} · {greeting} · {Thu, Oct 1} · Day streak |
 | Week strip (VoiceOver) | {weekday}, all done. Opens history. · {weekday}, {n} of {m} done. Opens history. · {weekday}, nothing scheduled. Opens history. · {weekday}, today, {n} of {m} done · {weekday} |
 | History screen | History · Nothing scheduled · No check-ins |
 | Colors (VoiceOver) | Coral · Orange · Green · Teal · Blue · Indigo · Pink · Purple |
@@ -828,7 +904,7 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Edit streak | Archive streak · Delete streak |
 | Archive dialog | Archive {Task}? · It'll stop reminding you and leave your Today screen. Your photos and best streak are kept, and you can restore it anytime from Settings. · Cancel · Archive |
 | Delete dialog | Delete {Task}? · This permanently deletes the streak and all its photos. · Cancel · Delete |
-| Speech bubble | That's okay. One check-in brings me back. · {Task} closes in {m} min! Quick, snap a photo! · {Task} is open — let's do this! · Time for {task}. I'm ready when you are. · Next up: {task} at {time}. · All done today. I'm glowing! · That's everything. Proud of you. · Rest day. Recharging for tomorrow. · That's it for today. See you next time! |
+| Speech bubble | That's okay. One check-in brings me back. · {Task} closes in {m} min! Quick, snap a photo! · {Task} is open — let's do this! · Time for {task}. I'm ready when you are. · Next up: {task} at {time}. · All done today. I'm glowing! · That's everything. Proud of you. · Rest day. Recharging for tomorrow. · That's it for today. See you next time! · Our first streak! Check in during its window to light me up. |
 | Flame forms | Ember · Spark · Flame · Blaze · Bonfire · Inferno · Wildfire · Eternal |
 | Form descriptions (step 3) | Spark: A tiny spark with two flickering tongues. · Flame: Taller, with a bright golden core. · Blaze: Bigger, with four tongues and a soft glow. · Bonfire: Five tongues, a warm glow, and embers floating up. · Inferno: Red-hot edges and a white-hot core. · Wildfire: Purple-tipped tongues and sparkles all around. · Eternal: Blue and white, with sparkles in orbit. · Ember: A small, warm ember. |
 | Moods (VoiceOver) | Happy · Proud · Sleepy · Worried · Sad · Cheering |
@@ -836,6 +912,9 @@ All user-facing text, in one place. Put these in a single `Strings` file so word
 | Flame screen | Your flame · {n} day streak · {n} days to {form} · You've reached the final form. · Forms · {n} days · Locked · Longest · Best form |
 | Day streak ended | Your {n}-day streak ended · Longest: {n} days · Best form: {form} · One check-in brings me back. · Let's go |
 | Reminders | Opens: {Task} is open / Until {end time}. Snap a photo to keep your streak going. · Repeat: {Task} · {time left} left / Your window closes at {end time}. · Last call: {Task} closes at {end time} / Check in or use a skip ({n} left). · Last call, no skips: {Task} closes at {end time} / Last chance to keep your {n}-day streak. · Last call, no streak yet: {Task} closes at {end time} / Last chance to check in today. · Safety net (title only, after the last scheduled reminder): Open the app so I can keep reminding you. |
+| Progress tab | Progress · View all photos · Previous month · Next month · {Month Year} · This month · Check-ins · Completion rate · {n}% · — · Perfect days · Longest day streak · Your streaks · Last 30 days · {Task}, {n}% over the last 30 days · {Weekday}s are your strongest day ({n}%) · Check in for a few days and your progress shows up here. |
+| Progress calendar (VoiceOver) | {date}, all done. Opens history. · {date}, {n} of {m} done. Opens history. · {date}, missed. Opens history. · {date}, nothing scheduled. · {date}, today, {n} of {m} done · {date} |
+| Welcome | Skip · Hi! I'm your flame. I grow every day you show up. · Pick a time for each habit, then snap a photo during it to prove you did it. · Life happens, so you get a few skips each week. Ready? Let's light this up! · Continue · Let's go · Page {n} of 3 |
 | Reminder permission | I'll remind you when your windows open, so your streak never sneaks away. · Turn on reminders · Not now |
-| Developer (DEBUG) | Pretend time: {time} · Real time: {time} · +15 min · +1 hour · +1 day · +1 week · Reset to real time · Fill with sample data · Erase everything · Send test reminder in 5 seconds · Show pending reminders · Pretend time: {Thu 8:01 PM} · TAP TO RESET |
+| Developer (DEBUG) | Pretend time: {time} · Real time: {time} · +15 min · +1 hour · +1 day · +1 week · Reset to real time · Fill with sample data · Erase everything · Send test reminder in 5 seconds · Show pending reminders · Show welcome again · Pretend time: {Thu 8:01 PM} · TAP TO RESET |
 | Delete-all dialogs | Delete everything? · All streaks and photos will be permanently deleted from this iPhone. · Cancel · Continue · This can't be undone. · Delete everything |

@@ -1,15 +1,15 @@
 import SwiftUI
 
-/// The custom tab bar (design.md §4.0): Today on the left, Streaks on the right.
+/// The custom tab bar (design.md §4.0): Today, Streaks, Progress, and Flame. Every icon is always in its tab's own
+/// color; the selected one sits in a rounded square with its label underneath.
 struct AppTabBar: View {
     @Binding var selection: AppRouter.Tab
 
     var body: some View {
         HStack(spacing: 0) {
-            TabButton(title: Strings.Tabs.today, icon: "sun.max.fill",
-                      isSelected: selection == .today) { selection = .today }
-            TabButton(title: Strings.Tabs.streaks, icon: "flame.fill",
-                      isSelected: selection == .streaks) { selection = .streaks }
+            ForEach(AppRouter.Tab.allCases, id: \.self) { tab in
+                TabButton(tab: tab, isSelected: selection == tab) { selection = tab }
+            }
         }
         .frame(height: Sizes.tabBarHeight)
         .background {
@@ -25,38 +25,72 @@ struct AppTabBar: View {
     }
 }
 
+extension AppRouter.Tab {
+    var title: String {
+        switch self {
+        case .today: Strings.Tabs.today
+        case .streaks: Strings.Tabs.streaks
+        case .progress: Strings.Tabs.progress
+        case .flame: Strings.Tabs.flame
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .today: "sun.max.fill"
+        case .streaks: "checklist"
+        case .progress: "chart.bar.fill"
+        case .flame: "flame.fill"
+        }
+    }
+
+    /// Each tab's own color, used for its icon whether selected or not.
+    var color: Color {
+        switch self {
+        case .today: Color.app.gold
+        case .streaks: Color.app.info
+        case .progress: Color.app.success
+        case .flame: Color.app.flame
+        }
+    }
+}
+
 private struct TabButton: View {
-    let title: String
-    let icon: String
+    let tab: AppRouter.Tab
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.xxs) {
-                Image(systemName: icon)
+                Image(systemName: tab.icon)
                     .font(Font.app.tabIcon)
+                    .foregroundStyle(tab.color)
+                    .opacity(isSelected ? 1 : Sizes.tabUnselectedOpacity)
                     .frame(width: Sizes.tabSelection, height: Sizes.tabSelection)
                     .background {
-                        // The selected tab's icon sits in a rounded square with a blue border.
+                        // The selected tab's icon sits in a rounded square with a border in its color.
                         if isSelected {
                             RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                                .fill(Color.app.infoSoft)
+                                .fill(tab.color.opacity(Sizes.tabSelectedFillOpacity))
                             RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                                .strokeBorder(Color.app.info, lineWidth: Sizes.emphasisStroke)
+                                .strokeBorder(tab.color, lineWidth: Sizes.emphasisStroke)
                         }
                     }
-                Text(title)
-                    .font(Font.app.caption)
+                if isSelected {
+                    Text(tab.title)
+                        .font(Font.app.caption)
+                        .foregroundStyle(tab.color)
+                        .lineLimit(1)
+                }
             }
-            .foregroundStyle(isSelected ? Color.app.info : Color.app.textTertiary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityIdentifier("tab." + title)
+        .accessibilityIdentifier("tab." + tab.title)
     }
 }

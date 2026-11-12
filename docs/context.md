@@ -64,9 +64,9 @@ All fields are set on **one create screen**. Under the skips counter, a plain-la
 
 ## 5. The screens
 
-The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The app always opens on Today. Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab. **Settings** opens from a gear button at the top left of Today. **History** opens from Today (a "History" link above the week strip, or by tapping a past day).
+The app has a **tab bar with four tabs, left to right: Today, Streaks, Progress, and Flame.** The app always opens on Today. Each tab keeps its own back-and-forth navigation, so going back never jumps to another tab. **Settings** opens from a gear button at the top left of Today. **History** opens from Today (a "History" link above the week strip, or by tapping a past day) and from Progress ("View all photos", or by tapping a past day in the calendar).
 
-**Planned, not built:** a third **Friends** tab arrives with shared folders. At that point Today moves back to the center as a raised round button. Nothing is built for it now.
+**Planned, not built:** when the rewards phase adds the **Shop**, the bar becomes **five tabs** and **Today moves to the center as a raised round button**. A **Friends** tab arrives later with shared folders. Nothing is built for either now.
 
 **Today tab (the hub)**
 
@@ -80,8 +80,20 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 - **Coming up**: every task not scheduled today, with its next window, sorted by soonest, e.g. "Guitar · Tomorrow, 9:00 PM".
 - **Rest day** (streaks exist, none scheduled today): the status line reads "Rest day · Next: Gym tomorrow at 6:00 PM" (or "… Gym Friday at 6:00 PM"); no Today section or hero card; the week strip and Coming up show as normal.
 - Each task shows its status (open now / done with the check-in time / opens at a time) and its streak.
-- A **+** button creates a task.
-- **Empty state (no streaks at all):** the happy Ember says "Hi! I'm your flame. Create a streak and help me grow." above a "Create a streak" button (design.md §4.2). This is what a fresh install shows. No week strip, History link, or status line. No intro or onboarding screens.
+- A **+** button creates a task. The gear and + are big round chunky buttons (design.md §4.1).
+- **Tapping the flame or the day streak** in the header switches to the **Flame tab**.
+- **Empty state (no streaks at all):** the happy Ember says "Hi! I'm your flame. Create a streak and help me grow.", then **"Popular streaks"**: tappable chips for common habits, each opening the create form already filled in (name, icon, color, days, and a suggested window; see the list below), then a "Create a streak" button for a custom one (design.md §4.2). This is what a fresh install shows after the welcome. No week strip, History link, or status line.
+- **Popular streaks** (the chips): Gym (Mon, Tue, Thu, Fri, 6–8 PM) · Morning skincare (every day, 7–9 AM) · Read (every day, 9–10 PM) · Journal (every day, 9–10 PM) · Drink water (every day, 12–2 PM) · Walk (every day, 5–7 PM) · Study (Mon–Fri, 4–6 PM) · Clean up (Sun, 10 AM–12 PM). Each starts with 0 skips; everything can be changed before saving.
+- **After the first streak is created** (and after the reminders offer), the flame cheers in the header: "Our first streak! Check in during its window to light me up." It says this until the first check-in (unless the day streak ended today or a window is about to close).
+
+**Welcome (first open only)** — this reverses the earlier "no onboarding" decision.
+
+- Three short screens on the navy background, each with the animated flame and a speech bubble, a chunky **Continue** button, three progress dots at the bottom, and **Skip** at the top right:
+  1. Ember, happy: "Hi! I'm your flame. I grow every day you show up."
+  2. Flame form, cheering: "Pick a time for each habit, then snap a photo during it to prove you did it."
+  3. Blaze form, proud: "Life happens, so you get a few skips each week. Ready? Let's light this up!" Its button reads **Let's go**.
+- Shown once, on the first open of a fresh install (no streaks yet). Finishing or skipping it is remembered on the iPhone; it never comes back (an install that already has streaks never sees it). DEBUG: Settings → Developer → "Show welcome again".
+- It doesn't ask for any permission.
 
 **Streaks tab**
 
@@ -89,9 +101,36 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 - **Archived** habits in a collapsed section at the bottom. Opening one offers **Restore** and **Delete permanently**.
 - A + button creates a task.
 
-**History** (pushed from Today; the tab bar hides while it's open)
+**Progress tab**
 
-- Opened with the "History" link on Today, or by tapping a past day in the week strip (it then opens scrolled to that day). A standard back button returns to Today, and swiping from the left edge does too.
+How the month went, all calculated from the saved records (nothing extra is saved). Top to bottom:
+
+- **"Progress"** title, with **"View all photos"** (opens History) at the top right, and a **month switcher** ("‹ November 2026 ›"). It can't go past the current month or before the month the first streak was created.
+- **Month calendar**, Monday first. Each day is one of:
+  - **Full day:** everything scheduled was checked in or skipped, with at least one check-in (the same rule that grows the day streak, §10).
+  - **Partial day:** something was scheduled, nothing was missed, but it isn't full (today while it's still in progress, or a day where everything was skipped). Shows a ring for how much was checked in.
+  - **Missed day:** at least one window closed with no check-in and no skip.
+  - **Rest day,** or a day before any streak existed: nothing scheduled.
+  - **Today** is outlined; **future** days are just the date.
+  - Tapping a past day (from the first streak's day on) opens History at that day.
+- **"This month"**: four stats for the month shown, counting only days up to today:
+  - **Check-ins:** how many check-ins.
+  - **Completion rate:** check-ins ÷ scheduled windows that have finished or been resolved (a skip counts as not checked in; today's windows still to come don't count). "—" with nothing to count.
+  - **Perfect days:** how many full days.
+  - **Longest day streak this month:** the longest run of full days within the month, using the day streak's rules (rest days and all-skipped days keep the run going without adding; a missed day ends it).
+  The numbers count up when the tab appears.
+- **"Your streaks"**: one row per active streak (Streaks tab order) with its completion rate over the **last 30 days** (same rule) as a bar and a percentage.
+- **"Best day"**: the weekday with the highest completion rate across all history, e.g. "Tuesdays are your strongest day (92%)". Only shown once the first streak is at least 14 days old. Ties go to the earlier weekday.
+- **Empty state** (no streaks at all, active or archived): the happy Ember says "Check in for a few days and your progress shows up here."
+- Deleted streaks are gone from Progress too (their check-ins no longer exist). Archived streaks still count for the days they were active.
+
+**Flame tab**
+
+The Flame screen (§10, design.md §4.14) as its own tab, titled "Your flame", with no back button.
+
+**History** (pushed from Today or Progress; the tab bar hides while it's open)
+
+- Opened with the "History" link on Today, "View all photos" on Progress, or by tapping a past day in the week strip or the Progress calendar (it then opens scrolled to that day). A standard back button returns to where it was opened from, and swiping from the left edge does too.
 - Every check-in photo across all habits, newest first, grouped by day ("Today", "Yesterday", "Thursday, Sep 24"), with filter chips for one habit at a time.
 - Skips and misses show as small text lines without a photo.
 - The per-task history (from "See all" on a task screen) stays as it is.
@@ -127,7 +166,7 @@ The app has a **tab bar with two tabs: Today (left) and Streaks (right).** The a
 
 ## 6. Tracking progress: streaks
 
-Streaks are the only progress tracking in v1: one per habit (this section) plus the overall day streak the flame follows (section 10). There are no charts, calendars, or recaps yet.
+Streaks are the main progress tracking in v1: one per habit (this section) plus the overall day streak the flame follows (section 10). The Progress tab (section 5) adds a month calendar and a few simple stats; there are no recaps yet.
 
 **What counts:**
 
@@ -181,7 +220,7 @@ Deferred (might come later):
 - App blocking (Screen Time / FamilyControls)
 - Location triggers
 - iCloud sync, export/backup (deleting data is in v1; exporting it isn't)
-- Insights, recaps, charts
+- Recaps and deeper insights (the Progress tab covers the basics: a month calendar and a few stats)
 - Apple Watch app, Home Screen widgets
 - Public profiles
 - AI character or chat assistant
@@ -248,7 +287,7 @@ Built. Looks: `docs/design.md` §2b and §4.14–4.16.
   3. **Proud** — everything scheduled today is resolved.
   4. **Sleepy** — rest day.
   5. **Happy** — otherwise.
-  6. **Cheering** — only during celebrations.
+  6. **Cheering** — during celebrations, on the welcome screens, and in the header after the first streak is created until its first check-in (section 5; it comes after Sad and Worried).
 - **Speech bubble** on Today: one short, always-kind line for the situation (exact lines in design.md §6).
 - **After a check-in**, the celebration has up to three steps: the streak's own count (always), the day streak going up (only if that check-in completed the day), and the flame's new form (only if it just reached one). Reaching Spark (0 → 1) is shown inside the day-streak step as "Your flame is back!" (or simply growing), not as a separate new-form step.
 - **"Streak ended" screen:** shown **once per break**, the first time the app is opened after the day streak ends — but not if the day streak has already come back by then.
@@ -291,6 +330,7 @@ These are planned. Nothing for them exists in the app yet.
 - **XP** for every check-in fills a **level bar**.
 - Each **level-up**: 9 face-down boxes; you pick **3**. Every box holds **coins** (different amounts). The boxes you didn't pick are never revealed.
 - **Coins** buy **accessories** for the flame in a **wardrobe shop**.
+- The **Shop** gets its own tab: the bar becomes five tabs, and **Today moves to the center as the raised button**.
 - XP, levels, coins, and accessories are **never lost**, even when a streak breaks.
 - Coins can **never** be bought with real money.
 
@@ -308,4 +348,5 @@ One phase at a time. Each phase ends with something runnable.
 8. Flame character and day streak (gamification phase 2): day streak rules and saving, the drawn flame with 8 forms and 6 moods, the Today header with a speech bubble, the Flame screen, the 3-step celebration, the "streak ended" screen, the new empty state, and a Flame Lab in the Design Gallery (sample data)
 9. Make it real (replaces the old separate Tasks, Check-in, and Streaks-and-skips phases): saved data with SwiftData, real photos and the real camera, every screen on saved data, catching up on days that passed, a DEBUG pretend clock and sample-data tools — see section 11
 10. Reminders and fixes: local reminders (window open, repeats, last call, stop on check-in or skip, tap opens Today), the permission screen after the first streak, edits to brand-new streaks, misses that survive deleting, the hero card animation after a check-in, time zone and daylight saving rules, saved-data versioning, and a DEBUG pretend-time banner — see sections 7 and 11
-11. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe — see "Coming next"
+11. Fuller app: bigger gear and + buttons, four colorful tabs (Today, Streaks, Progress, Flame), the Flame screen as a tab, the Progress tab (month calendar, this month's stats, each streak's last 30 days, best day), a 3-screen welcome on first open, "Popular streaks" chips on the empty state, and the flame cheering after the first streak — see section 5
+12. Rewards (gamification phase 3): XP, levels, boxes, coins, the wardrobe and Shop (the tab bar becomes five tabs with Today in the center) — see "Coming next"

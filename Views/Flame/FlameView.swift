@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The Flame screen (design.md §4.14), pushed from Today's header: the flame up close, how far it is to
-/// the next form, every form on a path, and the longest day streak and best form.
+/// The Flame tab (design.md §4.14): the flame up close, how far it is to the next form, every form on a path,
+/// and the longest day streak and best form. Today's header switches here when the flame is tapped.
 struct FlameView: View {
     @Environment(TaskStore.self) private var store
     @Environment(DayStreakStore.self) private var dayStreak
@@ -14,6 +14,12 @@ struct FlameView: View {
         let mood = dayStreak.status(tasks: store.tasks, now: now).mood
         ScrollView {
             VStack(spacing: 0) {
+                Text(Strings.Flame.title)
+                    .font(Font.app.screenTitle)
+                    .foregroundStyle(Color.app.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                    .frame(maxWidth: .infinity, minHeight: Sizes.tapTarget, alignment: .leading)
+                    .padding(.top, Spacing.xs)
                 FlameCharacterView(form: state.form, mood: mood, size: Sizes.flameScreen, days: state.current)
                     .padding(.top, Spacing.xl)
 
@@ -47,9 +53,8 @@ struct FlameView: View {
             .padding(.bottom, Spacing.xxxl)
         }
         .background(Color.app.background)
-        .navigationTitle(Strings.Flame.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
+        .statusBarBackdrop()
     }
 
     private func stat(_ label: String, _ value: String) -> some View {

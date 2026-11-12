@@ -47,9 +47,10 @@ final class DayStreakStore {
         return events.lazy.compactMap { if case .grew(let change) = $0 { change } else { nil } }.first
     }
 
-    /// The flame's mood and speech bubble right now.
+    /// The flame's mood and speech bubble right now. Until the very first check-in, it cheers the first streak on.
     func status(tasks: [TaskSnapshot], now: Date) -> FlameStatus {
-        FlameStatus(state: state, record: DayRecord(tasks: tasks, now: now), now: now)
+        let firstStreak = tasks.contains { !$0.isArchived } && tasks.allSatisfy { $0.checkIns.isEmpty }
+        return FlameStatus(state: state, record: DayRecord(tasks: tasks, now: now), now: now, firstStreak: firstStreak)
     }
 
     /// The "streak ended" screen was closed: don't show it again for this break.

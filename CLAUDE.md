@@ -19,10 +19,10 @@ project.yml        XcodeGen project definition (targets, settings, Info.plist ke
 App/               App entry point (HabitApp.swift) and generated Info.plist
 DesignSystem/      AppColors (Color.app.*), AppFonts (Font.app.*), Spacing + Sizes, Radius,
                    Strings (all user-facing text), Formatters (streaks, skips, times, schedules)
-Models/            Display types (TaskSnapshot, Streak, Weekday…) SwiftData records (Records.swift), the rules that calculate everything from them (StreakRules.swift, DayStreak.swift), AppClock, and SampleData (gallery only)
+Models/            Display types (TaskSnapshot, Streak, Weekday…) SwiftData records (Records.swift), the rules that calculate everything from them (StreakRules.swift, DayStreak.swift, ProgressStats.swift), the Popular streaks presets (StreakPresets.swift), AppClock, and SampleData (gallery only)
 Views/Components/  Reusable pieces from design.md §2 (PrimaryButton, TaskCard, StatusPill…)
-Views/<Area>/      Screens: Home (Today), Habits (Streaks tab), History (pushed from Today), Settings, TaskDetail, TaskForm, Skip, CheckIn
-Views/Flame/       The flame character (FlameCharacterView), Flame screen, celebration steps 2–3, "streak ended" screen
+Views/<Area>/      Screens: Home (Today), Habits (Streaks tab), Progress (Progress tab), History (pushed from Today or Progress), Settings, TaskDetail, TaskForm, Skip, CheckIn, Welcome (first open)
+Views/Flame/       The flame character (FlameCharacterView), the Flame tab (FlameView), celebration steps 2–3, "streak ended" screen
 Views/Gallery/     DesignGalleryView — DEBUG builds only (#if DEBUG)
 Services/          Non-UI logic: HabitRepository (reads/writes saved data, catch-up), PhotoStore, CameraController, SoundPlayer
 Resources/         Assets.xcassets: app icon, AccentColor, Colors/ (light + dark color sets)
@@ -43,13 +43,14 @@ docs/credits.md    Font and sound sources and licenses
 - Animation timing lives in `DesignSystem/Motion.swift`; always check Reduce Motion before animating.
 - Look: always dark navy, Nunito font (`Font.app.*`), chunky 3D `ChunkyButton` / `.chunkyCard()` with a darker lip, bright `flame` brand color, no gradients. Sounds via `SoundPlayer` (Settings → Sounds); sources in `docs/credits.md`.
 - On screen a habit is called a **streak**; code keeps Task/Habit names. Each streak has a `StreakColor` and an SF Symbol icon (`DesignSystem/StreakPalette.swift`).
-- Tabs: Today and Streaks — custom `AppTabBar` (hidden while History is open via `AppRouter.hidesTabBar`). History is pushed from Today (link or a tapped past day); Settings is a sheet from the gear on Today. A Friends tab is planned for later, not built.
+- Tabs: Today, Streaks, Progress, Flame — custom `AppTabBar` with each icon always in its own color (hidden while History is open via `AppRouter.hidesTabBar`). History is pushed from Today or Progress (link or a tapped past day); Settings is a sheet from the gear on Today; tapping the flame on Today switches to the Flame tab. The Progress tab's view is `ProgressTabView` (so it doesn't hide SwiftUI's `ProgressView`). When the rewards phase adds the Shop, the bar becomes 5 tabs with Today in the center; a Friends tab comes later.
+- A fresh install shows the welcome (3 pages) once (`AppSettings.seenWelcome`); Settings → Developer → "Show welcome again" shows it again. The empty state has "Popular streaks" chips (`StreakPreset.popular`).
 - Gradients are allowed only on the hero card and the celebration glow.
 - The Design Gallery is opened from Settings → Developer (DEBUG only). Gallery entries each get their own copy of the sample data (`SampleScope`). Sample "now" is one fixed pretend time, Thursday Oct 1 2026, 6:40 PM (`SampleData.today`); the gallery's clock is frozen there so every time, countdown, and status agrees. Use `--time 18:40` for simulator screenshots.
 - App-wide state: `TaskStore` (streak snapshots for every screen; changes go through it to `HabitRepository`, then `refresh()` recalculates from saved records), `DayStreakStore` (the day streak the flame follows), `AppClock` (the one source of "now"; DEBUG pretend time), `AppSettings` (UserDefaults), `AppRouter` (selected tab). All are put in the environment in `App/HabitApp.swift`.
 - Saved records are the source of truth; streaks, week circles, skips left, the day streak, and the flame form are always calculated (`StreakRules`). Never store a calculated number unless it can be rebuilt.
 - A fresh install starts empty. Settings → Developer (DEBUG) has the pretend clock (+15 min … +1 week, reset), "Fill with sample data", and "Erase everything".
-- DEBUG launch options: `-sampleMode YES` (old in-memory sample data at Thursday 6:40 PM; most UI tests use it), `-resetData YES` (also forgets the reminder question), `-pretendNow "2026-10-05 06:30"`, `-fillSampleData YES`, `-askForReminders YES` (show the reminder offer even if reminders are already allowed). `UITests/RealDataUITests.swift` covers saved data end to end; `UITests/RemindersUITests.swift` checks a real notification arrives.
+- DEBUG launch options: `-sampleMode YES` (old in-memory sample data at Thursday 6:40 PM; most UI tests use it), `-resetData YES` (also forgets the reminder question and the welcome), `-settings.seenWelcome YES` (skip the welcome; UI tests on saved data pass it), `-pretendNow "2026-10-05 06:30"`, `-fillSampleData YES`, `-askForReminders YES` (show the reminder offer even if reminders are already allowed). `UITests/RealDataUITests.swift` covers saved data end to end; `UITests/RemindersUITests.swift` checks a real notification arrives.
 - Reminders: `ReminderPlanner` (pure, unit-tested) decides what to schedule; `ReminderScheduler` hands it to iOS on every `TaskStore.refresh()`. Reminders always use the real clock, never `AppClock`'s pretend time. The plan always fills all 64 places (tiers, then the safety net), and iOS drops the **earliest-added** notification beyond 64, so anything extra (like the DEBUG test reminder) must be added after `finishScheduling()`. Background app refresh (`Services/BackgroundRefresh.swift`) redoes the schedule when iOS allows; the simulator never runs it on its own. While the pretend clock is on, a yellow DEBUG banner shows at the top (tap to reset).
 - Saved days are moments of local midnight; always compare them through `Calendar.savedDay(_:)` (or the values from `StreakRecord.data(calendar:)`), never with `==` on the raw date, so time zone changes don't shift them.
 
@@ -73,16 +74,16 @@ xcodegen generate
 
 # Build for the simulator
 xcodebuild -project HabitApp.xcodeproj -scheme HabitApp \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
   -derivedDataPath build/DerivedData build
 
 # Run the unit tests
 xcodebuild -project HabitApp.xcodeproj -scheme HabitApp \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
   -derivedDataPath build/DerivedData test
 
 # Install and launch in the simulator (after building)
-xcrun simctl boot "iPhone 16"; open -a Simulator
+xcrun simctl boot "iPhone 17"; open -a Simulator
 xcrun simctl install booted build/DerivedData/Build/Products/Debug-iphonesimulator/HabitApp.app
 xcrun simctl launch booted com.ajeethsrinivasan.habitapp
 ```

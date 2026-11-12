@@ -10,7 +10,7 @@ final class RealDataUITests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         // Erase saved data and pretend it's Monday, October 5, 2026, 6:30 AM.
-        app.launchArguments = ["-resetData", "YES", "-pretendNow", "2026-10-05 06:30", "-settings.name", ""]
+        app.launchArguments = ["-resetData", "YES", "-pretendNow", "2026-10-05 06:30", "-settings.name", "", "-settings.seenWelcome", "YES"]
         app.launch()
 
         // A fresh install starts empty.
@@ -63,7 +63,7 @@ final class RealDataUITests: XCTestCase {
 
         // Still right after the app restarts (the pretend clock is kept).
         app.terminate()
-        app.launchArguments = ["-settings.name", ""]
+        app.launchArguments = ["-settings.name", "", "-settings.seenWelcome", "YES"]
         app.launch()
         assertCheckedIn()
         snapshot("5-after-restart")
@@ -74,7 +74,7 @@ final class RealDataUITests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         // `-askForReminders YES` shows it even if this simulator already allows reminders.
-        app.launchArguments = ["-resetData", "YES", "-askForReminders", "YES", "-settings.name", ""]
+        app.launchArguments = ["-resetData", "YES", "-askForReminders", "YES", "-settings.name", "", "-settings.seenWelcome", "YES"]
         app.launch()
         // The empty state is up (so the app has started) and no offer came with it.
         XCTAssertTrue(app.buttons["Create a streak"].waitForExistence(timeout: 10))
@@ -133,7 +133,7 @@ final class RealDataUITests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["-resetData", "YES", "-pretendNow", "2026-10-08 18:40", "-fillSampleData", "YES",
-                               "-settings.name", ""]
+                               "-settings.name", "", "-settings.seenWelcome", "YES"]
         app.launch()
 
         // Guitar missed a day about a week and a half ago, so the day streak ended once; it's been back since,

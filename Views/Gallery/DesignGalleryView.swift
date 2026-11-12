@@ -169,8 +169,27 @@ struct GalleryEntry: Identifiable {
         return seen
     }
 
-    static let all: [GalleryEntry] = flame + today + habits + allHistory + settings + dialogs
+    static let all: [GalleryEntry] = welcome + flame + today + habits + progress + allHistory + settings + dialogs
         + detail + form + skip + checkIn + history + components
+
+    // MARK: Welcome (design.md §4.20)
+
+    private static let welcome: [GalleryEntry] = (0..<3).map { page in
+        GalleryEntry(id: "welcome.\(page + 1)", section: "Welcome (first open)", title: "Page \(page + 1) of 3",
+                     presentation: .cover) { close in
+            AnyView(WelcomeView(startPage: page, onFinish: close))
+        }
+    }
+
+    // MARK: Progress tab (design.md §4.19)
+
+    private static let progress: [GalleryEntry] = [
+        app("progress.month", "Progress tab", "This month · calendar, stats, streaks, best day", tab: .progress),
+        app("progress.lastMonth", "Progress tab", "Last month", tab: .progress, start: .init(progressMonthOffset: -1)),
+        app("progress.new", "Progress tab", "First day · nothing to count yet (\u{2014})",
+            tasks: [SampleData.reading], tab: .progress),
+        app("progress.empty", "Progress tab", "Empty (no streaks)", tasks: [], tab: .progress),
+    ]
 
     // MARK: Tabs (shown with the tab bar; swipe down to close)
 
@@ -210,6 +229,9 @@ struct GalleryEntry: Identifiable {
         app("flame.ended", "Flame", "Header · ended today (sad)", tab: .today),
         app("flame.dayOver", "Flame", "Header · nothing left, after a miss", tasks: SampleData.dayOverTasks, tab: .today),
         app("flame.endedOnOpen", "Flame", "App opening after a break", tab: .today, showsEndedScreen: true),
+        app("flame.firstStreak", "Flame", "Header · first streak, no check-ins yet (cheering)",
+            tasks: [SampleData.reading], tab: .today, dayStreak: DayStreakState()),
+        app("flame.tab", "Flame", "Flame tab · Blaze, 23 days", tasks: SampleData.healthyTasks, tab: .flame),
         GalleryEntry(id: "flame.screen", section: "Flame", title: "Flame screen · Blaze, 23 days") { _ in
             AnyView(SampleScope(tasks: SampleData.healthyTasks) { FlameView() })
         },
@@ -254,7 +276,7 @@ struct GalleryEntry: Identifiable {
         app("today.restDay", "Today tab", "Status · rest day (next tomorrow)", tasks: SampleData.restDayTasks, tab: .today),
         app("today.restDayLater", "Today tab", "Status · rest day (next on a weekday)",
             tasks: SampleData.restDayLaterTasks, tab: .today),
-        app("today.empty", "Today tab", "Empty (no streaks)", tasks: [], tab: .today),
+        app("today.empty", "Today tab", "Empty · Popular streaks chips", tasks: [], tab: .today),
         app("today.named", "Today tab", "Greeting with a name", tab: .today, name: "Ajeeth"),
         app("today.doneOpen", "Today tab", "Done today expanded", tab: .today, start: .init(showsDone: true)),
         app("today.closingSoon", "Today tab", "Hero card · closes in under 15 min", now: SampleData.closingSoon, tab: .today),
@@ -378,6 +400,8 @@ struct GalleryEntry: Identifiable {
 
     private static let form: [GalleryEntry] = [
         formEntry("create", "New task · empty", .create, nil),
+        formEntry("preset", "New task · from the Gym chip", .create, StreakPreset.popular[0].draft),
+        formEntry("presetCleanUp", "New task · from the Clean up chip", .create, StreakPreset.popular[7].draft),
         formEntry("filled", "New task · filled in", .create, TaskFormView.Draft(
             name: "Gym", days: [.monday, .tuesday, .thursday, .friday],
             window: TimeWindow(start: TimeOfDay(18), end: TimeOfDay(20)), skips: 1)),
@@ -500,6 +524,35 @@ private struct ComponentsGallery: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 group("Tab bar (tap to switch)") {
                     AppTabBar(selection: $tab)
+                }
+                group("Round chunky buttons · press and hold") {
+                    HStack {
+                        CircleIconButton(systemImage: "gearshape.fill", label: "Settings") {}
+                        Spacer()
+                        CircleIconButton(systemImage: "plus", color: Color.app.flame, label: "Create streak") {}
+                    }
+                }
+                group("Popular streaks chips") {
+                    FlowLayout {
+                        ForEach(StreakPreset.popular) { preset in StarterChip(preset: preset) {} }
+                    }
+                }
+                group("Progress calendar · every day state") {
+                    MonthCalendar(month: Self.sampleMonth)
+                        .padding(Spacing.md)
+                        .chunkyCard()
+                }
+                group("Progress stat cards") {
+                    Grid(horizontalSpacing: Spacing.sm, verticalSpacing: Spacing.sm) {
+                        GridRow {
+                            ProgressStatCard(icon: "camera.fill", color: Color.app.info, label: "Check-ins", value: 42)
+                            ProgressStatCard(icon: "checkmark.circle.fill", color: Color.app.success,
+                                             label: "Completion rate", value: nil)
+                        }
+                    }
+                }
+                group("Page dots") {
+                    PageDots(count: 3, current: 1)
                 }
                 group("Week strip · every day state") {
                     WeekStrip(days: Self.sampleWeek)
@@ -650,6 +703,21 @@ private struct ComponentsGallery: View {
         return [day(.monday, .past, 3, 3), day(.tuesday, .past, 1, 3), day(.wednesday, .plain, 0, 0),
                 day(.thursday, .today, 1, 4), day(.friday, .plain, 0, 0), day(.saturday, .plain, 0, 0),
                 day(.sunday, .plain, 0, 0)]
+    }()
+
+    /// October 2026 with one of each calendar day state: full, partial (a ring), missed, rest, today, future.
+    private static let sampleMonth: ProgressMonth = {
+        let calendar = Calendar.current
+        let start = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1))!
+        let kinds: [(ProgressDay.Kind, Int, Int)] = [(.full, 3, 3), (.partial, 0, 2), (.missed, 1, 3), (.rest, 0, 0)]
+        let days = (0..<31).map { offset -> ProgressDay in
+            let date = calendar.date(byAdding: .day, value: offset, to: start)!
+            if offset == 20 { return ProgressDay(date: date, kind: .partial, isToday: true, done: 1, total: 3, opensHistory: false) }
+            if offset > 20 { return ProgressDay(date: date, kind: .future, isToday: false, done: 0, total: 0, opensHistory: false) }
+            let (kind, done, total) = offset == 5 ? (ProgressDay.Kind.partial, 1, 3) : kinds[offset % kinds.count]
+            return ProgressDay(date: date, kind: kind, isToday: false, done: done, total: total, opensHistory: true)
+        }
+        return ProgressMonth(start: start, leadingBlanks: 3, days: days, stats: MonthStats())
     }()
 
     /// The open Gym task, recolored.

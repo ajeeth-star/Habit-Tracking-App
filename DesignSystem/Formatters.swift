@@ -404,7 +404,44 @@ struct Formatters {
         case .allDone: pick(Strings.Bubble.allDone)
         case .restDay: Strings.Bubble.restDay
         case .dayOver: Strings.Bubble.dayOver
+        case .firstStreak: Strings.Bubble.firstStreak
         }
+    }
+
+    // MARK: Progress tab
+
+    /// A rate as a whole percentage: 0.857 → 86.
+    func percentValue(_ rate: Double) -> Int {
+        Int((rate * 100).rounded())
+    }
+
+    /// "86%", or "—" when there's nothing to count.
+    func rate(_ rate: Double?) -> String {
+        rate.map { Strings.Progress.percent(percentValue($0)) } ?? Strings.Progress.noRate
+    }
+
+    /// "Tuesdays are your strongest day (92%)".
+    func bestDay(_ best: BestDay) -> String {
+        Strings.Progress.bestDay(Strings.Progress.weekdayPlural(weekdayName(best.weekday)), rate(best.rate))
+    }
+
+    /// What VoiceOver says for a Progress calendar day: "November 3, all done. Opens history.",
+    /// "November 10, today, 1 of 2 done", or "November 20".
+    func progressDayLabel(_ day: ProgressDay) -> String {
+        let date = format(day.date, template: "MMMMd")
+        let label: String
+        if day.isToday {
+            label = Strings.Progress.today(date, day.done, day.total)
+        } else {
+            switch day.kind {
+            case .full: label = Strings.Progress.allDone(date)
+            case .partial: label = Strings.Progress.progress(date, day.done, day.total)
+            case .missed: label = Strings.Progress.missed(date)
+            case .rest: label = day.opensHistory ? Strings.Progress.nothingScheduled(date) : date
+            case .future: label = date
+            }
+        }
+        return day.opensHistory ? Strings.WeekStrip.opensHistory(label) : label
     }
 
     /// "Longest: 30 days · Best form: Bonfire".

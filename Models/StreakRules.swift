@@ -410,7 +410,9 @@ struct StreakRules {
             icon: streak.icon,
             createdAt: streak.createdAt)
         snapshot.photoFiles = Dictionary(checkIns.map { ($0.time, $0.photoFileName) }, uniquingKeysWith: { a, _ in a })
-        snapshot.recordedEvents = pastEvents(streak, now: now, summary: summary)
+        let judged = judgedDays(streak, now: now)
+        snapshot.recordedEvents = pastEvents(streak, now: now, summary: summary, judged: judged)
+        snapshot.recordedDays = dayMarks(judged)
         snapshot.nextWeek = nextWeek
         return snapshot
     }
@@ -426,15 +428,39 @@ struct StreakRules {
         return nil
     }
 
-    /// Skips and misses for History, newest first. Check-ins come from the photos.
-    func pastEvents(_ streak: StreakData, now: Date, summary: StreakSummary? = nil) -> [HistoryEvent] {
-        let ended = (summary ?? self.summary(streak, now: now)).endedByDay
-        let id = streak.id.uuidString
-        var events: [HistoryEvent] = []
+    /// Every day that counts for this streak, from the day it was created to today, oldest first.
+    func judgedDays(_ streak: StreakData, now: Date) -> [(day: Date, outcome: DayOutcome)] {
+        var days: [(day: Date, outcome: DayOutcome)] = []
         let today = calendar.startOfDay(for: now)
         var day = calendar.startOfDay(for: streak.createdAt)
         while day <= today {
-            switch outcome(streak, on: day, now: now) {
+            if let outcome = outcome(streak, on: day, now: now) { days.append((day, outcome)) }
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
+        }
+        return days
+    }
+
+    /// How each day that counts went, by the start of the day (the Progress tab).
+    func dayMarks(_ judged: [(day: Date, outcome: DayOutcome)]) -> [Date: DayMark] {
+        Dictionary(judged.map { day, outcome in
+            let mark: DayMark = switch outcome {
+            case .checkedIn: .done
+            case .skipped: .skipped
+            case .missed: .missed
+            case .pending: .pending
+            }
+            return (day, mark)
+        }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Skips and misses for History, newest first. Check-ins come from the photos.
+    func pastEvents(_ streak: StreakData, now: Date, summary: StreakSummary? = nil,
+                    judged: [(day: Date, outcome: DayOutcome)]? = nil) -> [HistoryEvent] {
+        let ended = (summary ?? self.summary(streak, now: now)).endedByDay
+        let id = streak.id.uuidString
+        var events: [HistoryEvent] = []
+        for (day, outcome) in judged ?? judgedDays(streak, now: now) {
+            switch outcome {
             case .skipped(let time):
                 events.append(HistoryEvent(taskID: id, taskName: streak.name, date: time, kind: .skip))
             case .missed:
@@ -443,10 +469,9 @@ struct StreakRules {
                                                date: window(version.window, on: day).closes,
                                                kind: .miss(streakEnded: ended[day])))
                 }
-            case .checkedIn, .pending, nil:
+            case .checkedIn, .pending:
                 break
             }
-            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86_400)
         }
         return events.sorted { $0.date > $1.date }
     }

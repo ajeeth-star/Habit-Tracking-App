@@ -229,6 +229,8 @@ enum FlameBubble: Hashable {
     case restDay
     /// Nothing left today, but something was missed.
     case dayOver
+    /// No check-in has ever happened: right after the first streak is created (context.md §5).
+    case firstStreak
 }
 
 /// The flame's mood and line for today.
@@ -239,7 +241,8 @@ struct FlameStatus: Hashable {
     /// "Worried" within this many minutes of an open window closing.
     static let worriedMinutes = 15
 
-    init(state: DayStreakState, record: DayRecord, now: Date) {
+    /// `firstStreak`: streaks exist but nothing has ever been checked in; the flame cheers it on.
+    init(state: DayStreakState, record: DayRecord, now: Date, firstStreak: Bool = false) {
         let open = record.items
             .filter { $0.outcome == .pending && $0.isOpen(at: now) }
             .sorted { $0.closes < $1.closes }
@@ -259,6 +262,7 @@ struct FlameStatus: Hashable {
 
         mood = if isSad { .sad }
             else if closing != nil { .worried }
+            else if firstStreak { .cheering }
             else if allResolved { .proud }
             else if record.isRestDay { .sleepy }
             else { .happy }
@@ -268,6 +272,7 @@ struct FlameStatus: Hashable {
                 .closingSoon(task: closing.taskName,
                              minutes: max(1, Int((closing.closes.timeIntervalSince(now) / 60).rounded(.up))))
             }
+            else if firstStreak { .firstStreak }
             else if let first = open.min(by: { $0.opens < $1.opens }) { .open(task: first.taskName) }
             else if let upcoming { .upcoming(task: upcoming.taskName, start: upcoming.opens) }
             else if allResolved { .allDone }

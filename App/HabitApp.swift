@@ -23,7 +23,8 @@ struct HabitApp: App {
 
     /// The saved data. DEBUG builds also understand these launch options (used by UI tests):
     /// - `-sampleMode YES`: the old in-memory sample data at Thursday 6:40 PM instead of saved data (no reminders);
-    /// - `-resetData YES`: erase all saved data, go back to the real time, and forget the reminder question;
+    /// - `-resetData YES`: erase all saved data, go back to the real time, and forget the reminder question and
+    ///   the welcome (UI tests that don't look at the welcome also pass `-settings.seenWelcome YES`);
     /// - `-pretendNow "2026-10-05 17:30"`: start the pretend clock at that local time;
     /// - `-fillSampleData YES`: add a few weeks of sample streaks (like Settings → Developer → Fill with sample data).
     @MainActor
@@ -47,6 +48,9 @@ struct HabitApp: App {
             repository.deleteAll()
             clock.resetToRealTime()
             settings.askedForReminders = false
+            // Forget the welcome too, unless the launch says it's been seen (`-settings.seenWelcome YES`).
+            launch.removeObject(forKey: "settings.seenWelcome")
+            settings.seenWelcome = launch.bool(forKey: "settings.seenWelcome")
         }
         if let text = launch.string(forKey: "pretendNow") {
             let formatter = DateFormatter()

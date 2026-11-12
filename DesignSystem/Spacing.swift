@@ -33,7 +33,11 @@ enum Sizes {
     static let progressHighlight: CGFloat = 4
 
     /// The selected tab's rounded square.
-    static let tabSelection: CGFloat = 40
+    static let tabSelection: CGFloat = 44
+    /// Unselected tab icons are shown at this opacity (still in their own color).
+    static let tabUnselectedOpacity: Double = 0.55
+    /// The selected tab's square is filled with its color at this opacity.
+    static let tabSelectedFillOpacity: Double = 0.15
 
     static let pillHorizontalPadding: CGFloat = 8
     static let pillVerticalPadding: CGFloat = 3
@@ -44,6 +48,22 @@ enum Sizes {
 
     /// A streak's icon badge.
     static let iconBadge: CGFloat = 40
+
+    /// Round chunky buttons (Today's gear and +): the circle, and its lip (also how far it presses down).
+    static let circleButton: CGFloat = 44
+    static let circleButtonLip: CGFloat = 3
+
+    /// "Popular streaks" chips: the icon's circle, and the chip's lip (also how far it presses down).
+    static let starterIcon: CGFloat = 28
+    static let starterLip: CGFloat = 3
+
+    /// Progress calendar: each day's rounded square and its rings.
+    static let calendarDay: CGFloat = 40
+    static let calendarRing: CGFloat = 3
+
+    /// The welcome's page dots: a dot, and the current page's wider capsule.
+    static let pageDot: CGFloat = 8
+    static let pageDotCurrent: CGFloat = 24
 
     /// Settings: row height, the icon badge on each row, and the thin line between rows.
     static let settingsRow: CGFloat = 52
@@ -72,6 +92,7 @@ enum Sizes {
     static let flameCelebration: CGFloat = 150
     static let flameEnded: CGFloat = 160
     static let flameEmpty: CGFloat = 120
+    static let flameWelcome: CGFloat = 160
     static let flamePath: CGFloat = 56
     static let flameLabGrid: CGFloat = 40
     /// The flame's outline.

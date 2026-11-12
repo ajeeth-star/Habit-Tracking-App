@@ -7,7 +7,7 @@ final class RemindersUITests: XCTestCase {
     func testTestReminderArrivesAndRemindersAreScheduled() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-resetData", "YES", "-fillSampleData", "YES", "-settings.name", ""]
+        app.launchArguments = ["-resetData", "YES", "-fillSampleData", "YES", "-settings.name", "", "-settings.seenWelcome", "YES"]
         app.launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 

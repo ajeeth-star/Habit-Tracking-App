@@ -50,6 +50,8 @@ enum Strings {
     enum Tabs {
         static let today = "Today"
         static let streaks = "Streaks"
+        static let progress = "Progress"
+        static let flame = "Flame"
     }
 
     enum Today {
@@ -153,6 +155,7 @@ enum Strings {
     enum Developer {
         static let sendTestReminder = "Send test reminder in 5 seconds"
         static let showPendingReminders = "Show pending reminders"
+        static let showWelcome = "Show welcome again"
         static let noPendingReminders = "No reminders scheduled."
         static func banner(_ time: String) -> String { "Pretend time: \(time) · TAP TO RESET" }
         static func pretendTime(_ time: String) -> String { "Pretend time: \(time)" }
@@ -367,7 +370,7 @@ enum Strings {
         static let current = "Current"
         static let longest = "Longest"
         static let bestForm = "Best form"
-        static let opensFlame = "Opens your flame"
+        static let opensFlame = "Opens the Flame tab"
         /// Floats above the sleepy flame.
         static let sleepZ = "z"
         static func accessibility(_ form: String, _ mood: String, _ streak: String?) -> String {
@@ -427,6 +430,62 @@ enum Strings {
         static let restDay = "Rest day. Recharging for tomorrow."
         static let dayOver = "That's it for today. See you next time!"
         static let empty = "Hi! I'm your flame. Create a streak and help me grow."
+        static let firstStreak = "Our first streak! Check in during its window to light me up."
+    }
+
+    /// The "Popular streaks" chips on the empty state (design.md §4.2).
+    enum Starters {
+        static let title = "Popular streaks"
+        static let hint = "Opens a new streak, filled in"
+        static let gym = "Gym"
+        static let skincare = "Morning skincare"
+        static let read = "Read"
+        static let journal = "Journal"
+        static let water = "Drink water"
+        static let walk = "Walk"
+        static let study = "Study"
+        static let cleanUp = "Clean up"
+    }
+
+    /// The Progress tab (design.md §4.19).
+    enum Progress {
+        static let title = "Progress"
+        static let viewAllPhotos = "View all photos"
+        static let previousMonth = "Previous month"
+        static let nextMonth = "Next month"
+        static let thisMonth = "This month"
+        static let checkIns = "Check-ins"
+        static let completionRate = "Completion rate"
+        static let perfectDays = "Perfect days"
+        static let longestDayStreak = "Longest day streak"
+        static let yourStreaks = "Your streaks"
+        static let lastThirtyDays = "Last 30 days"
+        static func percent(_ n: Int) -> String { "\(n)%" }
+        static let noRate = "—"
+        static func streakRate(_ task: String, _ rate: String) -> String { "\(task), \(rate) over the last 30 days" }
+        /// "Tuesdays are your strongest day (92%)", given the weekday's plural.
+        static func bestDay(_ weekdays: String, _ rate: String) -> String {
+            "\(weekdays) are your strongest day (\(rate))"
+        }
+        static func weekdayPlural(_ weekday: String) -> String { "\(weekday)s" }
+        static let empty = "Check in for a few days and your progress shows up here."
+        // Calendar days, for VoiceOver
+        static func allDone(_ date: String) -> String { "\(date), all done" }
+        static func progress(_ date: String, _ done: Int, _ total: Int) -> String { "\(date), \(done) of \(total) done" }
+        static func missed(_ date: String) -> String { "\(date), missed" }
+        static func nothingScheduled(_ date: String) -> String { "\(date), nothing scheduled" }
+        static func today(_ date: String, _ done: Int, _ total: Int) -> String { "\(date), today, \(done) of \(total) done" }
+    }
+
+    /// The welcome screens on a fresh install (design.md §4.20).
+    enum Welcome {
+        static let skip = "Skip"
+        static let hello = "Hi! I'm your flame. I grow every day you show up."
+        static let howItWorks = "Pick a time for each habit, then snap a photo during it to prove you did it."
+        static let skips = "Life happens, so you get a few skips each week. Ready? Let's light this up!"
+        static let `continue` = "Continue"
+        static let letsGo = "Let's go"
+        static func page(_ n: Int, _ count: Int) -> String { "Page \(n) of \(count)" }
     }
 
     /// The "day streak ended" screen (design.md §4.15).
