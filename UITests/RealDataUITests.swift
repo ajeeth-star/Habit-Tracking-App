@@ -167,7 +167,8 @@ final class RealDataUITests: XCTestCase {
         let flame = app.buttons["today.flame"]
         XCTAssertTrue(flame.waitForExistence(timeout: 5))
         XCTAssertEqual(flame.label, "Your flame. Spark form. Proud. 1 day streak.")
-        XCTAssertTrue(app.buttons["Done today · 1"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Pushups. Done'")).firstMatch
+            .waitForExistence(timeout: 3), "Done on the timeline")
 
         app.buttons["tab.Streaks"].tap()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Pushups'")).firstMatch

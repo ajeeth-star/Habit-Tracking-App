@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The Today tab (design.md §4.1–4.2): the flame and day streak with its speech bubble, this week, one
-/// status line, the open streak's hero card, the rest of today with a collapsible "Done today" row, and
+/// status line, the open streak's hero card, a timeline of the rest of the day with a "now" line, and
 /// "Coming up". History is pushed from here; the flame switches to the Flame tab. Must sit inside a
 /// `NavigationStack`.
 /// Reads the shared `TaskStore` and `DayStreakStore`.
@@ -12,13 +12,11 @@ struct HomeView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Kept for as long as the app is open (the tab stays alive while you switch tabs).
-    @State private var showsDone: Bool
     @State private var openedTaskID: String?
     @State private var history: HistoryRoute?
     @State private var checkInTask: TaskSnapshot?
     /// While a check-in started here is on screen, Today keeps showing that streak as it was, so the hero card
-    /// closes into the "Done today" row in front of you once the celebration ends (design.md §4.8).
+    /// closes into its timeline slot in front of you once the celebration ends (design.md §4.8).
     @State private var heldTask: TaskSnapshot?
 
     private var tasks: [TaskSnapshot] {
@@ -45,8 +43,7 @@ struct HomeView: View {
         var id: Self { self }
     }
 
-    init(showsDone: Bool = false, bubbleVariant: Int? = nil) {
-        _showsDone = State(initialValue: showsDone)
+    init(bubbleVariant: Int? = nil) {
         _bubbleVariant = State(initialValue: bubbleVariant ?? Int.random(in: 0..<100))
     }
 
@@ -113,7 +110,7 @@ struct HomeView: View {
                     StatusLine(summary: TodaySummary(tasks: active, now: now))
                         .padding(.top, Spacing.sm)
                     heroCards(now: now)
-                    todaySection(now: now)
+                    timelineSection(now: now)
                     comingUpSection(now: now)
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -231,26 +228,6 @@ struct HomeView: View {
         scheduledToday.filter { $0.cardState == .open }
     }
 
-    /// The rest of today still ahead, plus missed tasks so their "Streak ended" lines stay visible.
-    private var aheadToday: [TaskSnapshot] {
-        scheduledToday.filter {
-            switch $0.cardState {
-            case .upcoming, .missed: true
-            default: false
-            }
-        }
-    }
-
-    /// Checked in or skipped today: folded into the "Done today" row.
-    private var doneToday: [TaskSnapshot] {
-        scheduledToday.filter {
-            switch $0.cardState {
-            case .done, .skipped: true
-            default: false
-            }
-        }
-    }
-
     @ViewBuilder private func heroCards(now: Date) -> some View {
         if !openToday.isEmpty {
             VStack(spacing: Spacing.sm) {
@@ -262,18 +239,15 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder private func todaySection(now: Date) -> some View {
-        if !aheadToday.isEmpty || !doneToday.isEmpty {
-            section(Strings.Home.laterToday) {
-                ForEach(Array(aheadToday.enumerated()), id: \.element.id) { index, task in
-                    card(task, now: now).appearSlideIn(index: openToday.count + index)
+    /// Every other streak scheduled today on a timeline, with the "now" line (hidden on a rest day).
+    @ViewBuilder private func timelineSection(now: Date) -> some View {
+        let timeline = TodayTimeline(tasks: active, now: now)
+        if !timeline.isEmpty {
+            section(Strings.Today.yourDay) {
+                DayTimeline(timeline: timeline, now: now) { task in
+                    card(task, now: now)
                 }
-                if !doneToday.isEmpty {
-                    DisclosureRow(label: Strings.Today.doneToday, count: doneToday.count, isExpanded: $showsDone)
-                    if showsDone {
-                        ForEach(doneToday) { card($0, now: now) }
-                    }
-                }
+                .appearSlideIn(index: openToday.count)
             }
         }
     }
@@ -311,7 +285,7 @@ struct HomeView: View {
                     ComingUpRow(task: item.task, daysAhead: item.daysAhead, today: Weekday(now)) {
                         openedTaskID = item.task.id
                     }
-                    .appearSlideIn(index: openToday.count + aheadToday.count + 1 + index)
+                    .appearSlideIn(index: openToday.count + 1 + index)
                 }
             }
         }

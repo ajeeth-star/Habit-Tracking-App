@@ -24,7 +24,7 @@ final class AppNavigationUITests: XCTestCase {
         snapshot("tabs-1-today")
 
         tab("Streaks")
-        XCTAssertTrue(app.staticTexts["Active"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["streaks.summary"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Archived · 1"].exists)
         snapshot("tabs-2-streaks")
 
@@ -165,19 +165,24 @@ final class AppNavigationUITests: XCTestCase {
         XCTAssertTrue(field.waitForNonExistence(timeout: 5), "Settings closed")
     }
 
-    func testDoneTodayExpandsAndCollapses() {
-        let row = app.buttons["Done today · 2"]
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+    /// At 6:40 PM Gym is the hero card; the rest of the day is on the timeline in window order, done and skipped
+    /// ones included, with "now" between Run (5 PM) and Journal (9 PM).
+    func testTimelineShowsTheWholeDay() {
+        let now = app.otherElements["timeline.now"].firstMatch
+        XCTAssertTrue(app.staticTexts["Your day"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Done today · 2"].exists, "No Done today row any more")
         let skincare = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Morning skincare. Done'")).firstMatch
-        XCTAssertFalse(skincare.exists, "Collapsed at first")
-
-        row.tap()
-        XCTAssertTrue(skincare.waitForExistence(timeout: 2))
-        snapshot("done-expanded")
-
-        row.tap()
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: skincare)
-        wait(for: [gone], timeout: 2)
+        let run = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Run. Skipped'")).firstMatch
+        let journal = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Journal. Opens'")).firstMatch
+        for _ in 0..<4 where !journal.isHittable { app.swipeUp() }
+        XCTAssertTrue(skincare.exists, "Done streaks stay on the timeline")
+        XCTAssertTrue(run.exists, "Skipped streaks stay on the timeline")
+        XCTAssertTrue(now.exists)
+        XCTAssertLessThan(skincare.frame.minY, run.frame.minY)
+        XCTAssertLessThan(run.frame.minY, now.frame.minY)
+        XCTAssertLessThan(now.frame.minY, journal.frame.minY)
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gym. Done'")).count, 0)
+        snapshot("timeline")
     }
 
     func testFilteringHistory() {

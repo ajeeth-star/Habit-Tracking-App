@@ -84,9 +84,9 @@ final class FullerAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Create streak"].exists)
 
         // Every tab opens.
-        for (tab, check) in [("Streaks", "Active"), ("Flame", "Your flame"), ("Progress", "This month")] {
+        for (tab, check) in [("Streaks", "New streak"), ("Flame", "Your flame"), ("Progress", "This month")] {
             app.buttons["tab." + tab].tap()
-            XCTAssertTrue(app.staticTexts[check].waitForExistence(timeout: 3), "\(tab) tab")
+            XCTAssertTrue(app.descendants(matching: .any)[check].firstMatch.waitForExistence(timeout: 3), "\(tab) tab")
             XCTAssertTrue(app.buttons["tab." + tab].isSelected)
         }
         snapshot("progress-october")

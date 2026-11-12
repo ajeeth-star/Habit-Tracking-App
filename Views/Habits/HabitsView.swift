@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The Habits tab (design.md §4.10): every active habit by current streak, then a collapsible
-/// "Archived" row. Must sit inside a `NavigationStack`.
+/// The Streaks tab (design.md §4.10): the collection. Every active streak as a bright tile in a 2-column grid,
+/// by current streak, with a "New streak" tile last, then a collapsible "Archived" row. Must sit inside a
+/// `NavigationStack`.
 struct HabitsView: View {
     @Environment(TaskStore.self) private var store
     /// Kept for as long as the app is open.
@@ -23,14 +24,8 @@ struct HabitsView: View {
                     EmptyStateView(onPick: { creatingFrom = $0 }) { showingCreate = true }
                         .padding(.vertical, Spacing.xxxl)
                 } else {
-                    sectionTitle(Strings.Habits.active)
-                    VStack(spacing: Spacing.sm) {
-                        ForEach(Array(store.activeByStreak.enumerated()), id: \.element.id) { index, task in
-                            Button { openedTaskID = task.id } label: { HabitRow(task: task) }
-                                .buttonStyle(ChunkyCardButtonStyle())
-                                .appearSlideIn(index: index)
-                        }
-                    }
+                    grid
+                        .padding(.top, Spacing.lg)
                 }
                 if !store.archived.isEmpty {
                     DisclosureRow(label: Strings.Habits.archived, count: store.archived.count,
@@ -58,33 +53,45 @@ struct HabitsView: View {
         }
     }
 
+    /// "Streaks" and its summary line on the left, the round chunky + on the right.
     private var header: some View {
         HStack(alignment: .top) {
-            Text(Strings.Habits.title)
-                .font(Font.app.screenTitle)
-                .foregroundStyle(Color.app.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            Button { showingCreate = true } label: {
-                Image(systemName: "plus")
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(Strings.Habits.title)
                     .font(Font.app.screenTitle)
-                    .foregroundStyle(Color.app.flame)
-                    .frame(minWidth: Sizes.tapTarget, minHeight: Sizes.tapTarget)
-                    .contentShape(Rectangle())
+                    .foregroundStyle(Color.app.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                if !store.active.isEmpty {
+                    Text(Formatters.current.streaksSummary(active: store.active.count,
+                                                           skipsLeft: store.active.reduce(0) { $0 + $1.skipsLeft }))
+                        .font(Font.app.meta)
+                        .foregroundStyle(Color.app.textSecondary)
+                        .contentTransition(.numericText())
+                        .accessibilityIdentifier("streaks.summary")
+                }
             }
-            .accessibilityLabel(Strings.Home.createTask)
+            Spacer()
+            CircleIconButton(systemImage: "plus", color: Color.app.flame,
+                             label: Strings.Home.createTask) { showingCreate = true }
         }
         .padding(.top, Spacing.xs)
     }
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(Font.app.sectionHeader)
-            .foregroundStyle(Color.app.textTertiary)
-            .accessibilityAddTraits(.isHeader)
-            .padding(.top, Spacing.xl)
-            .padding(.bottom, Spacing.xs)
+    /// Two columns of tiles, highest streak first, with "New streak" always last.
+    private var grid: some View {
+        let tasks = store.activeByStreak
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm), GridItem(.flexible(), spacing: Spacing.sm)],
+                         spacing: Spacing.sm) {
+            ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
+                Button { openedTaskID = task.id } label: { StreakTile(task: task) }
+                    .buttonStyle(StreakTileButtonStyle(color: task.color, dormant: task.streak.totalCheckIns == 0))
+                    .appearPop(index: index)
+            }
+            NewStreakTile { showingCreate = true }
+                .appearPop(index: tasks.count)
+        }
     }
+
 }
 
 /// The archived habits as rows, `Spacing.sm` apart. Used by the Habits tab and Settings.

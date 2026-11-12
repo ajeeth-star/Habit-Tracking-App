@@ -408,6 +408,13 @@ struct Formatters {
         }
     }
 
+    // MARK: Streaks tab
+
+    /// "4 active · 3 skips left this week".
+    func streaksSummary(active: Int, skipsLeft: Int) -> String {
+        Strings.Habits.activeCount(active) + Strings.separator + Strings.Habits.skipsLeftThisWeek(skipsLeft)
+    }
+
     // MARK: Progress tab
 
     /// A rate as a whole percentage: 0.857 → 86.

@@ -278,12 +278,26 @@ struct GalleryEntry: Identifiable {
             tasks: SampleData.restDayLaterTasks, tab: .today),
         app("today.empty", "Today tab", "Empty · Popular streaks chips", tasks: [], tab: .today),
         app("today.named", "Today tab", "Greeting with a name", tab: .today, name: "Ajeeth"),
-        app("today.doneOpen", "Today tab", "Done today expanded", tab: .today, start: .init(showsDone: true)),
+        app("today.timelineMorning", "Today tab", "Timeline · 6:30 AM, everything still to come",
+            tasks: Self.morningTasks, now: SampleData.time(6, 30), tab: .today),
+        app("today.timelineDone", "Today tab", "Timeline · 10:30 PM, all done (now at the bottom)",
+            tasks: SampleData.allDoneTasks, now: SampleData.time(22, 30), tab: .today),
         app("today.closingSoon", "Today tab", "Hero card · closes in under 15 min", now: SampleData.closingSoon, tab: .today),
     ]
 
+    /// The main tasks first thing in the morning: nothing has happened yet today.
+    private static let morningTasks: [TaskSnapshot] = SampleData.allTasksWithArchived.map { task in
+        guard task.isScheduledToday else { return task }
+        var morning = task
+        morning.today = .scheduled(.before, .none)
+        morning.streakEnded = nil
+        return morning
+    }
+
     private static let habits: [GalleryEntry] = [
-        app("streaks.list", "Streaks tab", "Active · Archived collapsed", tab: .streaks),
+        app("streaks.list", "Streaks tab", "Tile grid · every status (Guitar dormant at 0)", tab: .streaks),
+        app("streaks.dormant", "Streaks tab", "A brand-new streak at 0 · New streak tile",
+            tasks: [SampleData.reading], tab: .streaks),
         app("streaks.archivedOpen", "Streaks tab", "Archived expanded", tab: .streaks, start: .init(showsArchived: true)),
         app("streaks.onlyArchived", "Streaks tab", "No active streaks · one archived",
             tasks: [SampleData.meditation], tab: .streaks),
@@ -530,6 +544,17 @@ private struct ComponentsGallery: View {
                         CircleIconButton(systemImage: "gearshape.fill", label: "Settings") {}
                         Spacer()
                         CircleIconButton(systemImage: "plus", color: Color.app.flame, label: "Create streak") {}
+                    }
+                }
+                group("Streak tiles · open, done, dormant, New streak") {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm), GridItem(.flexible())],
+                              spacing: Spacing.sm) {
+                        ForEach([SampleData.gym, SampleData.skincare, SampleData.guitar]) { task in
+                            Button {} label: { StreakTile(task: task) }
+                                .buttonStyle(StreakTileButtonStyle(color: task.color,
+                                                                   dormant: task.streak.totalCheckIns == 0))
+                        }
+                        NewStreakTile {}
                     }
                 }
                 group("Popular streaks chips") {

@@ -75,8 +75,7 @@ The app has a **tab bar with four tabs, left to right: Today, Streaks, Progress,
 - A Monday–Sunday strip for the current week: each past day shows how much of what was scheduled got done, today shows its progress so far. Tapping a past day opens History at that day.
 - **One status line** under the strip: how many of today's tasks are checked in and what's next ("2 of 3 done today · Next: Gym at 6:00 PM", "2 of 3 done today · Gym is open now", "All done for today · Next: Guitar tomorrow at 9:00 PM").
 - The task whose **window is open** comes right after the status line as the highlighted hero card with **a single "Check in" button**. No skip button here.
-- **Today**: the other tasks still ahead today, plus any missed today, **sorted by window start time**.
-- Tasks **checked in or skipped today** collapse into one row at the bottom of the Today section ("Done today · 2"). Tapping it shows or hides them. Whether it's open is remembered until the app closes.
+- **Your day**: a timeline of every other task scheduled today, **sorted by window start time**, each at its time: still to come, missed, and also **done and skipped** ones, which stay in their slot (dimmed) so the whole day reads top to bottom. A "Now" line shows where the current time falls between them.
 - **Coming up**: every task not scheduled today, with its next window, sorted by soonest, e.g. "Guitar · Tomorrow, 9:00 PM".
 - **Rest day** (streaks exist, none scheduled today): the status line reads "Rest day · Next: Gym tomorrow at 6:00 PM" (or "… Gym Friday at 6:00 PM"); no Today section or hero card; the week strip and Coming up show as normal.
 - Each task shows its status (open now / done with the check-in time / opens at a time) and its streak.
@@ -95,9 +94,10 @@ The app has a **tab bar with four tabs, left to right: Today, Streaks, Progress,
 - Shown once, on the first open of a fresh install (no streaks yet). Finishing or skipping it is remembered on the iPhone; it never comes back (an install that already has streaks never sees it). DEBUG: Settings → Developer → "Show welcome again".
 - It doesn't ask for any permission.
 
-**Streaks tab**
+**Streaks tab** (the collection; Today is the plan for the day)
 
-- Every active habit, sorted by current streak (highest first), with its schedule, today's status, current streak, and best streak. Tapping one opens its task screen.
+- A summary line: how many streaks are active and how many skips are left this week across all of them.
+- Every active habit as a bright tile in a 2-column grid, sorted by current streak (highest first): its current streak, today's status (done, open, skipped, missed), this week's days, and its best streak. A streak at 0 looks dormant (faded), not broken. Tapping one opens its task screen. The last tile always creates a new streak.
 - **Archived** habits in a collapsed section at the bottom. Opening one offers **Restore** and **Delete permanently**.
 - A + button creates a task.
 

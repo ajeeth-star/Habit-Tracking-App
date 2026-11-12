@@ -17,7 +17,6 @@ enum Strings {
         /// Fills "Streak ended {day} at …" when the miss was today or yesterday.
         static let endedToday = "today"
         static let endedYesterday = "yesterday"
-        static let laterToday = "Later today"
         static func nextDay(_ day: String) -> String { "Next: \(day)" }
     }
 
@@ -56,7 +55,11 @@ enum Strings {
 
     enum Today {
         static let comingUp = "Coming up"
-        static let doneToday = "Done today"
+        /// The timeline of the day (design.md §4.1).
+        static let yourDay = "Your day"
+        /// The timeline's "now" marker, shown ALL CAPS.
+        static let now = "Now"
+        static func nowAt(_ time: String) -> String { "Now, \(time)" }
         static func dayAndTime(_ day: String, _ time: String) -> String { "\(day), \(time)" }
     }
 
@@ -76,6 +79,23 @@ enum Strings {
         static let restore = "Restore"
         static let deletePermanently = "Delete permanently"
         static let noArchived = "No archived streaks."
+        static func activeCount(_ n: Int) -> String { "\(n) active" }
+        static func skipsLeftThisWeek(_ n: Int) -> String {
+            switch n {
+            case 0: "No skips left this week"
+            case 1: "1 skip left this week"
+            default: "\(n) skips left this week"
+            }
+        }
+        /// "Best 5w 1d" on a tile.
+        static func tileBest(_ streak: String) -> String { "Best \(streak)" }
+        static let newStreak = "New streak"
+        // A tile's status (the words show ALL CAPS)
+        static let open = "Open"
+        static let skipped = "Skipped"
+        static let missed = "Missed"
+        static let done = "Done"
+        static let openNow = "Open now"
     }
 
     enum AllHistory {

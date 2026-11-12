@@ -61,6 +61,22 @@ enum Sizes {
     static let calendarDay: CGFloat = 40
     static let calendarRing: CGFloat = 3
 
+    /// Streaks tab tiles: height for each point of width, the icon badge, the week dots and their ring,
+    /// how faded a skipped day's dot is, and how much color a dormant (0) tile keeps.
+    static let tileAspect: CGFloat = 1.1
+    static let tileBadge: CGFloat = 36
+    static let tileDot: CGFloat = 10
+    static let tileDotRing: CGFloat = 1.5
+    static let tileSkippedDotOpacity: Double = 0.35
+    static let tileDormantSaturation: Double = 0.45
+
+    /// Today's timeline: the line down the left, each streak's dot, the "now" line, and how faded done and
+    /// skipped streaks are.
+    static let timelineLine: CGFloat = 2
+    static let timelineDot: CGFloat = 14
+    static let nowLine: CGFloat = 2
+    static let timelineDoneOpacity: Double = 0.6
+
     /// The welcome's page dots: a dot, and the current page's wider capsule.
     static let pageDot: CGFloat = 8
     static let pageDotCurrent: CGFloat = 24

@@ -172,3 +172,34 @@ struct ProgressTests {
         #expect(store.status(tasks: [], now: now).bubble != .firstStreak)
     }
 }
+
+/// Today's timeline order and "now" marker, and the Streaks tab's summary line (design.md §4.1, §4.10).
+struct TimelineTests {
+    private func at(_ hour: Int, _ minute: Int = 0) -> Date { SampleData.time(hour, minute) }
+
+    @Test func timelineLeavesOutTheHeroAndKeepsDoneOnes() {
+        // 6:40 PM: Gym (6 PM) is open, so it's the hero card. Skincare done, Guitar missed, Run skipped, Journal ahead.
+        let timeline = TodayTimeline(tasks: SampleData.allTasksWithArchived, now: at(18, 40))
+        #expect(timeline.tasks.map(\.id) == ["skincare", "guitar", "run", "journal"])
+        #expect(timeline.nowIndex == 3) // after Run (5 PM), before Journal (9 PM)
+        #expect(TimelineDot(SampleData.skincare.cardState) == .done)
+        #expect(TimelineDot(SampleData.guitar.cardState) == .missed)
+        #expect(TimelineDot(SampleData.run.cardState) == .skipped)
+        #expect(TimelineDot(SampleData.journal.cardState) == .upcoming)
+        #expect(TimelineDot.done.isFaded && TimelineDot.skipped.isFaded && !TimelineDot.missed.isFaded)
+    }
+
+    @Test func nowMarkerMovesWithTheTime() {
+        #expect(TodayTimeline(tasks: SampleData.allTasksWithArchived, now: at(6, 30)).nowIndex == 0)
+        #expect(TodayTimeline(tasks: SampleData.allTasksWithArchived, now: at(7)).nowIndex == 1) // a window starting now
+        #expect(TodayTimeline(tasks: SampleData.allTasksWithArchived, now: at(23)).nowIndex == 4)
+        #expect(TodayTimeline(tasks: SampleData.restDayTasks, now: at(12)).isEmpty)
+    }
+
+    @Test func streaksSummaryLine() {
+        let format = Formatters(locale: Locale(identifier: "en_US"))
+        #expect(format.streaksSummary(active: 4, skipsLeft: 3) == "4 active · 3 skips left this week")
+        #expect(format.streaksSummary(active: 1, skipsLeft: 1) == "1 active · 1 skip left this week")
+        #expect(format.streaksSummary(active: 2, skipsLeft: 0) == "2 active · No skips left this week")
+    }
+}

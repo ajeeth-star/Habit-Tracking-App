@@ -19,6 +19,10 @@ struct AppFonts {
     let celebrationNumber = Font.custom(Nunito.blackName, fixedSize: 64).monospacedDigit()
     /// The big numbers on the Progress tab's stat cards.
     let statNumber = Nunito.black(28, .title).monospacedDigit()
+    /// The streak on a Streaks tab tile.
+    let streakTileNumber = Nunito.black(40, .largeTitle).monospacedDigit()
+    /// A time on Today's timeline ("9:00 PM").
+    let timelineTime = Nunito.bold(12, .caption)
     /// The day streak in Today's header, in `flame`.
     let dayStreakNumber = Nunito.black(44, .largeTitle).monospacedDigit()
     /// "DAY STREAK" under it and "GYM STREAK" on the celebration: shown ALL CAPS with `capsLabel()`.
@@ -44,6 +48,8 @@ struct AppFonts {
     let settingsIcon = Font.system(size: 15, weight: .semibold)
     /// Fixed size: tab bar icons.
     let tabIcon = Font.system(size: 26, weight: .semibold)
+    /// Fixed size: the small x for a missed day among a streak tile's week dots.
+    let tileDotIcon = Font.system(size: 10, weight: .black)
     /// Fixed size: the icon in a round chunky button (Today's gear and +).
     let circleButtonIcon = Font.system(size: 22, weight: .bold)
     /// The `plus` in the empty-state circle.

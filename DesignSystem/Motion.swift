@@ -19,6 +19,11 @@ enum Motion {
     static let slideInStagger: Double = 0.04
     static let slideInMaxStaggered = 10
     static let slideIn = Animation.spring(duration: 0.45, bounce: 0.25)
+    /// Streaks tab tiles popping in the first time the tab appears: starting scale, the spring, and the gap
+    /// between tiles.
+    static let tilePopStartScale: CGFloat = 0.85
+    static let tilePop = Animation.spring(duration: 0.4, bounce: 0.4)
+    static let tilePopStagger: Double = 0.05
     /// Confetti: how many pieces and how long they fall.
     static let confettiCount = 50
     static let confettiDuration: Double = 1.5

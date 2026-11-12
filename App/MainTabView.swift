@@ -6,7 +6,6 @@ import SwiftUI
 struct MainTabView: View {
     /// How each tab starts out. The app uses the defaults; the Design Gallery opens specific states.
     struct StartState {
-        var showsDone = false
         var showsArchived = false
         /// Fixes which line the speech bubble picks (nil: random).
         var bubbleVariant: Int?
@@ -34,7 +33,7 @@ struct MainTabView: View {
             // Apple's tab container keeps every tab alive and shows VoiceOver only the current one;
             // its own bar is hidden in favor of `AppTabBar`.
             TabView(selection: $router.selectedTab) {
-                tab(.today) { HomeView(showsDone: start.showsDone, bubbleVariant: start.bubbleVariant) }
+                tab(.today) { HomeView(bubbleVariant: start.bubbleVariant) }
                 tab(.streaks) { HabitsView(showsArchived: start.showsArchived) }
                 tab(.progress) { ProgressTabView(monthOffset: start.progressMonthOffset) }
                 tab(.flame) { FlameView() }
